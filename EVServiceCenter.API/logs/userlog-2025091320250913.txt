@@ -1,0 +1,1157 @@
+2025-09-13 07:29:24.141 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 07:29:24.584 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 07:29:24.584 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 07:29:24.631 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 07:29:24.631 +07:00 [INF] Hosting environment: Development
+2025-09-13 07:29:24.632 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 07:29:26.864 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 07:29:27.117 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 262.326ms
+2025-09-13 07:29:27.119 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 07:29:30.985 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 07:29:30.985 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 07:29:31.004 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 19.3624ms
+2025-09-13 07:29:31.046 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 61.0242ms
+2025-09-13 07:29:31.130 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 07:29:31.206 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 75.8613ms
+2025-09-13 07:29:36.236 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 07:29:36.241 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 07:29:36.268 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 07:29:39.543 +07:00 [INF] Executed DbCommand (55ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 07:29:39.767 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 07:29:39.775 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 3504.1495ms
+2025-09-13 07:29:39.775 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 07:29:39.784 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 3548.1326ms
+2025-09-13 07:30:15.689 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/1 - null null
+2025-09-13 07:30:15.700 +07:00 [INF] Executing endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:15.712 +07:00 [INF] Route matched with {action = "GetUserById", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserById(Int32) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:30:15.982 +07:00 [INF] Executed DbCommand (28ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:30:16.015 +07:00 [INF] Executing OkObjectResult, writing value of type 'EVServiceCenter.Core.DTOs.Response.UserResponseDto'.
+2025-09-13 07:30:16.015 +07:00 [INF] Executed action UserController.GetUserById (EVServiceCenter.API) in 302.8765ms
+2025-09-13 07:30:16.015 +07:00 [INF] Executed endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:16.015 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/1 - 200 null application/json; charset=utf-8 326.7982ms
+2025-09-13 07:30:23.876 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/2 - null null
+2025-09-13 07:30:23.877 +07:00 [INF] Executing endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:23.877 +07:00 [INF] Route matched with {action = "GetUserById", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserById(Int32) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:30:23.910 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:30:23.911 +07:00 [INF] Executing OkObjectResult, writing value of type 'EVServiceCenter.Core.DTOs.Response.UserResponseDto'.
+2025-09-13 07:30:23.911 +07:00 [INF] Executed action UserController.GetUserById (EVServiceCenter.API) in 34.1341ms
+2025-09-13 07:30:23.911 +07:00 [INF] Executed endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:23.911 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/2 - 200 null application/json; charset=utf-8 35.8676ms
+2025-09-13 07:30:27.207 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/3 - null null
+2025-09-13 07:30:27.207 +07:00 [INF] Executing endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:27.207 +07:00 [INF] Route matched with {action = "GetUserById", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserById(Int32) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:30:27.225 +07:00 [INF] Executed DbCommand (13ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:30:27.226 +07:00 [INF] Executing OkObjectResult, writing value of type 'EVServiceCenter.Core.DTOs.Response.UserResponseDto'.
+2025-09-13 07:30:27.226 +07:00 [INF] Executed action UserController.GetUserById (EVServiceCenter.API) in 18.6872ms
+2025-09-13 07:30:27.226 +07:00 [INF] Executed endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:27.227 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/3 - 200 null application/json; charset=utf-8 19.7032ms
+2025-09-13 07:30:31.472 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/4 - null null
+2025-09-13 07:30:31.473 +07:00 [INF] Executing endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:31.473 +07:00 [INF] Route matched with {action = "GetUserById", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserById(Int32) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:30:31.481 +07:00 [INF] Executed DbCommand (7ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:30:31.482 +07:00 [INF] Executing OkObjectResult, writing value of type 'EVServiceCenter.Core.DTOs.Response.UserResponseDto'.
+2025-09-13 07:30:31.482 +07:00 [INF] Executed action UserController.GetUserById (EVServiceCenter.API) in 9.3657ms
+2025-09-13 07:30:31.482 +07:00 [INF] Executed endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:31.482 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/4 - 200 null application/json; charset=utf-8 10.2791ms
+2025-09-13 07:30:35.308 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/8 - null null
+2025-09-13 07:30:35.309 +07:00 [INF] Executing endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:35.309 +07:00 [INF] Route matched with {action = "GetUserById", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserById(Int32) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:30:35.311 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:30:35.313 +07:00 [INF] Executing NotFoundObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 07:30:35.316 +07:00 [INF] Executed action UserController.GetUserById (EVServiceCenter.API) in 7.4075ms
+2025-09-13 07:30:35.316 +07:00 [INF] Executed endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 07:30:35.317 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/8 - 404 null application/json; charset=utf-8 8.2182ms
+2025-09-13 07:31:08.846 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 07:31:08.848 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 07:31:08.848 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 07:31:08.872 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 07:31:08.873 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 07:31:08.873 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 3.8303ms
+2025-09-13 07:31:08.873 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 07:31:08.873 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 27.7431ms
+2025-09-13 07:31:31.241 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 61
+2025-09-13 07:31:31.250 +07:00 [INF] CORS policy execution failed.
+2025-09-13 07:31:31.250 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 07:31:31.251 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 07:31:31.255 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:31:31.297 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 07:31:31.590 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:31:31.742 +07:00 [INF] Executed DbCommand (15ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 07:31:31.749 +07:00 [INF] User logged in: PhamNghia
+2025-09-13 07:31:31.781 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 07:31:31.783 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 528.2354ms
+2025-09-13 07:31:31.783 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 07:31:31.783 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 541.8594ms
+2025-09-13 07:31:53.931 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 63
+2025-09-13 07:31:53.932 +07:00 [INF] CORS policy execution failed.
+2025-09-13 07:31:53.948 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 07:31:53.948 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 07:31:53.948 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:31:53.980 +07:00 [INF] Executed DbCommand (17ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 07:31:53.980 +07:00 [WRN] Login failed: Username PhamNghia12 not found
+2025-09-13 07:31:53.980 +07:00 [INF] Executing UnauthorizedObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 07:31:53.981 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 32.6462ms
+2025-09-13 07:31:53.981 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 07:31:53.981 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 401 null application/json; charset=utf-8 49.7089ms
+2025-09-13 07:32:02.628 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 61
+2025-09-13 07:32:02.628 +07:00 [INF] CORS policy execution failed.
+2025-09-13 07:32:02.628 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 07:32:02.628 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 07:32:02.629 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 07:32:02.636 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 07:32:02.814 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 07:32:02.830 +07:00 [INF] Executed DbCommand (13ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 07:32:02.831 +07:00 [INF] User logged in: PhamNghia
+2025-09-13 07:32:02.831 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 07:32:02.832 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 203.0322ms
+2025-09-13 07:32:02.832 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 07:32:02.832 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 203.7539ms
+2025-09-13 08:26:24.262 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 08:26:24.540 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 08:26:24.541 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 08:26:24.578 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 08:26:24.578 +07:00 [INF] Hosting environment: Development
+2025-09-13 08:26:24.578 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 08:26:25.275 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 08:26:25.466 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 198.7498ms
+2025-09-13 08:26:25.467 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 08:26:27.968 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 08:26:27.968 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 08:26:27.989 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 20.7087ms
+2025-09-13 08:26:28.012 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 43.3179ms
+2025-09-13 08:26:28.099 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 08:26:28.194 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 94.8634ms
+2025-09-13 08:27:34.450 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/register - application/json 171
+2025-09-13 08:27:34.463 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:27:34.463 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:27:34.473 +07:00 [INF] Executing endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 08:27:34.503 +07:00 [INF] Route matched with {action = "Register", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(EVServiceCenter.Core.DTOs.Request.RegisterRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:27:37.737 +07:00 [INF] Executed DbCommand (44ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Username] = @__username_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 08:27:37.783 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__email_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Email] = @__email_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 08:27:38.418 +07:00 [INF] Executed DbCommand (14ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (Size = 100), @p6='?' (DbType = Date), @p7='?' (DbType = Boolean), @p8='?' (DbType = DateTime2), @p9='?' (DbType = Date), @p10='?' (Size = 64) (DbType = Binary), @p11='?' (Size = 32) (DbType = Binary), @p12='?' (Size = 20), @p13='?' (Size = 500), @p14='?' (DbType = Int32), @p15='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p16='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedBy], [CreatedDate], [Department], [Email], [EmployeeCode], [FullName], [HireDate], [IsActive], [LastLoginDate], [PasswordExpiryDate], [PasswordHash], [PasswordSalt], [PhoneNumber], [ProfilePicture], [RoleID], [Salary], [Username])
+OUTPUT INSERTED.[UserID], INSERTED.[FailedLoginAttempts]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16);
+2025-09-13 08:27:38.449 +07:00 [INF] User registered: tester123
+2025-09-13 08:27:38.487 +07:00 [INF] Executing CreatedAtActionResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:27:38.509 +07:00 [INF] Executed action UserController.Register (EVServiceCenter.API) in 4001.0531ms
+2025-09-13 08:27:38.510 +07:00 [INF] Executed endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 08:27:38.517 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/register - 201 null application/json; charset=utf-8 4067.4002ms
+2025-09-13 08:27:56.696 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 57
+2025-09-13 08:27:56.698 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:27:56.698 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:27:56.701 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:27:56.706 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:27:56.931 +07:00 [INF] Executed DbCommand (8ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:27:57.282 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 08:27:57.317 +07:00 [INF] Executed DbCommand (21ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 08:27:57.320 +07:00 [INF] User logged in: tester123
+2025-09-13 08:27:57.323 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:27:57.324 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 617.3757ms
+2025-09-13 08:27:57.324 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:27:57.324 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 627.8301ms
+2025-09-13 08:29:03.643 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:29:03.644 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:29:03.644 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:29:03.670 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:03.673 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:29:03.705 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:29:03.884 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:29:03.884 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:29:04.121 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:29:04.122 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 449.019ms
+2025-09-13 08:29:04.122 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:04.122 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 479.0698ms
+2025-09-13 08:29:17.108 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:29:17.108 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:29:17.109 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:29:17.109 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:17.109 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:29:17.112 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:29:17.253 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:29:17.253 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:29:17.373 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:29:17.373 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 264.5909ms
+2025-09-13 08:29:17.373 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:17.374 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 265.6444ms
+2025-09-13 08:29:17.967 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:29:17.967 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:29:17.967 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:29:17.967 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:17.967 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:29:17.969 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:29:18.128 +07:00 [INF] Executed DbCommand (9ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:29:18.129 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:29:18.203 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:29:18.203 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 236.482ms
+2025-09-13 08:29:18.203 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:18.204 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 237.0567ms
+2025-09-13 08:29:18.733 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:29:18.734 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:29:18.734 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:29:18.734 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:18.734 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:29:18.737 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:29:18.877 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:29:18.877 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:29:18.943 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:29:18.944 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 209.7274ms
+2025-09-13 08:29:18.944 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:18.944 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 210.3858ms
+2025-09-13 08:29:19.559 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:29:19.559 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:29:19.559 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:29:19.559 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:19.559 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:29:19.562 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:29:19.708 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:29:19.708 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:29:19.773 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:29:19.773 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 213.3985ms
+2025-09-13 08:29:19.773 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:19.773 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 214.1216ms
+2025-09-13 08:29:20.285 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:29:20.285 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:29:20.285 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:29:20.286 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:20.286 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:29:20.289 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:29:20.455 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:29:20.456 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:29:20.568 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:29:20.569 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 282.9314ms
+2025-09-13 08:29:20.569 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:29:20.569 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 283.5169ms
+2025-09-13 08:30:01.343 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 58
+2025-09-13 08:30:01.399 +07:00 [INF] CORS policy execution failed.
+2025-09-13 08:30:01.400 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 08:30:01.400 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:30:01.400 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 08:30:01.407 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 08:30:01.581 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 08:30:01.582 +07:00 [WRN] Login failed: Invalid password for tester123
+2025-09-13 08:30:01.667 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 08:30:01.667 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 267.3851ms
+2025-09-13 08:30:01.667 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 08:30:01.667 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 323.9791ms
+2025-09-13 12:57:12.990 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 12:57:13.299 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 12:57:13.300 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 12:57:13.343 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 12:57:13.343 +07:00 [INF] Hosting environment: Development
+2025-09-13 12:57:13.343 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 12:57:15.100 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 12:57:15.314 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 221.1226ms
+2025-09-13 12:57:15.316 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 12:57:28.985 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 12:57:28.986 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 12:57:29.046 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 61.3935ms
+2025-09-13 12:57:29.082 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 96.2938ms
+2025-09-13 12:57:29.122 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 12:57:29.225 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 102.4557ms
+2025-09-13 12:57:40.606 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 12:57:40.611 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 12:57:40.633 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 12:57:43.548 +07:00 [INF] Executed DbCommand (26ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 12:57:43.777 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 12:57:43.790 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 3151.2347ms
+2025-09-13 12:57:43.791 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 12:57:43.799 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 3192.6334ms
+2025-09-13 12:58:22.561 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 61
+2025-09-13 12:58:22.572 +07:00 [INF] CORS policy execution failed.
+2025-09-13 12:58:22.572 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 12:58:22.575 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 12:58:22.584 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 12:58:22.956 +07:00 [INF] Executed DbCommand (30ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 12:58:23.285 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 12:58:23.446 +07:00 [INF] Executed DbCommand (21ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 12:58:23.456 +07:00 [INF] User logged in: PhamNghia
+2025-09-13 12:58:23.488 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 12:58:23.492 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 908.392ms
+2025-09-13 12:58:23.492 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 12:58:23.493 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 931.7152ms
+2025-09-13 13:40:12.279 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 13:40:12.519 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 13:40:12.519 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 13:40:12.546 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 13:40:12.547 +07:00 [INF] Hosting environment: Development
+2025-09-13 13:40:12.547 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 13:40:13.017 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 13:40:13.157 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 145.3468ms
+2025-09-13 13:40:13.159 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 13:40:15.351 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 13:40:15.351 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 13:40:15.364 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 13.7089ms
+2025-09-13 13:40:15.378 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 26.8484ms
+2025-09-13 13:40:15.458 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 13:40:15.529 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 70.9233ms
+2025-09-13 13:40:20.928 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/register - application/json 162
+2025-09-13 13:40:20.933 +07:00 [INF] CORS policy execution failed.
+2025-09-13 13:40:20.933 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 13:40:20.936 +07:00 [INF] Executing endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 13:40:20.956 +07:00 [INF] Route matched with {action = "Register", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(EVServiceCenter.Core.DTOs.Request.RegisterRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 13:40:24.188 +07:00 [INF] Executed DbCommand (58ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Username] = @__username_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 13:40:24.238 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__email_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Email] = @__email_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 13:40:24.276 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@__prefix_0_startswith='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[EmployeeCode]
+FROM [Users] AS [u]
+WHERE [u].[EmployeeCode] IS NOT NULL AND [u].[EmployeeCode] LIKE @__prefix_0_startswith ESCAPE N'\'
+ORDER BY [u].[EmployeeCode] DESC
+2025-09-13 13:40:24.284 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__code_0='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[EmployeeCode] = @__code_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 13:40:24.931 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (Size = 100), @p6='?' (DbType = Date), @p7='?' (DbType = Boolean), @p8='?' (DbType = DateTime2), @p9='?' (DbType = Date), @p10='?' (Size = 64) (DbType = Binary), @p11='?' (Size = 32) (DbType = Binary), @p12='?' (Size = 20), @p13='?' (Size = 500), @p14='?' (DbType = Int32), @p15='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p16='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedBy], [CreatedDate], [Department], [Email], [EmployeeCode], [FullName], [HireDate], [IsActive], [LastLoginDate], [PasswordExpiryDate], [PasswordHash], [PasswordSalt], [PhoneNumber], [ProfilePicture], [RoleID], [Salary], [Username])
+OUTPUT INSERTED.[UserID], INSERTED.[FailedLoginAttempts]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16);
+2025-09-13 13:40:24.962 +07:00 [INF] User registered: staff_test
+2025-09-13 13:40:25.005 +07:00 [INF] Executing CreatedAtActionResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 13:40:25.038 +07:00 [INF] Executed action UserController.Register (EVServiceCenter.API) in 4077.8658ms
+2025-09-13 13:40:25.038 +07:00 [INF] Executed endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 13:40:25.046 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/register - 201 null application/json; charset=utf-8 4118.2285ms
+2025-09-13 13:40:47.824 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 55
+2025-09-13 13:40:47.848 +07:00 [INF] CORS policy execution failed.
+2025-09-13 13:40:47.848 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 13:40:47.850 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 13:40:47.855 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 13:40:48.049 +07:00 [INF] Executed DbCommand (11ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 13:40:48.371 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 13:40:48.398 +07:00 [INF] Executed DbCommand (13ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 13:40:48.400 +07:00 [INF] User logged in: staff_test
+2025-09-13 13:40:48.404 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 13:40:48.405 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 549.9627ms
+2025-09-13 13:40:48.405 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 13:40:48.405 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 581.1031ms
+2025-09-13 13:41:00.448 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 13:41:00.449 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 13:41:00.452 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 13:41:00.478 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 13:41:00.490 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 13:41:00.491 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 39.1274ms
+2025-09-13 13:41:00.491 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 13:41:00.491 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 43.4627ms
+2025-09-13 13:41:14.930 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/6 - null null
+2025-09-13 13:41:14.930 +07:00 [INF] Executing endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 13:41:14.938 +07:00 [INF] Route matched with {action = "GetUserById", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetUserById(Int32) on controller UserController (EVServiceCenter.API).
+2025-09-13 13:41:14.946 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 13:41:14.947 +07:00 [INF] Executing OkObjectResult, writing value of type 'EVServiceCenter.Core.DTOs.Response.UserResponseDto'.
+2025-09-13 13:41:14.948 +07:00 [INF] Executed action UserController.GetUserById (EVServiceCenter.API) in 9.1512ms
+2025-09-13 13:41:14.948 +07:00 [INF] Executed endpoint 'UserController.GetUserById (EVServiceCenter.API)'
+2025-09-13 13:41:14.948 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/6 - 200 null application/json; charset=utf-8 18.1846ms
+2025-09-13 13:46:50.232 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 13:46:50.432 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 13:46:50.432 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 13:46:50.462 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 13:46:50.462 +07:00 [INF] Hosting environment: Development
+2025-09-13 13:46:50.462 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 13:46:51.153 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 13:46:51.356 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 210.4753ms
+2025-09-13 13:46:51.357 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 13:46:53.760 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 13:46:53.760 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 13:46:53.784 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 24.7593ms
+2025-09-13 13:46:53.797 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 37.7208ms
+2025-09-13 13:46:53.870 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 13:46:53.965 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 95.4825ms
+2025-09-13 13:47:52.506 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/register - application/json 162
+2025-09-13 13:47:52.538 +07:00 [INF] CORS policy execution failed.
+2025-09-13 13:47:52.538 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 13:47:52.624 +07:00 [INF] Executing endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 13:47:52.641 +07:00 [INF] Route matched with {action = "Register", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(EVServiceCenter.Core.DTOs.Request.RegisterRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 13:47:54.407 +07:00 [INF] Executed DbCommand (47ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Username] = @__username_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 13:47:54.433 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__email_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Email] = @__email_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 13:47:54.455 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__prefix_0_startswith='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[EmployeeCode]
+FROM [Users] AS [u]
+WHERE [u].[EmployeeCode] IS NOT NULL AND [u].[EmployeeCode] LIKE @__prefix_0_startswith ESCAPE N'\'
+ORDER BY [u].[EmployeeCode] DESC
+2025-09-13 13:47:54.462 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__code_0='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[EmployeeCode] = @__code_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 13:47:54.848 +07:00 [INF] Executed DbCommand (7ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (Size = 100), @p6='?' (DbType = Date), @p7='?' (DbType = Boolean), @p8='?' (DbType = DateTime2), @p9='?' (DbType = Date), @p10='?' (Size = 64) (DbType = Binary), @p11='?' (Size = 32) (DbType = Binary), @p12='?' (Size = 20), @p13='?' (Size = 500), @p14='?' (DbType = Int32), @p15='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p16='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedBy], [CreatedDate], [Department], [Email], [EmployeeCode], [FullName], [HireDate], [IsActive], [LastLoginDate], [PasswordExpiryDate], [PasswordHash], [PasswordSalt], [PhoneNumber], [ProfilePicture], [RoleID], [Salary], [Username])
+OUTPUT INSERTED.[UserID], INSERTED.[FailedLoginAttempts]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16);
+2025-09-13 13:47:54.867 +07:00 [INF] User registered: admin_test
+2025-09-13 13:47:54.893 +07:00 [INF] Executing CreatedAtActionResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 13:47:54.910 +07:00 [INF] Executed action UserController.Register (EVServiceCenter.API) in 2265.9371ms
+2025-09-13 13:47:54.910 +07:00 [INF] Executed endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 13:47:54.915 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/register - 201 null application/json; charset=utf-8 2408.2425ms
+2025-09-13 14:59:42.075 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 14:59:42.415 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 14:59:42.419 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 14:59:42.454 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 14:59:42.454 +07:00 [INF] Hosting environment: Development
+2025-09-13 14:59:42.454 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 14:59:42.648 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 14:59:42.809 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 165.7231ms
+2025-09-13 14:59:42.810 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 14:59:47.166 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/user - null null
+2025-09-13 14:59:47.171 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/user - 404 0 null 4.3928ms
+2025-09-13 14:59:47.171 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/user, Response status code: 404
+2025-09-13 14:59:51.781 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 14:59:51.782 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 14:59:51.802 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 21.7711ms
+2025-09-13 14:59:51.819 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 37.0531ms
+2025-09-13 14:59:51.904 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 14:59:51.984 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 79.6584ms
+2025-09-13 15:01:44.584 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/register - application/json 177
+2025-09-13 15:01:44.619 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:01:44.619 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:01:44.623 +07:00 [INF] Executing endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 15:01:44.656 +07:00 [INF] Route matched with {action = "Register", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(EVServiceCenter.Core.DTOs.Request.RegisterRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:01:48.053 +07:00 [INF] Executed DbCommand (70ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Username] = @__username_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 15:01:48.096 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[@__email_0='?' (Size = 100)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[Email] = @__email_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 15:01:48.133 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__prefix_0_startswith='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[EmployeeCode]
+FROM [Users] AS [u]
+WHERE [u].[EmployeeCode] IS NOT NULL AND [u].[EmployeeCode] LIKE @__prefix_0_startswith ESCAPE N'\'
+ORDER BY [u].[EmployeeCode] DESC
+2025-09-13 15:01:48.142 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@__code_0='?' (Size = 20)], CommandType='"Text"', CommandTimeout='30']
+SELECT CASE
+    WHEN EXISTS (
+        SELECT 1
+        FROM [Users] AS [u]
+        WHERE [u].[EmployeeCode] = @__code_0) THEN CAST(1 AS bit)
+    ELSE CAST(0 AS bit)
+END
+2025-09-13 15:01:48.809 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (Size = 100), @p6='?' (DbType = Date), @p7='?' (DbType = Boolean), @p8='?' (DbType = DateTime2), @p9='?' (DbType = Date), @p10='?' (Size = 64) (DbType = Binary), @p11='?' (Size = 32) (DbType = Binary), @p12='?' (Size = 20), @p13='?' (Size = 500), @p14='?' (DbType = Int32), @p15='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p16='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+INSERT INTO [Users] ([CreatedBy], [CreatedDate], [Department], [Email], [EmployeeCode], [FullName], [HireDate], [IsActive], [LastLoginDate], [PasswordExpiryDate], [PasswordHash], [PasswordSalt], [PhoneNumber], [ProfilePicture], [RoleID], [Salary], [Username])
+OUTPUT INSERTED.[UserID], INSERTED.[FailedLoginAttempts]
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16);
+2025-09-13 15:01:48.840 +07:00 [INF] User registered: admin01
+2025-09-13 15:01:48.880 +07:00 [INF] Executing CreatedAtActionResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:01:48.908 +07:00 [INF] Executed action UserController.Register (EVServiceCenter.API) in 4248.6502ms
+2025-09-13 15:01:48.909 +07:00 [INF] Executed endpoint 'UserController.Register (EVServiceCenter.API)'
+2025-09-13 15:01:48.916 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/register - 201 null application/json; charset=utf-8 4332.1127ms
+2025-09-13 15:06:00.668 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 15:06:00.857 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 15:06:00.857 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 15:06:00.884 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 15:06:00.884 +07:00 [INF] Hosting environment: Development
+2025-09-13 15:06:00.884 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 15:06:01.231 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 15:06:01.388 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 161.0011ms
+2025-09-13 15:06:01.390 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 15:06:03.926 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 15:06:03.926 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 15:06:03.942 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 15.345ms
+2025-09-13 15:06:03.953 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 27.2193ms
+2025-09-13 15:06:04.040 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 15:06:04.130 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 90.0494ms
+2025-09-13 15:06:43.520 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 55
+2025-09-13 15:06:43.530 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:06:43.531 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:06:43.547 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:06:43.566 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:06:47.065 +07:00 [INF] Executed DbCommand (65ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 15:06:47.631 +07:00 [INF] Executed DbCommand (6ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 15:06:47.777 +07:00 [INF] Executed DbCommand (19ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 15:06:47.784 +07:00 [INF] User logged in: admin01
+2025-09-13 15:06:47.816 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:06:47.826 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 4256.693ms
+2025-09-13 15:06:47.827 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:06:47.834 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 4313.639ms
+2025-09-13 15:08:01.429 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 15:08:01.441 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:08:01.445 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:08:01.445 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 401 0 null 16.2419ms
+2025-09-13 15:08:05.804 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 15:08:05.806 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:08:05.806 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:08:05.807 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 401 0 null 2.5092ms
+2025-09-13 15:10:10.857 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:10:10.884 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:10:10.886 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 15:10:10.941 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 15:10:10.950 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 15:10:10.954 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 66.878ms
+2025-09-13 15:10:10.954 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:10:10.954 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 97.4465ms
+2025-09-13 15:10:37.372 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:10:37.376 +07:00 [INF] Failed to validate the token.
+System.ArgumentException: IDX14102: Unable to decode the header '[PII of type 'Microsoft.IdentityModel.Logging.SecurityArtifact' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]' as Base64Url encoded string.
+ ---> System.FormatException: IDX10400: Unable to decode: '[PII of type 'System.String' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]' as Base64url encoded string.
+   at Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Decode(ReadOnlySpan`1 strSpan, Span`1 output, Boolean needReplace, Int32 decodedLength)
+   at Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Decode(ReadOnlySpan`1 strSpan, Span`1 output)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.CreateClaimSet(ReadOnlySpan`1 strSpan, Int32 startIndex, Int32 length, Boolean createHeaderClaimSet)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.ReadToken(ReadOnlyMemory`1 encodedTokenMemory)
+   --- End of inner exception stack trace ---
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.ReadToken(ReadOnlyMemory`1 encodedTokenMemory)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken..ctor(String jwtEncodedString)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.ReadToken(String token, TokenValidationParameters validationParameters)
+2025-09-13 15:10:37.381 +07:00 [INF] Bearer was not authenticated. Failure message: IDX14102: Unable to decode the header '[PII of type 'Microsoft.IdentityModel.Logging.SecurityArtifact' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]' as Base64Url encoded string.
+2025-09-13 15:10:37.381 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:10:37.382 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:10:37.382 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 401 0 null 9.9511ms
+2025-09-13 15:10:42.470 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:10:42.471 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:10:42.471 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 15:10:42.483 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 15:10:42.485 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 15:10:42.486 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 14.4625ms
+2025-09-13 15:10:42.486 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:10:42.486 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 16.1219ms
+2025-09-13 15:11:08.142 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 55
+2025-09-13 15:11:08.192 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:11:08.192 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:11:08.193 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:08.193 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:08.211 +07:00 [INF] Executed DbCommand (14ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 15:11:08.406 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 15:11:08.422 +07:00 [INF] Executed DbCommand (14ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 15:11:08.422 +07:00 [INF] User logged in: admin01
+2025-09-13 15:11:08.423 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:11:08.423 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 229.9628ms
+2025-09-13 15:11:08.423 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:08.423 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 281.4711ms
+2025-09-13 15:11:11.207 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:11:11.208 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:11:11.208 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:11.212 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 15:11:11.213 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 15:11:11.213 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 4.5154ms
+2025-09-13 15:11:11.213 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:11:11.213 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 5.9588ms
+2025-09-13 15:11:17.668 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 55
+2025-09-13 15:11:17.668 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:11:17.668 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:11:17.668 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:17.668 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:17.670 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 15:11:17.792 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 15:11:17.794 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 15:11:17.794 +07:00 [INF] User logged in: admin01
+2025-09-13 15:11:17.795 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:11:17.795 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 126.608ms
+2025-09-13 15:11:17.795 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:17.795 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 127.1684ms
+2025-09-13 15:11:19.482 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 55
+2025-09-13 15:11:19.482 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:11:19.482 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:11:19.482 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:19.482 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:19.487 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 15:11:19.615 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 15:11:19.618 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 15:11:19.618 +07:00 [INF] User logged in: admin01
+2025-09-13 15:11:19.618 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:11:19.618 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 136.3091ms
+2025-09-13 15:11:19.618 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:19.618 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 136.785ms
+2025-09-13 15:11:24.316 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 54
+2025-09-13 15:11:24.317 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:11:24.317 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:11:24.317 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:24.317 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:24.319 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 15:11:24.453 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [FailedLoginAttempts] = @p0
+OUTPUT 1
+WHERE [UserID] = @p1;
+2025-09-13 15:11:24.453 +07:00 [WRN] Login failed: Invalid password for admin01
+2025-09-13 15:11:24.667 +07:00 [INF] Executing BadRequestObjectResult, writing value of type '<>f__AnonymousType0`1[[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:11:24.668 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 351.3536ms
+2025-09-13 15:11:24.668 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:24.668 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 400 null application/json; charset=utf-8 351.8855ms
+2025-09-13 15:11:30.260 +07:00 [INF] Request starting HTTP/2 POST https://localhost:7077/api/User/login - application/json 55
+2025-09-13 15:11:30.261 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:11:30.261 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:11:30.261 +07:00 [INF] Executing endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:30.261 +07:00 [INF] Route matched with {action = "Login", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(EVServiceCenter.Core.DTOs.Request.LoginRequestDto) on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:30.263 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__username_0='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[Username] = @__username_0 AND [u].[IsActive] = CAST(1 AS bit)
+2025-09-13 15:11:30.389 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@__id_0='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(1) [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username], [u0].[RoleID], [u0].[CreatedDate], [u0].[Description], [u0].[IsActive], [u0].[Permissions], [u0].[RoleName]
+FROM [Users] AS [u]
+INNER JOIN [UserRoles] AS [u0] ON [u].[RoleID] = [u0].[RoleID]
+WHERE [u].[UserID] = @__id_0
+2025-09-13 15:11:30.391 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[@p18='?' (DbType = Int32), @p0='?' (DbType = Int32), @p1='?' (DbType = DateTime2), @p2='?' (Size = 50), @p3='?' (Size = 100), @p4='?' (Size = 20), @p5='?' (DbType = Int32), @p6='?' (Size = 100), @p7='?' (DbType = Date), @p8='?' (DbType = Boolean), @p9='?' (DbType = DateTime2), @p10='?' (DbType = Date), @p11='?' (Size = 64) (DbType = Binary), @p12='?' (Size = 32) (DbType = Binary), @p13='?' (Size = 20), @p14='?' (Size = 500), @p15='?' (DbType = Int32), @p16='?' (Precision = 15) (Scale = 2) (DbType = Decimal), @p17='?' (Size = 50)], CommandType='"Text"', CommandTimeout='30']
+SET IMPLICIT_TRANSACTIONS OFF;
+SET NOCOUNT ON;
+UPDATE [Users] SET [CreatedBy] = @p0, [CreatedDate] = @p1, [Department] = @p2, [Email] = @p3, [EmployeeCode] = @p4, [FailedLoginAttempts] = @p5, [FullName] = @p6, [HireDate] = @p7, [IsActive] = @p8, [LastLoginDate] = @p9, [PasswordExpiryDate] = @p10, [PasswordHash] = @p11, [PasswordSalt] = @p12, [PhoneNumber] = @p13, [ProfilePicture] = @p14, [RoleID] = @p15, [Salary] = @p16, [Username] = @p17
+OUTPUT 1
+WHERE [UserID] = @p18;
+2025-09-13 15:11:30.391 +07:00 [INF] User logged in: admin01
+2025-09-13 15:11:30.391 +07:00 [INF] Executing OkObjectResult, writing value of type '<>f__AnonymousType2`3[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+2025-09-13 15:11:30.392 +07:00 [INF] Executed action UserController.Login (EVServiceCenter.API) in 130.5234ms
+2025-09-13 15:11:30.392 +07:00 [INF] Executed endpoint 'UserController.Login (EVServiceCenter.API)'
+2025-09-13 15:11:30.392 +07:00 [INF] Request finished HTTP/2 POST https://localhost:7077/api/User/login - 200 null application/json; charset=utf-8 131.2994ms
+2025-09-13 15:11:45.516 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:11:45.516 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:11:45.516 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 15:11:45.518 +07:00 [INF] Executed DbCommand (2ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 15:11:45.519 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 15:11:45.519 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 2.8439ms
+2025-09-13 15:11:45.519 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:11:45.519 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 3.5241ms
+2025-09-13 15:12:03.261 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:12:03.263 +07:00 [INF] Failed to validate the token.
+System.ArgumentException: IDX14101: Unable to decode the payload '[PII of type 'Microsoft.IdentityModel.Logging.SecurityArtifact' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]' as Base64Url encoded string.
+ ---> System.InvalidOperationException: Cannot transcode invalid UTF-8 JSON text to UTF-16 string.
+ ---> System.Text.DecoderFallbackException: Unable to translate bytes [C7] at index 23 from specified code page to Unicode.
+   at System.Text.DecoderExceptionFallbackBuffer.Throw(Byte[] bytesUnknown, Int32 index)
+   at System.Text.DecoderExceptionFallbackBuffer.Fallback(Byte[] bytesUnknown, Int32 index)
+   at System.Text.Encoding.GetCharCountWithFallback(ReadOnlySpan`1 bytes, Int32 originalBytesLength, DecoderNLS decoder)
+   at System.Text.Encoding.GetCharCountWithFallback(Byte* pBytesOriginal, Int32 originalByteCount, Int32 bytesConsumedSoFar)
+   at System.Text.Json.JsonReaderHelper.TranscodeHelper(ReadOnlySpan`1 utf8Unescaped)
+   --- End of inner exception stack trace ---
+   at System.Text.Json.JsonReaderHelper.TranscodeHelper(ReadOnlySpan`1 utf8Unescaped)
+   at System.Text.Json.Utf8JsonReader.GetString()
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.ReadPayloadValue(Utf8JsonReader& reader, IDictionary`2 claims)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.CreatePayloadClaimSet(ReadOnlySpan`1 byteSpan)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.CreateClaimSet(ReadOnlySpan`1 strSpan, Int32 startIndex, Int32 length, Boolean createHeaderClaimSet)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.ReadToken(ReadOnlyMemory`1 encodedTokenMemory)
+   --- End of inner exception stack trace ---
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken.ReadToken(ReadOnlyMemory`1 encodedTokenMemory)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebToken..ctor(String jwtEncodedString)
+   at Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler.ReadToken(String token, TokenValidationParameters validationParameters)
+2025-09-13 15:12:03.264 +07:00 [INF] Bearer was not authenticated. Failure message: IDX14101: Unable to decode the payload '[PII of type 'Microsoft.IdentityModel.Logging.SecurityArtifact' is hidden. For more details, see https://aka.ms/IdentityModel/PII.]' as Base64Url encoded string.
+2025-09-13 15:12:03.264 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:12:03.264 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:12:03.264 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 401 0 null 3.902ms
+2025-09-13 15:12:09.105 +07:00 [INF] Request starting HTTP/1.1 GET https://localhost:7077/api/User - null null
+2025-09-13 15:12:09.105 +07:00 [INF] Executing endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:12:09.105 +07:00 [INF] Route matched with {action = "GetAllUsers", controller = "User"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetAllUsers() on controller UserController (EVServiceCenter.API).
+2025-09-13 15:12:09.115 +07:00 [INF] Executed DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [u].[UserID], [u].[CreatedBy], [u].[CreatedDate], [u].[Department], [u].[Email], [u].[EmployeeCode], [u].[FailedLoginAttempts], [u].[FullName], [u].[HireDate], [u].[IsActive], [u].[LastLoginDate], [u].[PasswordExpiryDate], [u].[PasswordHash], [u].[PasswordSalt], [u].[PhoneNumber], [u].[ProfilePicture], [u].[RoleID], [u].[Salary], [u].[Username]
+FROM [Users] AS [u]
+2025-09-13 15:12:09.116 +07:00 [INF] Executing OkObjectResult, writing value of type 'System.Collections.Generic.List`1[[EVServiceCenter.Core.DTOs.Response.UserResponseDto, EVServiceCenter.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+2025-09-13 15:12:09.116 +07:00 [INF] Executed action UserController.GetAllUsers (EVServiceCenter.API) in 10.3499ms
+2025-09-13 15:12:09.116 +07:00 [INF] Executed endpoint 'UserController.GetAllUsers (EVServiceCenter.API)'
+2025-09-13 15:12:09.116 +07:00 [INF] Request finished HTTP/1.1 GET https://localhost:7077/api/User - 200 null application/json; charset=utf-8 10.9414ms
+2025-09-13 15:15:27.038 +07:00 [INF] User profile is available. Using 'C:\Users\ADMIN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2025-09-13 15:15:27.266 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-13 15:15:27.267 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-13 15:15:27.297 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-13 15:15:27.297 +07:00 [INF] Hosting environment: Development
+2025-09-13 15:15:27.297 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter\EVServiceCenter.API
+2025-09-13 15:15:27.927 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/ - null null
+2025-09-13 15:15:28.104 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/ - 404 0 null 179.3983ms
+2025-09-13 15:15:28.106 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/, Response status code: 404
+2025-09-13 15:15:34.473 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/ủe - null null
+2025-09-13 15:15:34.479 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/ủe - 404 0 null 5.8374ms
+2025-09-13 15:15:34.479 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/api/%E1%BB%A7e, Response status code: 404
+2025-09-13 15:15:38.644 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:15:38.656 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:15:38.660 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:15:38.661 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 16.5542ms
+2025-09-13 15:15:40.966 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/users - null null
+2025-09-13 15:15:40.968 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/users - 404 0 null 1.9329ms
+2025-09-13 15:15:40.968 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/api/users, Response status code: 404
+2025-09-13 15:15:49.084 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 15:15:49.085 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 15:15:49.102 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 17.3402ms
+2025-09-13 15:15:49.122 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 37.5748ms
+2025-09-13 15:15:49.197 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 15:15:49.450 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 252.6081ms
+2025-09-13 15:15:54.999 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 15:15:55.143 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 143.9225ms
+2025-09-13 15:15:55.254 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/favicon.ico - null null
+2025-09-13 15:15:55.255 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/favicon.ico - 404 0 null 0.5319ms
+2025-09-13 15:15:55.255 +07:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7077/favicon.ico, Response status code: 404
+2025-09-13 15:16:09.929 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User - null null
+2025-09-13 15:16:09.930 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:16:09.932 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:16:09.932 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User - 401 0 null 2.9648ms
+2025-09-13 15:16:17.423 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/1 - null null
+2025-09-13 15:16:17.426 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2025-09-13 15:16:17.426 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:16:17.426 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/1 - 401 0 null 3.5796ms
+2025-09-13 15:16:22.511 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/User/2 - null null
+2025-09-13 15:16:22.512 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2025-09-13 15:16:22.512 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:16:22.512 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/User/2 - 401 0 null 1.2302ms
+2025-09-13 15:17:50.337 +07:00 [INF] Request starting HTTP/2 DELETE https://localhost:7077/api/User/1 - null null
+2025-09-13 15:17:50.378 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:17:50.378 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:17:50.380 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:17:50.380 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:17:50.380 +07:00 [INF] Request finished HTTP/2 DELETE https://localhost:7077/api/User/1 - 401 0 null 43.2376ms
+2025-09-13 15:18:20.440 +07:00 [INF] Request starting HTTP/2 PUT https://localhost:7077/api/User/1 - application/json 1237231
+2025-09-13 15:18:20.465 +07:00 [INF] CORS policy execution failed.
+2025-09-13 15:18:20.468 +07:00 [INF] Request origin https://localhost:7077 does not have permission to access the resource.
+2025-09-13 15:18:20.468 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+2025-09-13 15:18:20.468 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:18:20.468 +07:00 [INF] Request finished HTTP/2 PUT https://localhost:7077/api/User/1 - 401 0 null 28.7703ms
+2025-09-13 15:18:20.472 +07:00 [INF] Connection id "0HNFIJMP95G69", Request id "0HNFIJMP95G69:0000001B": the application completed without reading the entire request body.
+2025-09-13 15:20:03.648 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:20:03.658 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:20:03.658 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:20:03.658 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 10.5222ms
+2025-09-13 15:20:10.229 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:20:10.231 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:20:10.231 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:20:10.231 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 1.669ms
+2025-09-13 15:20:18.765 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:20:18.766 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:20:18.766 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:20:18.766 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 1.5478ms
+2025-09-13 15:20:19.540 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:20:19.541 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:20:19.541 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:20:19.541 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 1.5965ms
+2025-09-13 15:20:22.634 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:20:22.636 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:20:22.636 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:20:22.636 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 1.7145ms
+2025-09-13 15:20:23.202 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/api/user - null null
+2025-09-13 15:20:23.203 +07:00 [INF] Authorization failed. These requirements were not met:
+DenyAnonymousAuthorizationRequirement: Requires an authenticated user.
+RolesAuthorizationRequirement:User.IsInRole must be true for one of the following roles: (Admin)
+2025-09-13 15:20:23.203 +07:00 [INF] AuthenticationScheme: Bearer was challenged.
+2025-09-13 15:20:23.204 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/api/user - 401 0 null 1.3182ms
+2025-09-13 15:20:26.744 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - null null
+2025-09-13 15:20:26.745 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/_vs/browserLink - null null
+2025-09-13 15:20:26.745 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_framework/aspnetcore-browser-refresh.js - 200 16523 application/javascript; charset=utf-8 0.7345ms
+2025-09-13 15:20:26.758 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/_vs/browserLink - 200 null text/javascript; charset=UTF-8 13.1015ms
+2025-09-13 15:20:26.854 +07:00 [INF] Request starting HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - null null
+2025-09-13 15:20:26.898 +07:00 [INF] Request finished HTTP/2 GET https://localhost:7077/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 43.5284ms
+2025-09-13 15:53:07.979 +07:00 [INF] Executed DbCommand (10ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 15:53:08.000 +07:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2025-09-13 15:53:08.020 +07:00 [INF] Executed DbCommand (18ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2025-09-13 15:53:08.073 +07:00 [INF] Executed DbCommand (20ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2025-09-13 15:53:08.078 +07:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 15:53:08.078 +07:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2025-09-13 15:53:08.084 +07:00 [INF] Executed DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2025-09-13 15:53:08.089 +07:00 [INF] Applying migration '20250912112421_MakeEmployeeCodeNullable'.
+2025-09-13 15:53:08.284 +07:00 [ERR] Failed executing DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [AppointmentStatus] (
+    [StatusID] int NOT NULL IDENTITY,
+    [StatusName] nvarchar(50) NOT NULL,
+    [StatusColor] nvarchar(10) NULL,
+    [Description] nvarchar(200) NULL,
+    [IsActive] bit NULL DEFAULT CAST(1 AS bit),
+    [DisplayOrder] int NULL DEFAULT 0,
+    CONSTRAINT [PK__Appointm__C8EE204358988DD1] PRIMARY KEY ([StatusID])
+);
+2025-09-13 15:54:46.843 +07:00 [INF] Executed DbCommand (8ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 15:54:46.873 +07:00 [INF] Executed DbCommand (12ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2025-09-13 15:54:46.881 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2025-09-13 16:06:57.596 +07:00 [INF] Executed DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 16:06:57.617 +07:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2025-09-13 16:06:57.638 +07:00 [INF] Executed DbCommand (20ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2025-09-13 16:06:57.686 +07:00 [INF] Executed DbCommand (13ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2025-09-13 16:06:57.690 +07:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 16:06:57.691 +07:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2025-09-13 16:06:57.699 +07:00 [INF] Executed DbCommand (7ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2025-09-13 16:06:57.704 +07:00 [INF] Applying migration '20250913090001_AddResetTokenToUsers'.
+2025-09-13 16:06:57.913 +07:00 [ERR] Failed executing DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+CREATE TABLE [AppointmentStatus] (
+    [StatusID] int NOT NULL IDENTITY,
+    [StatusName] nvarchar(50) NOT NULL,
+    [StatusColor] nvarchar(10) NULL,
+    [Description] nvarchar(200) NULL,
+    [IsActive] bit NULL DEFAULT CAST(1 AS bit),
+    [DisplayOrder] int NULL DEFAULT 0,
+    CONSTRAINT [PK__Appointm__C8EE204358988DD1] PRIMARY KEY ([StatusID])
+);
+2025-09-13 16:11:10.944 +07:00 [INF] Executed DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 16:11:10.962 +07:00 [INF] Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+2025-09-13 16:11:10.979 +07:00 [INF] Executed DbCommand (16ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result
+2025-09-13 16:11:11.017 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+2025-09-13 16:11:11.022 +07:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT 1
+2025-09-13 16:11:11.022 +07:00 [INF] Executed DbCommand (0ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+2025-09-13 16:11:11.026 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];
+2025-09-13 16:11:11.031 +07:00 [INF] Applying migration '20250913090001_AddResetTokenToUsers'.
+2025-09-13 16:11:11.165 +07:00 [INF] Executed DbCommand (16ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE [Users] ADD [ResetToken] varbinary(128) NULL;
+2025-09-13 16:11:11.167 +07:00 [INF] Executed DbCommand (1ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+ALTER TABLE [Users] ADD [ResetTokenExpiry] datetime2 NULL;
+2025-09-13 16:11:11.171 +07:00 [INF] Executed DbCommand (4ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20250913090001_AddResetTokenToUsers', N'9.0.9');
+2025-09-13 16:11:11.175 +07:00 [INF] Executed DbCommand (3ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result

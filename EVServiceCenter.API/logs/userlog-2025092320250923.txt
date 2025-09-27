@@ -1,0 +1,87 @@
+2025-09-23 18:54:06.564 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 18:54:06.611 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 18:54:06.736 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 18:54:06.743 +07:00 [INF] Hosting environment: Development
+2025-09-23 18:54:06.748 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 18:54:07.797 +07:00 [INF] Request: GET /
+2025-09-23 18:56:55.511 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 18:56:55.551 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 18:56:55.596 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 18:56:55.599 +07:00 [INF] Hosting environment: Development
+2025-09-23 18:56:55.601 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 18:56:56.182 +07:00 [INF] Request: GET /
+2025-09-23 18:57:17.890 +07:00 [INF] Request: POST /api/auth/login
+2025-09-23 18:57:22.332 +07:00 [WRN] Invalid password for user NghiaPham. Failed attempts: 1
+2025-09-23 18:57:27.844 +07:00 [INF] Request: POST /api/auth/login
+2025-09-23 18:57:28.190 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-23 18:57:32.252 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-23 18:57:42.273 +07:00 [INF] Request: POST /api/auth/login
+2025-09-23 18:57:42.446 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-23 18:57:45.727 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-23 18:58:27.126 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-23 18:58:27.199 +07:00 [WRN] Password reset requested for non-existent email: tuyenlhse181699@fpt.edu.vn
+2025-09-23 19:07:26.265 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 19:07:26.306 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 19:07:26.350 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 19:07:26.354 +07:00 [INF] Hosting environment: Development
+2025-09-23 19:07:26.358 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 19:07:26.899 +07:00 [INF] Request: GET /
+2025-09-23 19:08:04.726 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-23 19:08:41.899 +07:00 [WRN] Password reset requested for non-existent email: tuyenlhse181699@fpt.edu.vn
+2025-09-23 19:12:50.325 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 19:12:50.362 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 19:12:50.415 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 19:12:50.421 +07:00 [INF] Hosting environment: Development
+2025-09-23 19:12:50.425 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 19:12:51.078 +07:00 [INF] Request: GET /
+2025-09-23 19:13:39.198 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-23 19:13:42.779 +07:00 [WRN] Password reset requested for non-existent email: tuyenlhse181699@fpt.edu.vn
+2025-09-23 21:33:57.598 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 21:33:57.657 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 21:33:57.748 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 21:33:57.753 +07:00 [INF] Hosting environment: Development
+2025-09-23 21:33:57.760 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 21:34:04.049 +07:00 [INF] Request: GET /
+2025-09-23 21:35:15.260 +07:00 [INF] Request: POST //auth/login
+2025-09-23 21:35:27.569 +07:00 [INF] Request: POST //auth/login
+2025-09-23 21:37:05.355 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 21:37:05.399 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 21:37:05.528 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 21:37:05.532 +07:00 [INF] Hosting environment: Development
+2025-09-23 21:37:05.536 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 21:37:06.170 +07:00 [INF] Request: GET /
+2025-09-23 21:37:41.182 +07:00 [INF] Request: POST /api/auth/login
+2025-09-23 21:37:55.522 +07:00 [INF] Request: POST /api/auth/login
+2025-09-23 21:37:56.758 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 1.54.101.94, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-23 21:38:01.851 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-23 21:38:06.974 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-23 21:38:11.782 +07:00 [INF] Email sent successfully to nghiapnse181815@fpt.edu.vn with subject: Đặt lại mật khẩu EV Service Center
+2025-09-23 21:38:11.792 +07:00 [INF] Password reset token generated for user: nghiapnse181815@fpt.edu.vn
+2025-09-23 21:38:37.154 +07:00 [INF] Request: GET /api/account/reset-password-page
+2025-09-23 21:38:45.341 +07:00 [INF] Request: GET /api/account/reset-password-page
+2025-09-23 21:38:56.031 +07:00 [INF] Request: GET /api/account/reset-password-page
+2025-09-23 21:39:16.300 +07:00 [INF] Request: GET /api/account/reset-password-page
+2025-09-23 21:40:14.170 +07:00 [INF] Request: GET /api/account/reset-password-page
+2025-09-23 21:43:05.727 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 21:43:05.772 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 21:43:05.807 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 21:43:05.822 +07:00 [INF] Hosting environment: Development
+2025-09-23 21:43:05.831 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 21:43:06.333 +07:00 [INF] Request: GET /
+2025-09-23 21:43:40.346 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-23 21:43:49.446 +07:00 [INF] Email sent successfully to nghiadaucau1@gmail.com with subject: Đặt lại mật khẩu EV Service Center
+2025-09-23 21:43:49.464 +07:00 [INF] Password reset token generated for user: nghiadaucau1@gmail.com
+2025-09-23 21:45:17.628 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-23 21:45:17.680 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-23 21:45:17.737 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-23 21:45:17.743 +07:00 [INF] Hosting environment: Development
+2025-09-23 21:45:17.747 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-23 21:45:18.162 +07:00 [INF] Request: GET /
+2025-09-23 21:45:47.223 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-23 21:45:56.629 +07:00 [INF] Email sent successfully to nghiadaucau1@gmail.com with subject: Đặt lại mật khẩu EV Service Center
+2025-09-23 21:45:56.641 +07:00 [INF] Password reset token generated for user: nghiadaucau1@gmail.com
+2025-09-23 21:47:24.402 +07:00 [INF] Request: GET /api/account/validate-reset-token
+2025-09-23 21:47:24.485 +07:00 [INF] Validating password reset token for nghiadaucau1@gmail.com
+2025-09-23 21:48:04.693 +07:00 [INF] Request: POST /api/account/reset-password-submit
+2025-09-23 21:48:05.288 +07:00 [INF] Password reset successful for user: nghiadaucau1@gmail.com
+2025-09-23 21:48:05.300 +07:00 [INF] Password reset successful for nghiadaucau1@gmail.com

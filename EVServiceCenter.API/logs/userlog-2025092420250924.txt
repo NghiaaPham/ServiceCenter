@@ -1,0 +1,198 @@
+2025-09-24 09:38:31.088 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 09:38:31.129 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 09:38:31.166 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 09:38:31.191 +07:00 [INF] Hosting environment: Development
+2025-09-24 09:38:31.193 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 09:38:31.754 +07:00 [INF] Request: GET /
+2025-09-24 13:43:10.763 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 13:43:10.812 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 13:43:10.860 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 13:43:10.882 +07:00 [INF] Hosting environment: Development
+2025-09-24 13:43:10.884 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 13:43:11.374 +07:00 [INF] Request: GET /
+2025-09-24 13:43:30.215 +07:00 [INF] Request: GET /api/account/validate-reset-token
+2025-09-24 13:43:33.099 +07:00 [INF] Validating password reset token for nghi
+2025-09-24 13:43:42.589 +07:00 [INF] Request: GET /api/account/validate-reset-token
+2025-09-24 13:43:42.642 +07:00 [INF] Validating password reset token for nghiadaucau1@gmail.com
+2025-09-24 14:07:00.613 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 14:07:00.681 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 14:07:00.716 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 14:07:00.728 +07:00 [INF] Hosting environment: Development
+2025-09-24 14:07:00.731 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 14:07:01.189 +07:00 [INF] Request: GET /
+2025-09-24 14:07:16.415 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:07:20.964 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:07:25.293 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-24 14:07:31.583 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:07:31.942 +07:00 [WRN] Invalid password for user NghiaPham. Failed attempts: 1
+2025-09-24 14:07:40.152 +07:00 [INF] Request: POST /api/auth/logout
+2025-09-24 14:07:49.860 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 14:07:49.915 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 14:07:49.960 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 14:07:49.966 +07:00 [INF] Hosting environment: Development
+2025-09-24 14:07:49.975 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 14:07:50.662 +07:00 [INF] Request: GET /
+2025-09-24 14:08:34.396 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:08:38.815 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:08:42.863 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-24 14:09:08.611 +07:00 [INF] Request: GET /api/auth/profile
+2025-09-24 14:09:22.449 +07:00 [INF] Request: GET /api/users
+2025-09-24 14:09:34.894 +07:00 [INF] Request: GET /api/users/9
+2025-09-24 14:09:46.389 +07:00 [INF] Request: GET /api/users/9
+2025-09-24 14:09:49.647 +07:00 [INF] Request: GET /api/users/9
+2025-09-24 14:10:36.974 +07:00 [INF] Request: PUT /api/users/9
+2025-09-24 14:10:37.275 +07:00 [ERR] Error updating user 9
+System.InvalidOperationException: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.UpdateUserAsync(User user) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 136
+   at EVServiceCenter.API.Controllers.Users.UserController.UpdateUser(Int32 id, UpdateUserRequestDto updateRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\Users\UserController.cs:line 159
+2025-09-24 14:11:05.373 +07:00 [INF] Request: PUT /api/users/9
+2025-09-24 14:11:05.532 +07:00 [ERR] Error updating user 9
+System.InvalidOperationException: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.UpdateUserAsync(User user) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 136
+   at EVServiceCenter.API.Controllers.Users.UserController.UpdateUser(Int32 id, UpdateUserRequestDto updateRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\Users\UserController.cs:line 159
+2025-09-24 14:11:22.613 +07:00 [INF] Request: PUT /api/users/9
+2025-09-24 14:11:22.692 +07:00 [ERR] Error updating user 9
+System.InvalidOperationException: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.UpdateUserAsync(User user) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 136
+   at EVServiceCenter.API.Controllers.Users.UserController.UpdateUser(Int32 id, UpdateUserRequestDto updateRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\Users\UserController.cs:line 159
+2025-09-24 14:11:29.209 +07:00 [INF] Request: PUT /api/users/9
+2025-09-24 14:11:29.294 +07:00 [ERR] Error updating user 9
+System.InvalidOperationException: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.UpdateUserAsync(User user) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 136
+   at EVServiceCenter.API.Controllers.Users.UserController.UpdateUser(Int32 id, UpdateUserRequestDto updateRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\Users\UserController.cs:line 159
+2025-09-24 14:11:35.902 +07:00 [INF] Request: PUT /api/users/9
+2025-09-24 14:11:35.976 +07:00 [ERR] Error updating user 9
+System.InvalidOperationException: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.UpdateUserAsync(User user) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 136
+   at EVServiceCenter.API.Controllers.Users.UserController.UpdateUser(Int32 id, UpdateUserRequestDto updateRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\Users\UserController.cs:line 159
+2025-09-24 14:12:04.489 +07:00 [INF] Request: POST /api/verification/resend-verification
+2025-09-24 14:12:12.715 +07:00 [INF] Request: POST /api/verification/resend-verification
+2025-09-24 14:12:26.554 +07:00 [INF] Request: POST /api/verification/resend-verification
+2025-09-24 14:12:30.711 +07:00 [INF] Email sent successfully to nghiadaucau123@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-24 14:12:30.721 +07:00 [INF] Verification email resent for user: nghiadaucau123@gmail.com
+2025-09-24 14:12:49.621 +07:00 [INF] Request: POST /api/verification/resend-verification
+2025-09-24 14:12:53.741 +07:00 [INF] Email sent successfully to nghiadaucau1@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-24 14:12:53.746 +07:00 [INF] Verification email resent for user: nghiadaucau1@gmail.com
+2025-09-24 14:14:14.736 +07:00 [INF] Request: GET /api/verification/email-status/nghiadaucau1@gmail.com
+2025-09-24 14:14:28.554 +07:00 [INF] Request: GET /api/verification/email-status/nghiapnse181815@fpt.edu.vn
+2025-09-24 14:15:25.650 +07:00 [INF] Request: POST /api/auth/logout
+2025-09-24 14:17:07.374 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 14:17:07.417 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 14:17:07.461 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 14:17:07.465 +07:00 [INF] Hosting environment: Development
+2025-09-24 14:17:07.467 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 14:17:07.902 +07:00 [INF] Request: GET /
+2025-09-24 14:17:25.604 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:17:30.277 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:17:33.748 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-24 14:18:01.143 +07:00 [INF] Request: PUT /api/users/5
+2025-09-24 14:18:14.914 +07:00 [INF] Request: PUT /api/users/9
+2025-09-24 14:18:15.032 +07:00 [INF] User updated: 9 by system
+2025-09-24 14:18:30.486 +07:00 [INF] Request: GET /api/users/9
+2025-09-24 14:28:21.043 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 14:28:21.104 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 14:28:21.243 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 14:28:21.247 +07:00 [INF] Hosting environment: Development
+2025-09-24 14:28:21.251 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 14:28:21.851 +07:00 [INF] Request: GET /
+2025-09-24 14:29:10.767 +07:00 [INF] Request: POST /api/auth/external/google
+2025-09-24 14:29:12.617 +07:00 [ERR] Error verifying Google token
+Google.Apis.Auth.InvalidJwtException: JWT contains untrusted 'aud' claim.
+   at Google.Apis.Auth.SignedTokenVerification.VerifySignedTokenAsync[TJswHeader,TJswPayload](SignedToken`2 signedToken, SignedTokenVerificationOptions options, CancellationToken cancellationToken)
+   at Google.Apis.Auth.GoogleJsonWebSignature.ValidateInternalAsync(String jwt, ValidationSettings validationSettings)
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.ExternalAuthService.VerifyGoogleTokenAsync(String idToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\ExternalAuthService.cs:line 189
+2025-09-24 14:31:31.623 +07:00 [INF] Request: POST /api/auth/external/google
+2025-09-24 14:31:31.705 +07:00 [ERR] Error verifying Google token
+Google.Apis.Auth.InvalidJwtException: JWT contains untrusted 'aud' claim.
+   at Google.Apis.Auth.SignedTokenVerification.VerifySignedTokenAsync[TJswHeader,TJswPayload](SignedToken`2 signedToken, SignedTokenVerificationOptions options, CancellationToken cancellationToken)
+   at Google.Apis.Auth.GoogleJsonWebSignature.ValidateInternalAsync(String jwt, ValidationSettings validationSettings)
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.ExternalAuthService.VerifyGoogleTokenAsync(String idToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\ExternalAuthService.cs:line 189
+2025-09-24 14:32:59.280 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 14:32:59.331 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 14:32:59.393 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 14:32:59.398 +07:00 [INF] Hosting environment: Development
+2025-09-24 14:32:59.401 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 14:32:59.860 +07:00 [INF] Request: GET /
+2025-09-24 14:33:22.821 +07:00 [INF] Request: POST /api/auth/external/google
+2025-09-24 14:33:25.587 +07:00 [INF] External login successful for user 62 via Google
+2025-09-24 14:37:34.532 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 14:37:34.575 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 14:37:34.616 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 14:37:34.621 +07:00 [INF] Hosting environment: Development
+2025-09-24 14:37:34.628 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 14:37:35.171 +07:00 [INF] Request: GET /
+2025-09-24 14:37:53.817 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:37:58.367 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:38:02.607 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-24 14:38:55.721 +07:00 [INF] Request: GET /api
+2025-09-24 14:40:57.820 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:40:58.073 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:41:02.011 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-24 14:43:05.814 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 14:43:05.873 +07:00 [WRN] Password reset requested for non-existent email: tuyenlhse181699@fpt.edu.vn from IP: 115.75.223.184
+2025-09-24 14:43:06.741 +07:00 [INF] Password reset requested for tuyenlhse181699@fpt.edu.vn from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:43:39.641 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 14:43:39.650 +07:00 [WRN] Password reset requested for non-existent email: tuyenlhse181699@fpt.edu.vn from IP: 115.75.223.184
+2025-09-24 14:43:40.710 +07:00 [INF] Password reset requested for tuyenlhse181699@fpt.edu.vn from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:45:40.075 +07:00 [INF] Request: POST /api/auth/register
+2025-09-24 14:45:44.454 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Xác thực tài khoản EV Service Center
+2025-09-24 14:45:44.459 +07:00 [INF] Verification email sent to tuyenlhse181699@fpt.edu.vn for user Ensure
+2025-09-24 14:45:44.464 +07:00 [INF] User registered successfully: Ensure, Role: "Customer"
+2025-09-24 14:45:54.752 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:45:55.052 +07:00 [WRN] Login blocked: Email not verified for Ensure
+2025-09-24 14:46:08.921 +07:00 [INF] Request: GET /api/verification/verify-email
+2025-09-24 14:46:08.945 +07:00 [INF] Processing email verification for tuyenlhse181699@fpt.edu.vn
+2025-09-24 14:46:13.022 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Chào mừng đến với EV Service Center
+2025-09-24 14:46:13.027 +07:00 [INF] Email verified successfully for user: tuyenlhse181699@fpt.edu.vn
+2025-09-24 14:46:13.035 +07:00 [INF] Email verification successful for tuyenlhse181699@fpt.edu.vn
+2025-09-24 14:46:23.574 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:46:23.887 +07:00 [INF] User Ensure (ID: 1056, Role: "Customer") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:46:29.517 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 14:46:33.274 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Đặt lại mật khẩu EV Service Center
+2025-09-24 14:46:33.278 +07:00 [INF] Password reset token generated for email: tuyenlhse181699@fpt.edu.vn from IP: 115.75.223.184
+2025-09-24 14:46:33.282 +07:00 [INF] Password reset requested for tuyenlhse181699@fpt.edu.vn from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 14:47:31.260 +07:00 [INF] Request: GET /api
+2025-09-24 14:50:33.728 +07:00 [INF] Request: GET /api
+2025-09-24 14:54:31.459 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 14:54:31.816 +07:00 [INF] User Ensure (ID: 1056, Role: "Customer") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:05:47.935 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 15:05:47.974 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 15:05:48.013 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 15:05:48.016 +07:00 [INF] Hosting environment: Development
+2025-09-24 15:05:48.018 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 15:05:48.639 +07:00 [INF] Request: GET /
+2025-09-24 15:06:13.501 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-24 15:06:13.540 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-24 15:06:13.584 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-24 15:06:13.590 +07:00 [INF] Hosting environment: Development
+2025-09-24 15:06:13.597 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-24 15:06:14.099 +07:00 [INF] Request: GET /
+2025-09-24 15:08:18.027 +07:00 [INF] Request: POST /api/auth/login
+2025-09-24 15:08:22.302 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:08:25.771 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-24 15:09:21.873 +07:00 [INF] Request: GET /
+2025-09-24 15:18:12.262 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:18:12.397 +07:00 [WRN] Rate limit: Password reset requested too soon for email: tuyenlhse181699@fpt.edu.vn
+2025-09-24 15:18:12.405 +07:00 [INF] Password reset requested for tuyenlhse181699@fpt.edu.vn from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:19:04.901 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:04.941 +07:00 [WRN] Rate limit: Password reset requested too soon for email: tuyenlhse181699@fpt.edu.vn
+2025-09-24 15:19:04.952 +07:00 [INF] Password reset requested for tuyenlhse181699@fpt.edu.vn from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:19:49.665 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:50.890 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:50.905 +07:00 [WRN] Rate limit: Password reset requested too soon for email: hoclaptrinh0414@gmail.com
+2025-09-24 15:19:50.926 +07:00 [INF] Password reset requested for hoclaptrinh0414@gmail.com from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:19:51.011 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:51.023 +07:00 [WRN] Rate limit: Password reset requested too soon for email: hoclaptrinh0414@gmail.com
+2025-09-24 15:19:51.040 +07:00 [INF] Password reset requested for hoclaptrinh0414@gmail.com from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:19:51.178 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:51.189 +07:00 [WRN] Rate limit: Password reset requested too soon for email: hoclaptrinh0414@gmail.com
+2025-09-24 15:19:51.197 +07:00 [INF] Password reset requested for hoclaptrinh0414@gmail.com from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-24 15:19:51.328 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:51.339 +07:00 [WRN] Rate limit exceeded for password reset from IP: 115.75.223.184
+2025-09-24 15:19:51.472 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:51.477 +07:00 [WRN] Rate limit exceeded for password reset from IP: 115.75.223.184
+2025-09-24 15:19:51.686 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-24 15:19:51.692 +07:00 [WRN] Rate limit exceeded for password reset from IP: 115.75.223.184
+2025-09-24 15:19:53.264 +07:00 [INF] Email sent successfully to hoclaptrinh0414@gmail.com with subject: Đặt lại mật khẩu EV Service Center
+2025-09-24 15:19:53.270 +07:00 [INF] Password reset token generated for email: hoclaptrinh0414@gmail.com from IP: 115.75.223.184
+2025-09-24 15:19:53.275 +07:00 [INF] Password reset requested for hoclaptrinh0414@gmail.com from IP: ::1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0

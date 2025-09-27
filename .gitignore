@@ -1,0 +1,37 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.dbmdl
+*.dbproj.schemaview
+
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug*/
+[Rr]elease*/
+x64/
+x86/
+[Aa][Rr][Mm]*/
+[Aa][Rr][Mm]64/
+
+# Logs
+*.log
+
+# Others
+*.userosscache
+*.sln.docstates
+
+# Entity Framework
+*.ide
+Migrations/
+
+# Rider
+.idea/
+
+# Backup & publish
+*.publishsettings
+*.tmp
+*.bak

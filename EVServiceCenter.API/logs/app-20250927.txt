@@ -1,0 +1,232 @@
+[2025-09-27 08:38:01.775 +07:00 INF] Now listening on: https://localhost:7077 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:38:01.895 +07:00 INF] Now listening on: http://localhost:5153 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:38:01.959 +07:00 INF] Application started. Press Ctrl+C to shut down. {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:38:01.969 +07:00 INF] Hosting environment: Development {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:38:01.984 +07:00 INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:38:02.505 +07:00 INF] Request: GET / {"SourceContext":"Program","RequestId":"0HNFTCPVHT48U:00000001","RequestPath":"/","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:41:17.302 +07:00 INF] Request: POST /api/customers {"SourceContext":"Program","RequestId":"0HNFTCPVHT48U:00000009","RequestPath":"/api/customers","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:41:43.394 +07:00 INF] Request: POST /api/auth/login {"SourceContext":"Program","RequestId":"0HNFTCPVHT48U:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:41:47.667 +07:00 INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0 {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService","ActionId":"e2756f56-117d-4810-8ce2-d62988b436df","ActionName":"EVServiceCenter.API.Controllers.Auth.AuthController.Login (EVServiceCenter.API)","RequestId":"0HNFTCPVHT48U:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:41:51.274 +07:00 INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService","ActionId":"e2756f56-117d-4810-8ce2-d62988b436df","ActionName":"EVServiceCenter.API.Controllers.Auth.AuthController.Login (EVServiceCenter.API)","RequestId":"0HNFTCPVHT48U:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:42:11.337 +07:00 INF] Request: POST /api/customers {"SourceContext":"Program","RequestId":"0HNFTCPVHT48U:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:42:30.686 +07:00 ERR] An unhandled exception has occurred while executing the request. {"EventId":{"Id":1,"Name":"UnhandledException"},"SourceContext":"Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware","RequestId":"0HNFTCPVHT48U:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTCPVHT48U"}
+FluentValidation.AsyncValidatorInvokedSynchronouslyException: Validator "CreateCustomerRequestValidator" can't be used with ASP.NET automatic validation as it contains asynchronous rules. ASP.NET's validation pipeline is not asynchronous and can't invoke asynchronous rules. Remove the asynchronous rules in order for this validator to run.
+   at FluentValidation.AbstractValidator`1.Validate(ValidationContext`1 context) in /_/src/FluentValidation/AbstractValidator.cs:line 207
+   at FluentValidation.AbstractValidator`1.FluentValidation.IValidator.Validate(IValidationContext context) in /_/src/FluentValidation/AbstractValidator.cs:line 153
+   at FluentValidation.AspNetCore.FluentValidationModelValidator.Validate(ModelValidationContext mvContext) in /_/src/FluentValidation.AspNetCore/FluentValidationModelValidatorProvider.cs:line 150
+   at Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidationVisitor.ValidateNode()
+   at Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidationVisitor.VisitComplexType(IValidationStrategy defaultStrategy)
+   at Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidationVisitor.VisitImplementation(ModelMetadata& metadata, String& key, Object model)
+   at Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidationVisitor.Visit(ModelMetadata metadata, String key, Object model)
+   at FluentValidation.AspNetCore.FluentValidationVisitor.<>n__1(ModelMetadata metadata, String key, Object model, Boolean alwaysValidateAtTopLevel, Object container)
+   at FluentValidation.AspNetCore.FluentValidationVisitor.<>c__DisplayClass2_0.<Validate>g__BaseValidate|0() in /_/src/FluentValidation.AspNetCore/FluentValidationVisitor.cs:line 45
+   at FluentValidation.AspNetCore.FluentValidationVisitor.ValidateInternal(ModelMetadata metadata, String key, Object model, Func`1 continuation) in /_/src/FluentValidation.AspNetCore/FluentValidationVisitor.cs:line 63
+   at FluentValidation.AspNetCore.FluentValidationVisitor.Validate(ModelMetadata metadata, String key, Object model, Boolean alwaysValidateAtTopLevel, Object container) in /_/src/FluentValidation.AspNetCore/FluentValidationVisitor.cs:line 47
+   at Microsoft.AspNetCore.Mvc.ModelBinding.ObjectModelValidator.Validate(ActionContext actionContext, ValidationStateDictionary validationState, String prefix, Object model, ModelMetadata metadata, Object container)
+   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.EnforceBindRequiredAndValidate(ObjectModelValidator baseObjectValidator, ActionContext actionContext, ParameterDescriptor parameter, ModelMetadata metadata, ModelBindingContext modelBindingContext, ModelBindingResult modelBindingResult, Object container)
+   at Microsoft.AspNetCore.Mvc.ModelBinding.ParameterBinder.BindModelAsync(ActionContext actionContext, IModelBinder modelBinder, IValueProvider valueProvider, ParameterDescriptor parameter, ModelMetadata metadata, Object value, Object container)
+   at Microsoft.AspNetCore.Mvc.Controllers.ControllerBinderDelegateProvider.<>c__DisplayClass0_0.<<CreateBinderDelegate>g__Bind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at EVServiceCenter.API.Middleware.PasswordResetRateLimitMiddleware.InvokeAsync(HttpContext context) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API\Middleware\PasswordResetRateLimitMiddleware.cs:line 31
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Program.<>c.<<<Main>$>b__0_10>d.MoveNext() in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API\Program.cs:line 183
+--- End of stack trace from previous location ---
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+[2025-09-27 08:47:25.922 +07:00 INF] Request: POST /api/customers {"SourceContext":"Program","RequestId":"0HNFTCPVHT48U:0000000F","RequestPath":"/api/customers","ConnectionId":"0HNFTCPVHT48U"}
+[2025-09-27 08:50:59.470 +07:00 INF] Now listening on: https://localhost:7077 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:50:59.511 +07:00 INF] Now listening on: http://localhost:5153 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:50:59.558 +07:00 INF] Application started. Press Ctrl+C to shut down. {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:50:59.568 +07:00 INF] Hosting environment: Development {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:50:59.582 +07:00 INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 08:50:59.898 +07:00 INF] Request: GET / {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:00000001","RequestPath":"/","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:51:18.691 +07:00 INF] Request: POST /api/customers {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:00000009","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:51:38.814 +07:00 INF] Request: POST /api/auth/login {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:51:42.799 +07:00 INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0 {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService","ActionId":"4fe786d2-bbfc-4947-8fb8-64a3916241ed","ActionName":"EVServiceCenter.API.Controllers.Auth.AuthController.Login (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:51:46.083 +07:00 INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService","ActionId":"4fe786d2-bbfc-4947-8fb8-64a3916241ed","ActionName":"EVServiceCenter.API.Controllers.Auth.AuthController.Login (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:52:03.732 +07:00 INF] Request: POST /api/customers {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:52:04.128 +07:00 WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'. {"EventId":{"Id":30004,"Name":"Microsoft.EntityFrameworkCore.Database.Transaction.SavepointsDisabledBecauseOfMARS"},"SourceContext":"Microsoft.EntityFrameworkCore.Database.Transaction","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:52:04.205 +07:00 ERR] An exception occurred in the database while saving changes for context type 'EVServiceCenter.Core.Entities.EVDbContext'.
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): The INSERT statement conflicted with the FOREIGN KEY constraint "FK__Customers__TypeI__693CA210". The conflict occurred in database "EVServiceCenterV2", table "dbo.CustomerTypes", column 'TypeID'.
+   at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+   at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+   at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+ClientConnectionId:45c4a19e-250a-46d0-9587-42c4fd22e5d4
+Error Number:547,State:0,Class:16
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken) {"EventId":{"Id":10000,"Name":"Microsoft.EntityFrameworkCore.Update.SaveChangesFailed"},"SourceContext":"Microsoft.EntityFrameworkCore.Update","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): The INSERT statement conflicted with the FOREIGN KEY constraint "FK__Customers__TypeI__693CA210". The conflict occurred in database "EVServiceCenterV2", table "dbo.CustomerTypes", column 'TypeID'.
+   at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+   at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+   at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+ClientConnectionId:45c4a19e-250a-46d0-9587-42c4fd22e5d4
+Error Number:547,State:0,Class:16
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+[2025-09-27 08:52:04.409 +07:00 ERR] Error creating customer: Nguyễn Văn An {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): The INSERT statement conflicted with the FOREIGN KEY constraint "FK__Customers__TypeI__693CA210". The conflict occurred in database "EVServiceCenterV2", table "dbo.CustomerTypes", column 'TypeID'.
+   at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+   at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+   at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+ClientConnectionId:45c4a19e-250a-46d0-9587-42c4fd22e5d4
+Error Number:547,State:0,Class:16
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Repositories\CustomerRepository.cs:line 456
+[2025-09-27 08:52:04.745 +07:00 ERR] Error in service layer creating customer: Nguyễn Văn An {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Customers.Services.CustomerService","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): The INSERT statement conflicted with the FOREIGN KEY constraint "FK__Customers__TypeI__693CA210". The conflict occurred in database "EVServiceCenterV2", table "dbo.CustomerTypes", column 'TypeID'.
+   at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+   at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+   at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+ClientConnectionId:45c4a19e-250a-46d0-9587-42c4fd22e5d4
+Error Number:547,State:0,Class:16
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Repositories\CustomerRepository.cs:line 456
+   at EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Repositories\CustomerRepository.cs:line 468
+   at EVServiceCenter.Infrastructure.Domains.Customers.Services.CustomerService.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Services\CustomerService.cs:line 129
+[2025-09-27 08:52:04.948 +07:00 ERR] Error creating customer: Nguyễn Văn An {"SourceContext":"EVServiceCenter.API.Controllers.Customers.CustomersController","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+ ---> Microsoft.Data.SqlClient.SqlException (0x80131904): The INSERT statement conflicted with the FOREIGN KEY constraint "FK__Customers__TypeI__693CA210". The conflict occurred in database "EVServiceCenterV2", table "dbo.CustomerTypes", column 'TypeID'.
+   at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+   at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+   at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+   at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+   at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+   at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+--- End of stack trace from previous location ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+ClientConnectionId:45c4a19e-250a-46d0-9587-42c4fd22e5d4
+Error Number:547,State:0,Class:16
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+   at EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Repositories\CustomerRepository.cs:line 456
+   at EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Repositories\CustomerRepository.cs:line 468
+   at EVServiceCenter.Infrastructure.Domains.Customers.Services.CustomerService.CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.Infrastructure\Domains\Customers\Services\CustomerService.cs:line 129
+   at EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer(CreateCustomerRequestDto request) in C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API\Controllers\Customers\CustomersController.cs:line 284
+[2025-09-27 08:53:14.358 +07:00 INF] Request: POST /api/customers {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:0000000F","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:53:14.515 +07:00 WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'. {"EventId":{"Id":30004,"Name":"Microsoft.EntityFrameworkCore.Database.Transaction.SavepointsDisabledBecauseOfMARS"},"SourceContext":"Microsoft.EntityFrameworkCore.Database.Transaction","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000F","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:53:14.549 +07:00 INF] Created customer: KH2509001 - Nguyễn Văn An {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Customers.Repositories.CustomerRepository","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000F","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:53:14.619 +07:00 INF] Successfully created customer: KH2509001 - Nguyễn Văn An {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Customers.Services.CustomerService","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000F","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:53:14.637 +07:00 INF] Customer created successfully by user 8: KH2509001 - Nguyễn Văn An {"SourceContext":"EVServiceCenter.API.Controllers.Customers.CustomersController","ActionId":"b993c304-c1f3-4dcf-a9d5-4989d0e5a319","ActionName":"EVServiceCenter.API.Controllers.Customers.CustomersController.CreateCustomer (EVServiceCenter.API)","RequestId":"0HNFTD17AGIPA:0000000F","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:54:12.349 +07:00 INF] Request: GET /api/customers {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:00000011","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:55:16.690 +07:00 INF] Request: GET /api/customers {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:00000013","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:55:29.557 +07:00 INF] Request: GET /api/customers {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:00000015","RequestPath":"/api/customers","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 08:55:41.216 +07:00 INF] Request: GET /api/customers/statistics {"SourceContext":"Program","RequestId":"0HNFTD17AGIPA:00000017","RequestPath":"/api/customers/statistics","ConnectionId":"0HNFTD17AGIPA"}
+[2025-09-27 10:32:07.014 +07:00 INF] Now listening on: https://localhost:7077 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 10:32:07.097 +07:00 INF] Now listening on: http://localhost:5153 {"EventId":{"Id":14,"Name":"ListeningOnAddress"},"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 10:32:07.164 +07:00 INF] Application started. Press Ctrl+C to shut down. {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 10:32:07.176 +07:00 INF] Hosting environment: Development {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 10:32:07.184 +07:00 INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API {"SourceContext":"Microsoft.Hosting.Lifetime"}
+[2025-09-27 10:32:11.180 +07:00 INF] Request: GET / {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:00000001","RequestPath":"/","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:32:33.849 +07:00 INF] Request: GET /api/customer-types/statistics {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:00000009","RequestPath":"/api/customer-types/statistics","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:32:54.250 +07:00 INF] Request: POST /api/auth/login {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:32:58.353 +07:00 INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0 {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService","ActionId":"7eb58246-c88a-463c-b3e6-3f7014b2022d","ActionName":"EVServiceCenter.API.Controllers.Auth.AuthController.Login (EVServiceCenter.API)","RequestId":"0HNFTEPNJLEA4:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:33:04.488 +07:00 INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập {"SourceContext":"EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService","ActionId":"7eb58246-c88a-463c-b3e6-3f7014b2022d","ActionName":"EVServiceCenter.API.Controllers.Auth.AuthController.Login (EVServiceCenter.API)","RequestId":"0HNFTEPNJLEA4:0000000B","RequestPath":"/api/auth/login","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:33:35.572 +07:00 INF] Request: GET /api/customers {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:0000000D","RequestPath":"/api/customers","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:34:32.393 +07:00 INF] Request: GET /api/customers/by-code/KH2509001 {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:0000000F","RequestPath":"/api/customers/by-code/KH2509001","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:35:02.705 +07:00 INF] Request: GET /api/customers/maintenance-due {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:00000011","RequestPath":"/api/customers/maintenance-due","ConnectionId":"0HNFTEPNJLEA4"}
+[2025-09-27 10:35:17.614 +07:00 INF] Request: GET /api/customers/statistics {"SourceContext":"Program","RequestId":"0HNFTEPNJLEA4:00000013","RequestPath":"/api/customers/statistics","ConnectionId":"0HNFTEPNJLEA4"}

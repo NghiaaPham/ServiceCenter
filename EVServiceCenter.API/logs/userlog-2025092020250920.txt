@@ -1,0 +1,91 @@
+2025-09-20 07:25:03.485 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 07:25:03.574 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 07:25:03.779 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 07:25:03.801 +07:00 [INF] Hosting environment: Development
+2025-09-20 07:25:03.808 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 07:25:04.441 +07:00 [INF] Request: GET /
+2025-09-20 07:26:14.672 +07:00 [INF] Request: GET /api
+2025-09-20 07:26:59.323 +07:00 [INF] Request: POST /api/auth/login
+2025-09-20 07:27:07.130 +07:00 [WRN] Invalid password for user NghiaPham. Failed attempts: 1
+2025-09-20 07:27:13.378 +07:00 [INF] Request: POST /api/auth/login
+2025-09-20 07:27:14.044 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 118.69.182.149, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-20 07:27:19.069 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-20 07:29:06.843 +07:00 [INF] Request: POST /api/auth/forgot-password
+2025-09-20 07:29:15.133 +07:00 [INF] Request: POST /api/auth/forgot-password
+2025-09-20 07:29:49.218 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-20 07:29:53.419 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Đặt lại mật khẩu EV Service Center
+2025-09-20 07:29:54.067 +07:00 [INF] Password reset token generated for user: tuyenlhse181699@fpt.edu.vn
+2025-09-20 08:47:11.149 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 08:47:11.202 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 08:47:11.548 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 08:47:11.553 +07:00 [INF] Hosting environment: Development
+2025-09-20 08:47:11.559 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 08:47:11.995 +07:00 [INF] Request: GET /
+2025-09-20 08:49:16.146 +07:00 [INF] Request: POST /api/auth/register
+2025-09-20 08:49:24.982 +07:00 [INF] Request: POST /api/auth/register
+2025-09-20 08:49:30.012 +07:00 [INF] Request: POST /api/auth/register
+2025-09-20 08:49:36.385 +07:00 [INF] Request: POST /api/auth/register
+2025-09-20 08:49:36.919 +07:00 [ERR] Error during user registration
+System.ArgumentException: Mật khẩu phải chứa ít nhất 1 số (Parameter 'plainPassword')
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 56
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-20 08:49:42.808 +07:00 [INF] Request: POST /api/auth/register
+2025-09-20 08:49:42.955 +07:00 [ERR] Error during user registration
+System.ArgumentException: Mật khẩu phải chứa ít nhất 1 số (Parameter 'plainPassword')
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 56
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-20 08:49:55.156 +07:00 [INF] Request: POST /api/auth/register
+2025-09-20 08:50:00.799 +07:00 [INF] Email sent successfully to Nghiaaa@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-20 08:50:00.842 +07:00 [INF] Verification email sent to Nghiaaa@gmail.com for user Nghiaaa
+2025-09-20 08:50:00.855 +07:00 [INF] User registered successfully: Nghiaaa, Role: "Customer"
+2025-09-20 08:50:24.364 +07:00 [INF] Request: POST /api/auth/login
+2025-09-20 08:50:24.854 +07:00 [WRN] Login blocked: Email not verified for Nghiaaa
+2025-09-20 14:48:24.550 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 14:48:24.600 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 14:48:24.652 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 14:48:24.665 +07:00 [INF] Hosting environment: Development
+2025-09-20 14:48:24.676 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 14:48:25.362 +07:00 [INF] Request: GET /
+2025-09-20 15:31:37.328 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 15:31:37.392 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 15:31:37.442 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 15:31:37.447 +07:00 [INF] Hosting environment: Development
+2025-09-20 15:31:37.453 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 15:31:38.315 +07:00 [INF] Request: GET /
+2025-09-20 15:32:24.463 +07:00 [INF] Request: GET /api
+2025-09-20 15:34:29.686 +07:00 [INF] Request: GET /api
+2025-09-20 15:52:02.524 +07:00 [INF] Request: POST /api/auth/google
+2025-09-20 15:58:17.500 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 15:58:17.550 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 15:58:17.609 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 15:58:17.615 +07:00 [INF] Hosting environment: Development
+2025-09-20 15:58:17.621 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 15:58:18.343 +07:00 [INF] Request: GET /
+2025-09-20 16:03:41.577 +07:00 [INF] Request: GET /api
+2025-09-20 16:07:24.549 +07:00 [INF] Request: POST /api/auth/google
+2025-09-20 16:07:35.693 +07:00 [INF] Request: POST /api/auth/google
+2025-09-20 16:08:07.240 +07:00 [INF] Request: POST /api/auth/google
+2025-09-20 16:12:37.084 +07:00 [INF] Request: POST /api/auth/google
+2025-09-20 16:14:57.706 +07:00 [INF] Request: POST /api/auth/external/google
+2025-09-20 16:15:02.586 +07:00 [ERR] Error verifying Google token
+Google.Apis.Auth.InvalidJwtException: JWT must consist of Header, Payload, and Signature
+   at Google.Apis.Auth.SignedToken`2.FromSignedToken(String signedToken)
+   at Google.Apis.Auth.GoogleJsonWebSignature.ValidateInternalAsync(String jwt, ValidationSettings validationSettings)
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.ExternalAuthService.VerifyGoogleTokenAsync(String idToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.Infrastructure\Domains\Identity\Services\ExternalAuthService.cs:line 189
+2025-09-20 16:15:30.143 +07:00 [INF] Request: POST /api/auth/google
+2025-09-20 22:11:08.069 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 22:11:08.161 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 22:11:08.261 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 22:11:08.273 +07:00 [INF] Hosting environment: Development
+2025-09-20 22:11:08.316 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 22:11:09.199 +07:00 [INF] Request: GET /
+2025-09-20 22:11:49.858 +07:00 [INF] Request: POST /api/auth/login
+2025-09-20 22:12:30.294 +07:00 [INF] Request: POST /api/auth/login
+2025-09-20 22:12:38.116 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-20 22:12:43.324 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-20 22:15:49.872 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-20 22:15:49.937 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-20 22:15:49.989 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-20 22:15:49.992 +07:00 [INF] Hosting environment: Development
+2025-09-20 22:15:49.995 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV3\EVServiceCenter.API
+2025-09-20 22:15:50.542 +07:00 [INF] Request: GET /

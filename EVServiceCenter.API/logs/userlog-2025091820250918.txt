@@ -1,0 +1,309 @@
+2025-09-18 08:06:23.047 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 08:06:23.099 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 08:06:23.157 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 08:06:23.162 +07:00 [INF] Hosting environment: Development
+2025-09-18 08:06:23.164 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API
+2025-09-18 08:06:24.043 +07:00 [INF] Request: GET /
+2025-09-18 08:07:23.467 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:07:36.158 +07:00 [ERR] Failed to send email to nghiadaucau123@gmail.com
+System.Net.Mail.SmtpException: Failure sending mail.
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskToAsyncResult.End(IAsyncResult asyncResult)
+   at System.Net.Sockets.TcpClient.EndConnect(IAsyncResult asyncResult)
+   at System.Net.Mail.SmtpConnection.ConnectAndHandshakeAsyncResult.InitializeConnectionCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SmtpClient.ConnectCallback(IAsyncResult result)
+   --- End of inner exception stack trace ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-18 08:07:36.610 +07:00 [ERR] Error during user registration
+System.InvalidOperationException: Email sending failed: Failure sending mail.
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailVerificationAsync(String email, String fullName, String verificationToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 68
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 95
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:08:25.099 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:08:58.337 +07:00 [ERR] Error during user registration
+System.Exception: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 53
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:09:20.095 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:09:36.979 +07:00 [ERR] Failed to send email to nghiadauca2u123@gmail.com
+System.Net.Mail.SmtpException: Failure sending mail.
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskToAsyncResult.End(IAsyncResult asyncResult)
+   at System.Net.Sockets.TcpClient.EndConnect(IAsyncResult asyncResult)
+   at System.Net.Mail.SmtpConnection.ConnectAndHandshakeAsyncResult.InitializeConnectionCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SmtpClient.ConnectCallback(IAsyncResult result)
+   --- End of inner exception stack trace ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-18 08:09:37.354 +07:00 [ERR] Error during user registration
+System.InvalidOperationException: Email sending failed: Failure sending mail.
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailVerificationAsync(String email, String fullName, String verificationToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 68
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 95
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:10:26.924 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 08:10:26.984 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 08:10:27.150 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 08:10:27.156 +07:00 [INF] Hosting environment: Development
+2025-09-18 08:10:27.163 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API
+2025-09-18 08:10:27.939 +07:00 [INF] Request: GET /
+2025-09-18 08:11:02.310 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:11:46.139 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:11:58.341 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:12:05.573 +07:00 [ERR] Failed to send email to nghka312312@gmail.com
+System.Net.Mail.SmtpException: Failure sending mail.
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskToAsyncResult.End(IAsyncResult asyncResult)
+   at System.Net.Sockets.TcpClient.EndConnect(IAsyncResult asyncResult)
+   at System.Net.Mail.SmtpConnection.ConnectAndHandshakeAsyncResult.InitializeConnectionCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SmtpClient.ConnectCallback(IAsyncResult result)
+   --- End of inner exception stack trace ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-18 08:12:05.820 +07:00 [ERR] Error during user registration
+System.InvalidOperationException: Email sending failed: Failure sending mail.
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailVerificationAsync(String email, String fullName, String verificationToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 68
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 95
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:13:35.559 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:13:54.163 +07:00 [ERR] Error during user registration
+System.Exception: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 53
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:14:07.400 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:14:14.523 +07:00 [ERR] Error during user registration
+System.Exception: Email đã được sử dụng
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 56
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:14:21.098 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:15:42.408 +07:00 [ERR] Failed to send email to nghka3123132@gmail.com
+System.Net.Mail.SmtpException: Failure sending mail.
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskToAsyncResult.End(IAsyncResult asyncResult)
+   at System.Net.Sockets.TcpClient.EndConnect(IAsyncResult asyncResult)
+   at System.Net.Mail.SmtpConnection.ConnectAndHandshakeAsyncResult.InitializeConnectionCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SmtpClient.ConnectCallback(IAsyncResult result)
+   --- End of inner exception stack trace ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-18 08:15:42.669 +07:00 [ERR] Error during user registration
+System.InvalidOperationException: Email sending failed: Failure sending mail.
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailVerificationAsync(String email, String fullName, String verificationToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 68
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 95
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 64
+2025-09-18 08:17:19.854 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 08:17:22.959 +07:00 [INF] Email sent successfully to nghka31231ss32@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-18 08:17:22.968 +07:00 [INF] User registered: nghka312sssss312, verification email sent
+2025-09-18 08:19:08.531 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 08:19:09.231 +07:00 [WRN] Login failed: Email not verified for nghka312sssss312
+2025-09-18 08:19:09.712 +07:00 [ERR] Error during login for user nghka312sssss312
+System.Exception: Please verify your email before logging in
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.LoginAsync(String username, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 187
+   at EVServiceCenter.API.Controllers.AuthController.Login(LoginRequestDto loginRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 117
+2025-09-18 08:20:07.567 +07:00 [INF] Request: POST /api/verification/verify-email
+2025-09-18 08:20:07.848 +07:00 [INF] Email sent successfully to nghka31231ss32@gmail.com with subject: Chào mừng đến với EV Service Center
+2025-09-18 08:20:07.872 +07:00 [INF] Email verified successfully for user: nghka31231ss32@gmail.com
+2025-09-18 08:20:24.403 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 08:20:24.946 +07:00 [INF] User logged in: nghka312sssss312
+2025-09-18 09:12:25.969 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 09:12:26.021 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 09:12:26.099 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 09:12:26.105 +07:00 [INF] Hosting environment: Development
+2025-09-18 09:12:26.111 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API
+2025-09-18 09:12:26.676 +07:00 [INF] Request: GET /
+2025-09-18 10:06:11.244 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 10:06:11.295 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 10:06:11.443 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 10:06:11.452 +07:00 [INF] Hosting environment: Development
+2025-09-18 10:06:11.459 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API
+2025-09-18 10:06:12.140 +07:00 [INF] Request: GET /
+2025-09-18 10:24:53.263 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 10:25:09.644 +07:00 [INF] Email sent successfully to ascbasbcbs@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-18 10:25:09.655 +07:00 [INF] User registered: abcacabca, verification email sent
+2025-09-18 10:26:34.915 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 10:26:35.338 +07:00 [WRN] Login failed: Email not verified for abcacabca
+2025-09-18 10:26:35.584 +07:00 [ERR] Error during login for user abcacabca
+System.Exception: Please verify your email before logging in
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.LoginAsync(String username, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 187
+   at EVServiceCenter.API.Controllers.AuthController.Login(LoginRequestDto loginRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API\Controllers\AuthController.cs:line 117
+2025-09-18 10:26:54.152 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 10:26:54.666 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 10:28:41.295 +07:00 [INF] Request: POST /api/verification/verify-email
+2025-09-18 10:28:41.559 +07:00 [INF] Email sent successfully to ascbasbcbs@gmail.com with subject: Chào mừng đến với EV Service Center
+2025-09-18 10:28:41.673 +07:00 [INF] Email verified successfully for user: ascbasbcbs@gmail.com
+2025-09-18 10:29:31.792 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 10:29:32.196 +07:00 [INF] User logged in: abcacabca
+2025-09-18 10:34:23.164 +07:00 [INF] Request: GET /api/users
+2025-09-18 10:34:44.916 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 10:34:45.310 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 10:35:05.175 +07:00 [INF] Request: GET /api/users
+2025-09-18 10:35:24.024 +07:00 [INF] Request: GET /api/users
+2025-09-18 10:35:42.870 +07:00 [INF] Request: DELETE /api/users/4
+2025-09-18 10:36:14.914 +07:00 [INF] Request: GET /.well-known/appspecific/com.chrome.devtools.json
+2025-09-18 17:14:19.570 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 17:14:19.650 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 17:14:19.732 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 17:14:19.740 +07:00 [INF] Hosting environment: Development
+2025-09-18 17:14:19.748 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2\EVServiceCenter.API
+2025-09-18 17:14:20.546 +07:00 [INF] Request: GET /
+2025-09-18 17:45:23.984 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 17:45:24.039 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 17:45:24.093 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 17:45:24.103 +07:00 [INF] Hosting environment: Development
+2025-09-18 17:45:24.119 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API
+2025-09-18 17:45:24.916 +07:00 [INF] Request: GET /
+2025-09-18 17:46:02.982 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 17:46:06.839 +07:00 [ERR] Error during user registration
+System.Exception: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 53
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-18 17:46:12.829 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 17:46:18.175 +07:00 [ERR] Failed to send email to nguyenvana@example.com
+System.Net.Mail.SmtpException: Failure sending mail.
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskToAsyncResult.End(IAsyncResult asyncResult)
+   at System.Net.Sockets.TcpClient.EndConnect(IAsyncResult asyncResult)
+   at System.Net.Mail.SmtpConnection.ConnectAndHandshakeAsyncResult.InitializeConnectionCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SmtpClient.ConnectCallback(IAsyncResult result)
+   --- End of inner exception stack trace ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-18 17:46:18.358 +07:00 [ERR] Error during user registration
+System.InvalidOperationException: Email sending failed: Failure sending mail.
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailVerificationAsync(String email, String fullName, String verificationToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 68
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 95
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-18 17:46:38.641 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 17:46:38.829 +07:00 [ERR] Error during user registration
+System.Exception: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 53
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-18 17:46:51.798 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 17:46:51.944 +07:00 [ERR] Error during user registration
+System.Exception: Email đã được sử dụng
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 56
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-18 17:46:56.745 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 17:46:57.288 +07:00 [INF] Email sent successfully to nguyenvanaa@example.com with subject: Xác thực tài khoản EV Service Center
+2025-09-18 17:46:57.302 +07:00 [INF] User registered: test_user11, verification email sent
+2025-09-18 17:47:37.233 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 17:47:37.782 +07:00 [WRN] Login blocked: Email not verified for test_user11
+2025-09-18 17:48:48.677 +07:00 [INF] Request: POST /api/verification/verify-email
+2025-09-18 17:48:48.965 +07:00 [INF] Email sent successfully to nguyenvanaa@example.com with subject: Chào mừng đến với EV Service Center
+2025-09-18 17:48:49.000 +07:00 [INF] Email verified successfully for user: nguyenvanaa@example.com
+2025-09-18 18:20:27.590 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 18:20:27.631 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 18:20:27.677 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 18:20:27.680 +07:00 [INF] Hosting environment: Development
+2025-09-18 18:20:27.684 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API
+2025-09-18 18:20:28.063 +07:00 [INF] Request: GET /
+2025-09-18 18:30:31.238 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 18:30:31.304 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 18:30:31.462 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 18:30:31.468 +07:00 [INF] Hosting environment: Development
+2025-09-18 18:30:31.475 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API
+2025-09-18 18:30:32.149 +07:00 [INF] Request: GET /
+2025-09-18 18:31:03.680 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:31:11.231 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 18:31:11.856 +07:00 [INF] Email sent successfully to string@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-18 18:31:11.888 +07:00 [INF] New verification email sent for string
+2025-09-18 18:31:53.787 +07:00 [INF] Request: GET /
+2025-09-18 18:31:54.778 +07:00 [INF] Request: GET /
+2025-09-18 18:32:50.361 +07:00 [INF] Request: GET /
+2025-09-18 18:32:55.914 +07:00 [INF] Request: GET /
+2025-09-18 18:33:07.520 +07:00 [INF] Request: GET /
+2025-09-18 18:33:13.182 +07:00 [INF] Request: GET /
+2025-09-18 18:33:42.591 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:33:43.036 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 18:35:44.350 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 18:35:44.916 +07:00 [ERR] Error during user registration
+System.Exception: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 53
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-18 18:35:52.239 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 18:35:52.401 +07:00 [ERR] Error during user registration
+System.Exception: Email đã được sử dụng
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 56
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-18 18:35:59.734 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 18:36:00.209 +07:00 [INF] Email sent successfully to hooclaptrinh0414@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-18 18:36:00.232 +07:00 [INF] User registered: laugh, verification email sent
+2025-09-18 18:36:31.116 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:36:31.164 +07:00 [WRN] Login failed: Username Tuyenlh not found
+2025-09-18 18:36:39.044 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:36:39.325 +07:00 [WRN] Login failed: Invalid password for laugh
+2025-09-18 18:36:53.636 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:36:53.906 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 18:39:12.199 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:39:12.445 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 18:39:18.932 +07:00 [INF] Request: POST /api/auth/register
+2025-09-18 18:40:43.876 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:40:44.076 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 18:41:08.666 +07:00 [INF] Request: GET /
+2025-09-18 18:41:59.302 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:41:59.437 +07:00 [WRN] Login failed: Username PhamNghia not found
+2025-09-18 18:42:11.832 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:42:12.155 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 18:45:05.246 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:45:05.554 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 18:49:50.859 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-18 18:49:50.925 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-18 18:49:50.982 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-18 18:49:50.986 +07:00 [INF] Hosting environment: Development
+2025-09-18 18:49:50.990 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API
+2025-09-18 18:49:51.471 +07:00 [INF] Request: GET /
+2025-09-18 18:53:01.615 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:53:04.893 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 18:53:37.076 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:53:37.393 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 18:53:52.958 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:53:52.988 +07:00 [WRN] Login failed: Username strisasng not found
+2025-09-18 18:53:57.988 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:53:58.035 +07:00 [WRN] Login failed: Username strisasng not found
+2025-09-18 18:55:28.380 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 18:55:28.761 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 19:01:33.059 +07:00 [INF] Request: GET /
+2025-09-18 19:01:35.491 +07:00 [INF] Request: GET /
+2025-09-18 19:01:36.281 +07:00 [INF] Request: GET /
+2025-09-18 19:01:47.424 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:01:47.733 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-18 19:01:52.773 +07:00 [INF] Request: GET /
+2025-09-18 19:01:53.806 +07:00 [INF] Request: GET /
+2025-09-18 19:02:34.366 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:02:34.426 +07:00 [WRN] Login failed: Username qưeqweqw not found
+2025-09-18 19:02:38.004 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:02:38.051 +07:00 [WRN] Login failed: Username sdfsfsd not found
+2025-09-18 19:02:43.348 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:02:54.481 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:02:54.730 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 19:03:20.691 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:03:21.006 +07:00 [INF] User logged in: NghiaPham
+2025-09-18 19:03:41.226 +07:00 [INF] Request: GET /api/swagger
+2025-09-18 19:03:42.408 +07:00 [INF] Request: GET /api/swagger
+2025-09-18 19:04:06.827 +07:00 [INF] Request: POST /api/auth/login
+2025-09-18 19:04:07.060 +07:00 [INF] User logged in: NghiaPham

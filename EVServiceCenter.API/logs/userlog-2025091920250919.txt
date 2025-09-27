@@ -1,0 +1,181 @@
+2025-09-19 12:01:03.456 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-19 12:01:03.554 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-19 12:01:03.667 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-19 12:01:03.790 +07:00 [INF] Hosting environment: Development
+2025-09-19 12:01:03.796 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API
+2025-09-19 12:01:04.538 +07:00 [INF] Request: GET /
+2025-09-19 12:03:07.019 +07:00 [INF] Request: POST /api/auth/register
+2025-09-19 12:03:46.333 +07:00 [INF] Request: GET /api
+2025-09-19 12:04:45.681 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:04:51.326 +07:00 [WRN] Login failed: Invalid password for NghiaPham
+2025-09-19 12:04:57.543 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:04:58.203 +07:00 [INF] User logged in: NghiaPham
+2025-09-19 12:05:24.277 +07:00 [INF] Request: POST /api/auth/register
+2025-09-19 12:05:24.668 +07:00 [ERR] Error during user registration
+System.Exception: Tên đăng nhập đã tồn tại
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 53
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-19 12:05:45.258 +07:00 [INF] Request: POST /api/auth/register
+2025-09-19 12:05:50.012 +07:00 [ERR] Failed to send email to laugh@gmail.com
+System.Net.Mail.SmtpException: Failure sending mail.
+ ---> System.Net.Sockets.SocketException (10061): No connection could be made because the target machine actively refused it.
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.Tasks.TaskToAsyncResult.End(IAsyncResult asyncResult)
+   at System.Net.Sockets.TcpClient.EndConnect(IAsyncResult asyncResult)
+   at System.Net.Mail.SmtpConnection.ConnectAndHandshakeAsyncResult.InitializeConnectionCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SmtpClient.ConnectCallback(IAsyncResult result)
+   --- End of inner exception stack trace ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-19 12:05:50.303 +07:00 [ERR] Error during user registration
+System.InvalidOperationException: Email sending failed: Failure sending mail.
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailVerificationAsync(String email, String fullName, String verificationToken) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 68
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 95
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-19 12:06:38.612 +07:00 [INF] Request: POST /api/auth/register
+2025-09-19 12:06:38.754 +07:00 [ERR] Error during user registration
+System.Exception: Email đã được sử dụng
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.RegisterUserAsync(User user, String plainPassword) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 56
+   at EVServiceCenter.API.Controllers.AuthController.Register(RegisterRequestDto registerRequest) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2 - Copy\EVServiceCenter.API\Controllers\AuthController.cs:line 65
+2025-09-19 12:06:44.239 +07:00 [INF] Request: POST /api/auth/register
+2025-09-19 12:06:44.964 +07:00 [INF] Email sent successfully to laugh1@gmail.com with subject: Xác thực tài khoản EV Service Center
+2025-09-19 12:06:45.011 +07:00 [INF] User registered: ADMIN041, verification email sent
+2025-09-19 12:07:28.300 +07:00 [INF] Request: GET /api
+2025-09-19 12:07:54.502 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:07:54.965 +07:00 [WRN] Login blocked: Email not verified for ADMIN041
+2025-09-19 12:08:01.759 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:08:02.149 +07:00 [WRN] Login failed: Invalid password for ADMIN041
+2025-09-19 12:08:04.831 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:08:05.227 +07:00 [WRN] Login blocked: Email not verified for ADMIN041
+2025-09-19 12:08:22.352 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:08:22.766 +07:00 [WRN] Login blocked: Email not verified for ADMIN041
+2025-09-19 12:08:25.718 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:08:26.440 +07:00 [WRN] Login blocked: Email not verified for ADMIN0414
+2025-09-19 12:08:28.798 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:08:29.235 +07:00 [WRN] Login blocked: Email not verified for ADMIN041
+2025-09-19 12:09:33.428 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:09:34.041 +07:00 [WRN] Login blocked: Email not verified for ADMIN041
+2025-09-19 12:10:32.228 +07:00 [INF] Request: POST /api/verification/verify-email
+2025-09-19 12:10:32.463 +07:00 [INF] Email sent successfully to laugh1@gmail.com with subject: Chào mừng đến với EV Service Center
+2025-09-19 12:10:32.487 +07:00 [INF] Email verified successfully for user: laugh1@gmail.com
+2025-09-19 12:10:47.455 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 12:10:48.050 +07:00 [INF] User logged in: ADMIN041
+2025-09-19 12:17:40.972 +07:00 [INF] Request: GET /api
+2025-09-19 17:26:34.770 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-19 17:26:34.831 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-19 17:26:34.893 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-19 17:26:34.897 +07:00 [INF] Hosting environment: Development
+2025-09-19 17:26:34.900 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.API
+2025-09-19 17:26:35.430 +07:00 [INF] Request: GET /
+2025-09-19 17:26:52.986 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:27:09.475 +07:00 [WRN] Login blocked: Email not verified for string
+2025-09-19 17:27:46.825 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:27:48.100 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-19 17:27:48.734 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-19 17:28:16.449 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:28:16.697 +07:00 [INF] User ADMIN041 (ID: 40, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-19 17:28:22.334 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:28:22.529 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 1
+2025-09-19 17:28:24.529 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:28:24.721 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 2
+2025-09-19 17:28:26.546 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:28:26.772 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 3
+2025-09-19 17:29:07.149 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:07.470 +07:00 [INF] User ADMIN041 (ID: 40, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-19 17:29:15.439 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:15.708 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 1
+2025-09-19 17:29:17.099 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:17.351 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 2
+2025-09-19 17:29:18.549 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:18.828 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 3
+2025-09-19 17:29:19.961 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:20.218 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 4
+2025-09-19 17:29:23.029 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:23.406 +07:00 [INF] User ADMIN041 (ID: 40, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-19 17:29:28.093 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:28.387 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 1
+2025-09-19 17:29:28.884 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:29.130 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 2
+2025-09-19 17:29:30.765 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:31.029 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 3
+2025-09-19 17:29:31.679 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:31.968 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 4
+2025-09-19 17:29:33.072 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:29:33.413 +07:00 [WRN] Invalid password for user ADMIN041. Failed attempts: 5
+2025-09-19 17:29:33.500 +07:00 [WRN] Account ADMIN041 has been locked due to 5 failed login attempts
+2025-09-19 17:29:33.646 +07:00 [INF] Email sent successfully to laugh1@gmail.com with subject: Tài khoản đã bị khóa tạm thời
+2025-09-19 17:53:00.844 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-19 17:53:00.885 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-19 17:53:00.933 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-19 17:53:00.943 +07:00 [INF] Hosting environment: Development
+2025-09-19 17:53:00.948 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.API
+2025-09-19 17:53:02.138 +07:00 [INF] Request: GET /
+2025-09-19 17:53:31.539 +07:00 [INF] Request: GET /api
+2025-09-19 17:53:32.822 +07:00 [INF] Request: GET /api
+2025-09-19 17:53:38.943 +07:00 [INF] Request: GET /api
+2025-09-19 17:54:20.673 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:54:27.929 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-19 17:54:28.983 +07:00 [ERR] Failed to send email to admin01@evservice.com
+System.Net.Mail.SmtpException: The SMTP server requires a secure connection or the client was not authenticated. The server response was: 5.7.0 Must issue a STARTTLS command first. For more information, go to
+   at System.Net.Mail.MailCommand.CheckResponse(SmtpStatusCode statusCode, String response)
+   at System.Net.Mail.MailCommand.EndSend(IAsyncResult result)
+   at System.Net.Mail.SendMailAsyncResult.SendMailFromCompleted(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at System.Net.Mail.SendMailAsyncResult.End(IAsyncResult result)
+   at System.Net.Mail.SmtpClient.SendMailCallback(IAsyncResult result)
+--- End of stack trace from previous location ---
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 286
+2025-09-19 17:54:29.391 +07:00 [ERR] Failed to send login notification to admin NghiaPham
+System.InvalidOperationException: Email sending failed: The SMTP server requires a secure connection or the client was not authenticated. The server response was: 5.7.0 Must issue a STARTTLS command first. For more information, go to
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendEmailAsync(String toEmail, String subject, String htmlBody) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 292
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.EmailService.SendNotificationAsync(String email, String subject, String message) in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\EmailService.cs:line 226
+   at EVServiceCenter.Infrastructure.Domains.Identity.Services.UserService.<>c__DisplayClass10_1.<<LoginAsync>b__1>d.MoveNext() in C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.Infrastructure\Domains\Identity\Services\UserService.cs:line 386
+2025-09-19 17:56:03.811 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-19 17:56:03.862 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-19 17:56:03.911 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-19 17:56:03.917 +07:00 [INF] Hosting environment: Development
+2025-09-19 17:56:03.922 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.API
+2025-09-19 17:56:05.447 +07:00 [INF] Request: GET /
+2025-09-19 17:56:28.367 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:56:31.648 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-09-19 17:56:35.283 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-09-19 17:57:23.260 +07:00 [INF] Request: POST /api/auth/register
+2025-09-19 17:57:29.650 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Xác thực tài khoản EV Service Center
+2025-09-19 17:57:29.680 +07:00 [INF] Verification email sent to tuyenlhse181699@fpt.edu.vn for user Ensure
+2025-09-19 17:57:29.698 +07:00 [INF] User registered successfully: Ensure, Role: "Customer"
+2025-09-19 17:58:02.367 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:58:02.707 +07:00 [WRN] Invalid password for user Ensure. Failed attempts: 1
+2025-09-19 17:58:08.398 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:58:08.794 +07:00 [WRN] Login blocked: Email not verified for Ensure
+2025-09-19 17:58:27.679 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:58:28.049 +07:00 [WRN] Invalid password for user Ensure. Failed attempts: 2
+2025-09-19 17:58:34.923 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:58:35.266 +07:00 [WRN] Login blocked: Email not verified for Ensure
+2025-09-19 17:58:38.263 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:58:38.614 +07:00 [WRN] Invalid password for user Ensure. Failed attempts: 3
+2025-09-19 17:58:52.411 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:58:52.787 +07:00 [WRN] Invalid password for user Ensure. Failed attempts: 4
+2025-09-19 17:59:19.888 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:59:20.234 +07:00 [WRN] Login blocked: Email not verified for Ensure
+2025-09-19 17:59:40.473 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 17:59:40.870 +07:00 [WRN] Login blocked: Email not verified for Ensure
+2025-09-19 18:01:23.805 +07:00 [INF] Request: POST /api/verification/verify-email
+2025-09-19 18:01:27.694 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Chào mừng đến với EV Service Center
+2025-09-19 18:01:27.733 +07:00 [INF] Email verified successfully for user: tuyenlhse181699@fpt.edu.vn
+2025-09-19 18:01:44.638 +07:00 [INF] Request: POST /api/auth/login
+2025-09-19 18:01:45.062 +07:00 [INF] User Ensure (ID: 51, Role: "Customer") logged in successfully from IP: 115.75.223.184, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
+2025-09-19 18:02:35.864 +07:00 [INF] Request: POST /api/verification/verify-email
+2025-09-19 18:02:35.995 +07:00 [WRN] Invalid email verification attempt for: user@example.com
+2025-09-19 18:06:46.192 +07:00 [INF] Request: POST /api/account/forgot-password
+2025-09-19 18:06:53.768 +07:00 [INF] Email sent successfully to tuyenlhse181699@fpt.edu.vn with subject: Đặt lại mật khẩu EV Service Center
+2025-09-19 18:06:54.597 +07:00 [INF] Password reset token generated for user: tuyenlhse181699@fpt.edu.vn
+2025-09-19 18:07:53.047 +07:00 [INF] Now listening on: https://localhost:7077
+2025-09-19 18:07:53.122 +07:00 [INF] Now listening on: http://localhost:5153
+2025-09-19 18:07:53.205 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-09-19 18:07:53.220 +07:00 [INF] Hosting environment: Development
+2025-09-19 18:07:53.231 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\SWP\BackEnd\EVServiceCenter-BackupV2-Done - Copy\EVServiceCenter.API
+2025-09-19 18:07:54.114 +07:00 [INF] Request: GET /
