@@ -3,11 +3,6 @@ using EVServiceCenter.Core.Domains.Customers.DTOs.Responses;
 using EVServiceCenter.Core.Domains.Customers.Interfaces;
 using EVServiceCenter.Core.Domains.Shared.Models;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
 {
@@ -115,27 +110,6 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in service layer retrieving customer by email: {Email}", email);
-                throw;
-            }
-        }
-
-        public async Task<CustomerResponseDto> CreateAsync(
-            CreateCustomerRequestDto request,
-            CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                _logger.LogDebug("Creating customer: {FullName}", request.FullName);
-                var result = await _repository.CreateAsync(request, cancellationToken);
-
-                _logger.LogInformation("Successfully created customer: {CustomerCode} - {FullName}",
-                    result.CustomerCode, result.FullName);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in service layer creating customer: {FullName}", request.FullName);
                 throw;
             }
         }
@@ -313,6 +287,45 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing purchase for customer: {CustomerId}", customerId);
+                throw;
+            }
+        }
+        public async Task<CustomerResponseDto> CreateWalkInCustomerAsync(
+            CreateWalkInCustomerDto request,
+            int createdByUserId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogDebug("Creating walk-in customer: {FullName} by user {UserId}",
+                    request.FullName, createdByUserId);
+
+                // Map CreateWalkInCustomerDto → CreateCustomerRequestDto (cho Repository)
+                var repositoryRequest = new CreateCustomerRequestDto
+                {
+                    FullName = request.FullName,
+                    PhoneNumber = request.PhoneNumber,
+                    Email = request.Email,
+                    Address = request.Address,
+                    DateOfBirth = request.DateOfBirth,
+                    Gender = request.Gender,
+                    TypeId = request.TypeId ?? 1,  // Default type
+                    PreferredLanguage = "vi-VN",
+                    MarketingOptIn = false,  // Walk-in customers mặc định false
+                    Notes = request.Notes,
+                    IsActive = true
+                };
+
+                var result = await _repository.CreateAsync(repositoryRequest, userId: null, cancellationToken);
+
+                _logger.LogInformation("Walk-in customer created: {CustomerCode} - {FullName} by user {UserId}",
+                    result.CustomerCode, result.FullName, createdByUserId);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating walk-in customer: {FullName}", request.FullName);
                 throw;
             }
         }

@@ -417,6 +417,18 @@ public partial class EVDbContext : DbContext
             entity.HasOne(d => d.Type).WithMany(p => p.Customers).HasConstraintName("FK__Customers__TypeI__6A30C649");
 
             entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.CustomerUpdatedByNavigations).HasConstraintName("FK__Customers__Updat__6C190EBB");
+
+            entity.HasOne(d => d.User)
+             .WithOne(u => u.Customer)
+             .HasForeignKey<Customer>(d => d.UserId)
+             .IsRequired(false)  // UserId nullable
+             .OnDelete(DeleteBehavior.Restrict)  
+             .HasConstraintName("FK_Customers_Users");
+
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("IX_Customers_UserID")
+                .IsUnique()
+                .HasFilter("[UserID] IS NOT NULL"); 
         });
 
         modelBuilder.Entity<CustomerCommunicationPreference>(entity =>

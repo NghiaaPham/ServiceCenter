@@ -13,6 +13,13 @@ public partial class Customer
     [Column("CustomerID")]
     public int CustomerId { get; set; }
 
+    [Column("UserID")]
+    public int? UserId { get; set; }
+
+    [ForeignKey("UserId")]
+    [InverseProperty("Customer")]
+    public virtual User? User { get; set; }
+
     [StringLength(20)]
     public string CustomerCode { get; set; } = null!;
 

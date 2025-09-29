@@ -4,9 +4,11 @@ using EVServiceCenter.Core.Domains.Identity.DTOs.Responses;
 using EVServiceCenter.Core.Domains.Identity.Entities;
 using EVServiceCenter.Core.Domains.Identity.Interfaces;
 using EVServiceCenter.Core.Domains.Shared.Models;
+using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.API.Controllers.Auth
 {
@@ -17,19 +19,22 @@ namespace EVServiceCenter.API.Controllers.Auth
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
         private readonly ILogger<AuthController> _logger;
+        private readonly EVDbContext _context;
 
         public AuthController(
             IUserService userService,
             ITokenService tokenService,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            EVDbContext context)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpPost("register")]
-        [AllowAnonymous]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Register([FromBody] RegisterRequestDto registerRequest)
         {
             if (!IsValidRequest(registerRequest))
@@ -44,12 +49,13 @@ namespace EVServiceCenter.API.Controllers.Auth
 
             try
             {
+                // Only allow internal roles (Admin, Staff, Technician)
                 if (!CanRegisterWithRole(registerRequest.RoleId))
                 {
                     return BadRequest(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Bạn không thể đăng ký với vai trò này.",
+                        Message = "Chỉ có thể tạo tài khoản nội bộ (Admin, Staff, Technician).",
                         ErrorCode = "ROLE_NOT_ALLOWED"
                     });
                 }
@@ -60,35 +66,33 @@ namespace EVServiceCenter.API.Controllers.Auth
                     FullName = registerRequest.FullName,
                     Email = registerRequest.Email,
                     PhoneNumber = registerRequest.PhoneNumber,
-                    RoleId = registerRequest.RoleId
+                    RoleId = registerRequest.RoleId,
+                    Department = registerRequest.Department,
+                    HireDate = registerRequest.HireDate,
+                    Salary = registerRequest.Salary,
+                    CreatedBy = GetCurrentUserId()
                 };
 
-                var createdUser = await _userService.RegisterUserAsync(user, registerRequest.Password);
-
-                var tokenUser = new User
-                {
-                    UserId = createdUser.UserId,
-                    Username = createdUser.Username,
-                    RoleId = registerRequest.RoleId
-                };
-                var token = _tokenService.GenerateToken(tokenUser);
+                var createdUser = await _userService.RegisterInternalUserAsync(user, registerRequest.Password);
 
                 return CreatedAtAction(nameof(GetProfile), new { id = createdUser.UserId },
                     new ApiResponse<object>
                     {
                         Success = true,
-                        Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
+                        Message = "Tạo tài khoản nhân viên thành công! Email chào mừng đã được gửi.",
                         Data = new
                         {
                             User = createdUser,
-                            Token = token,
-                            RequireEmailVerification = true
+                            UserType = "Internal",
+                            CreatedBy = GetCurrentUserName(),
+                            NextStep = "Nhân viên có thể đăng nhập ngay bằng username/password đã tạo",
+                            LoginUrl = "/login"
                         }
                     });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during user registration");
+                _logger.LogError(ex, "Error during internal user registration");
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
@@ -117,12 +121,11 @@ namespace EVServiceCenter.API.Controllers.Auth
             try
             {
                 var loginResult = await _userService.LoginAsync(loginRequest.Username, loginRequest.Password);
-                var (user, errorCode, errorMessage) = loginResult; // Destructure tuple
+                var (user, errorCode, errorMessage) = loginResult;
 
-                // Nếu có lỗi (user là null)
+                // Nếu có lỗi
                 if (user == null)
                 {
-                    // Xử lý riêng cho email not verified
                     if (errorCode == ErrorCodes.EMAIL_NOT_VERIFIED)
                     {
                         return BadRequest(new ApiResponse<object>
@@ -147,7 +150,6 @@ namespace EVServiceCenter.API.Controllers.Auth
                         });
                     }
 
-                    // Các lỗi khác (sai password, tài khoản bị khóa, v.v.)
                     return Unauthorized(new ApiResponse<object>
                     {
                         Success = false,
@@ -156,15 +158,42 @@ namespace EVServiceCenter.API.Controllers.Auth
                     });
                 }
 
-                // Login thành công - tạo token
+                // ✅ Nếu là Customer role → load Customer data
+                object? customerData = null;
+                int? customerId = null;
+
+                if (user.RoleId == (int)UserRoles.Customer)
+                {
+                    // Load Customer từ database
+                    var customer = await _context.Customers
+                        .Include(c => c.Type)
+                        .FirstOrDefaultAsync(c => c.UserId == user.UserId);
+
+                    if (customer != null)
+                    {
+                        customerId = customer.CustomerId;
+                        customerData = new
+                        {
+                            customer.CustomerId,
+                            customer.CustomerCode,
+                            customer.LoyaltyPoints,
+                            customer.TotalSpent,
+                            CustomerTypeName = customer.Type?.TypeName,
+                            CustomerTypeDiscount = customer.Type?.DiscountPercent ?? 0
+                        };
+                    }
+                }
+
                 var tokenUser = new User
                 {
                     UserId = user.UserId,
                     Username = user.Username,
-                    RoleId = user.RoleId
+                    RoleId = user.RoleId,
+                    Email = user.Email,
+                    FullName = user.FullName
                 };
 
-                var token = _tokenService.GenerateToken(tokenUser);
+                var token = _tokenService.GenerateToken(tokenUser, customerId);
 
                 return Ok(new ApiResponse<object>
                 {
@@ -173,6 +202,7 @@ namespace EVServiceCenter.API.Controllers.Auth
                     Data = new
                     {
                         User = user,
+                        Customer = customerData,  
                         Token = token
                     }
                 });
@@ -301,17 +331,16 @@ namespace EVServiceCenter.API.Controllers.Auth
         // PRIVATE HELPER METHODS
         private bool CanRegisterWithRole(int roleId)
         {
-            if (!User.Identity?.IsAuthenticated == true)
+            // For internal registration, only allow Admin, Staff, Technician
+            if (!IsAdmin())
             {
-                return roleId == (int)UserRoles.Customer;
+                return false; // Only admins can create internal accounts
             }
 
-            if (IsAdmin())
-            {
-                return true;
-            }
-
-            return roleId == (int)UserRoles.Customer;
+            // Admin can create Admin, Staff, or Technician accounts
+            return roleId == (int)UserRoles.Admin ||
+                   roleId == (int)UserRoles.Staff ||
+                   roleId == (int)UserRoles.Technician;
         }
     }
 }

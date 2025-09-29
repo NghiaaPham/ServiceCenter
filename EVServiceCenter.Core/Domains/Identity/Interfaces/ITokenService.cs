@@ -4,6 +4,6 @@ namespace EVServiceCenter.Core.Domains.Identity.Interfaces
 {
     public interface ITokenService
     {
-        string GenerateToken(User user);
+        string GenerateToken(User user, int? customerId = null);
     }
 }

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using EVServiceCenter.Core.Constants;
 
 namespace EVServiceCenter.Core.Domains.Identity.DTOs.Requests
@@ -24,6 +24,11 @@ namespace EVServiceCenter.Core.Domains.Identity.DTOs.Requests
     public string? PhoneNumber { get; set; }
 
     [Required]
-    public int RoleId { get; set; } 
-  }
+    public int RoleId { get; set; }
+
+    public string? Department { get; set; }
+    public string? EmployeeCode { get; set; }
+    public DateOnly? HireDate { get; set; }
+    public decimal? Salary { get; set; }
+    }
 }

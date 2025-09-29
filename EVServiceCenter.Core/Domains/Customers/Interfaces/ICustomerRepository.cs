@@ -11,7 +11,7 @@ namespace EVServiceCenter.Core.Domains.Customers.Interfaces
         Task<CustomerResponseDto?> GetByCustomerCodeAsync(string customerCode, CancellationToken cancellationToken = default);
         Task<CustomerResponseDto?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken cancellationToken = default);
         Task<CustomerResponseDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
-        Task<CustomerResponseDto> CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken = default);
+        Task<CustomerResponseDto> CreateAsync(CreateCustomerRequestDto request, int? userId = null, CancellationToken cancellationToken = default);
         Task<CustomerResponseDto> UpdateAsync(UpdateCustomerRequestDto request, CancellationToken cancellationToken = default);
         Task<bool> DeleteAsync(int customerId, CancellationToken cancellationToken = default);
         Task<bool> ExistsAsync(string phoneNumber, int? excludeCustomerId = null, CancellationToken cancellationToken = default);

@@ -91,6 +91,9 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<ActivityLog> ActivityLogs { get; set; } = new List<ActivityLog>();
 
+    [InverseProperty("User")]
+    public virtual Customer? Customer { get; set; }
+
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<Apikey> Apikeys { get; set; } = new List<Apikey>();
 

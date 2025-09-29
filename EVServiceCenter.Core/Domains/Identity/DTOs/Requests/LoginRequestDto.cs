@@ -3,7 +3,7 @@ using EVServiceCenter.Core.Constants;
 
 namespace EVServiceCenter.Core.Domains.Identity.DTOs.Requests
 {
-  public class LoginRequestDto
+  public class  LoginRequestDto
   {
     [Required]
     [StringLength(SystemConstants.USERNAME_MAX_LENGTH, MinimumLength = SystemConstants.USERNAME_MIN_LENGTH)]

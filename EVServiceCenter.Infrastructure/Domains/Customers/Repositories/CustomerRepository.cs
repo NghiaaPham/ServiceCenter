@@ -7,12 +7,9 @@ using EVServiceCenter.Core.Domains.Shared.Models;
 using EVServiceCenter.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
 {
@@ -408,67 +405,6 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
             }
         }
 
-        public async Task<CustomerResponseDto> CreateAsync(CreateCustomerRequestDto request, CancellationToken cancellationToken = default)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
-            {
-                // Business validation
-                if (await ExistsAsync(request.PhoneNumber, cancellationToken: cancellationToken))
-                {
-                    throw new InvalidOperationException($"Số điện thoại '{request.PhoneNumber}' đã được sử dụng");
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.Email) && await EmailExistsAsync(request.Email, cancellationToken: cancellationToken))
-                {
-                    throw new InvalidOperationException($"Email '{request.Email}' đã được sử dụng");
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.IdentityNumber) && await IdentityNumberExistsAsync(request.IdentityNumber, cancellationToken: cancellationToken))
-                {
-                    throw new InvalidOperationException($"Số CMND/CCCD đã được sử dụng");
-                }
-
-                // Generate customer code
-                var customerCode = await GenerateCustomerCodeAsync(cancellationToken);
-
-                var entity = new Customer
-                {
-                    CustomerCode = customerCode,
-                    FullName = request.FullName.Trim(),
-                    PhoneNumber = request.PhoneNumber.Trim(),
-                    Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
-                    Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
-                    DateOfBirth = request.DateOfBirth,
-                    Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
-                    IdentityNumber = string.IsNullOrWhiteSpace(request.IdentityNumber) ? null : EncryptIdentityNumber(request.IdentityNumber),
-                    TypeId = request.TypeId ?? 1, // Default to Individual type
-                    PreferredLanguage = request.PreferredLanguage,
-                    MarketingOptIn = request.MarketingOptIn,
-                    LoyaltyPoints = 0,
-                    TotalSpent = 0,
-                    Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-                    IsActive = request.IsActive,
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                _context.Customers.Add(entity);
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-
-                _logger.LogInformation("Created customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
-
-                return await GetByIdAsync(entity.CustomerId, false, cancellationToken)
-                    ?? throw new InvalidOperationException("Failed to retrieve created customer");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Error creating customer: {FullName}", request.FullName);
-                throw;
-            }
-        }
-
         public async Task<CustomerResponseDto> UpdateAsync(UpdateCustomerRequestDto request, CancellationToken cancellationToken = default)
         {
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -563,36 +499,19 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
                 throw;
             }
         }
-
         public async Task<string> GenerateCustomerCodeAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                var currentYear = DateTime.Now.ToString("yy");
-                var currentMonth = DateTime.Now.ToString("MM");
+                var result = await _context.Database
+                    .SqlQueryRaw<string>("EXEC sp_GetNextCustomerCode")
+                    .ToListAsync(cancellationToken);
 
-                // Get the latest customer code for current year-month
-                var latestCode = await _context.Customers
-                    .Where(c => c.CustomerCode.StartsWith($"KH{currentYear}{currentMonth}"))
-                    .OrderByDescending(c => c.CustomerCode)
-                    .Select(c => c.CustomerCode)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                int nextNumber = 1;
-                if (!string.IsNullOrEmpty(latestCode) && latestCode.Length == 8) // KH + yy + MM + xxx
-                {
-                    var numberPart = latestCode.Substring(6); // Last 3 digits
-                    if (int.TryParse(numberPart, out var currentNumber))
-                    {
-                        nextNumber = currentNumber + 1;
-                    }
-                }
-
-                return $"KH{currentYear}{currentMonth}{nextNumber:000}";
+                return result.First();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating customer code");
+                _logger.LogError(ex, "Error generating customer code with sequence");
                 throw;
             }
         }
@@ -806,6 +725,63 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating total spent for customer: {CustomerId}", customerId);
+                throw;
+            }
+        }
+
+        public async Task<CustomerResponseDto> CreateAsync(CreateCustomerRequestDto request, int? userId = null, CancellationToken cancellationToken = default)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                // Business validation
+                if (await ExistsAsync(request.PhoneNumber, cancellationToken: cancellationToken))
+                {
+                    throw new InvalidOperationException($"Số điện thoại '{request.PhoneNumber}' đã được sử dụng");
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Email) && await EmailExistsAsync(request.Email, cancellationToken: cancellationToken))
+                {
+                    throw new InvalidOperationException($"Email '{request.Email}' đã được sử dụng");
+                }
+
+                // Generate customer code
+                var customerCode = await GenerateCustomerCodeAsync(cancellationToken);
+
+                var entity = new Customer
+                {
+                    UserId = userId, // Link to User if provided
+                    CustomerCode = customerCode,
+                    FullName = request.FullName.Trim(),
+                    PhoneNumber = request.PhoneNumber.Trim(),
+                    Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+                    Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
+                    DateOfBirth = request.DateOfBirth,
+                    Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
+                    IdentityNumber = string.IsNullOrWhiteSpace(request.IdentityNumber) ? null : EncryptIdentityNumber(request.IdentityNumber),
+                    TypeId = request.TypeId ?? 1,
+                    PreferredLanguage = request.PreferredLanguage,
+                    MarketingOptIn = request.MarketingOptIn,
+                    LoyaltyPoints = 0,
+                    TotalSpent = 0,
+                    Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+                    IsActive = request.IsActive,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                _context.Customers.Add(entity);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation("Created customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
+
+                return await GetByIdAsync(entity.CustomerId, false, cancellationToken)
+                    ?? throw new InvalidOperationException("Failed to retrieve created customer");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex, "Error creating customer: {FullName}", request.FullName);
                 throw;
             }
         }

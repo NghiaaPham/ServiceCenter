@@ -42,6 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IHttpContextService, HttpContextService>();
         services.AddScoped<ICustomerTypeService, CustomerTypeService>();
         services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<ICustomerAccountService, CustomerAccountService>();
         // TODO: Add AppointmentService, InvoiceService,...
 
         return services;

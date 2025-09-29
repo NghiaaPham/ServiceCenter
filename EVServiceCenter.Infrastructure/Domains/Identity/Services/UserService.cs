@@ -45,9 +45,15 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
             return user == null ? null : _mapper.Map<UserResponseDto>(user);
         }
 
-        public async Task<UserResponseDto> RegisterUserAsync(User user, string plainPassword)
+        public async Task<UserResponseDto> RegisterCustomerUserAsync(User user, string plainPassword)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
+
+            // Validate this is customer user
+            if (user.RoleId != (int)UserRoles.Customer)
+            {
+                throw new ArgumentException("This method is only for customer registration", nameof(user.RoleId));
+            }
 
             // Validate password strength
             var (isValid, errorMessage) = PasswordValidator.ValidatePassword(plainPassword);
@@ -56,68 +62,57 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 throw new ArgumentException(errorMessage, nameof(plainPassword));
             }
 
-            if (!Enum.IsDefined(typeof(UserRoles), user.RoleId))
-                throw new ArgumentException($"{ErrorMessages.VALIDATION_ERROR}: {ErrorMessages.ACCESS_DENIED}", nameof(user.RoleId));
-
+            // Check for duplicates
             if (await _userRepository.IsUsernameExistsAsync(user.Username))
                 throw new InvalidOperationException(ErrorMessages.DUPLICATE_USERNAME);
 
             if (!string.IsNullOrEmpty(user.Email) && await _userRepository.IsEmailExistsAsync(user.Email))
                 throw new InvalidOperationException(ErrorMessages.DUPLICATE_EMAIL);
 
-            // Generate employee code for internal roles
-            if (user.RoleId == (int)UserRoles.Admin ||
-                user.RoleId == (int)UserRoles.Staff ||
-                user.RoleId == (int)UserRoles.Technician)
-            {
-                user.EmployeeCode = await GenerateUniqueEmployeeCodeAsync();
-            }
-            else
-            {
-                user.EmployeeCode = null;
-            }
-
-            // Use SecurityHelper for password hashing
+            // Password hashing
             var salt = SecurityHelper.GenerateSalt();
             var hash = SecurityHelper.HashPassword(plainPassword, salt);
             var hashBytes = Encoding.UTF8.GetBytes(hash);
             var saltBytes = Encoding.UTF8.GetBytes(salt);
 
-            // Validate hash length
-            if (hashBytes.Length > 64)
-                throw new InvalidOperationException("Password hash exceeds VARBINARY(64) limit.");
-            if (saltBytes.Length > 32)
-                throw new InvalidOperationException("Password salt exceeds VARBINARY(32) limit.");
+            if (hashBytes.Length > 64 || saltBytes.Length > 32)
+                throw new InvalidOperationException("Password hash/salt exceeds database limits.");
 
             user.PasswordHash = hashBytes;
             user.PasswordSalt = saltBytes;
             user.IsActive = true;
             user.CreatedDate = DateTime.UtcNow;
 
-            // Generate email verification token using SecurityHelper
+            // Customer: Email verification required
+            user.EmailVerified = false;
             var emailVerificationToken = SecurityHelper.GenerateSecureToken();
             user.EmailVerificationToken = Encoding.UTF8.GetBytes(emailVerificationToken);
             user.EmailVerificationExpiry = DateTime.UtcNow.AddHours(24);
-            user.EmailVerified = false;
 
             var createdUser = await _userRepository.CreateAsync(user);
 
-            // Send verification email
+            // Send verification email for customers
             if (!string.IsNullOrEmpty(user.Email))
             {
                 try
                 {
-                    await _emailService.SendEmailVerificationAsync(user.Email, user.FullName, emailVerificationToken);
-                    _logger.LogInformation("Verification email sent to {Email} for user {Username}", user.Email, user.Username);
+                    await _emailService.SendCustomerEmailVerificationAsync(
+                        user.Email,
+                        user.FullName,
+                        emailVerificationToken
+                    );
+                    _logger.LogInformation("Verification email sent to customer {Email} for user {Username}", user.Email, user.Username);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to send verification email for user {Username}", user.Username);
+                    _logger.LogError(ex, "Failed to send verification email for customer {Username}", user.Username);
                     // Don't fail registration if email fails
                 }
             }
 
-            _logger.LogInformation("User registered successfully: {Username}, Role: {Role}", user.Username, (UserRoles)user.RoleId);
+            _logger.LogInformation("Customer user registered successfully: {Username}, Email: {Email}",
+                user.Username, user.Email);
+
             return _mapper.Map<UserResponseDto>(createdUser);
         }
 
@@ -336,7 +331,7 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                                 await _userRepository.UpdateAsync(user);
 
                                 // Send verification email
-                                await _emailService.SendEmailVerificationAsync(user.Email, user.FullName, verificationToken);
+                                await _emailService.SendCustomerEmailVerificationAsync(user.Email, user.FullName, verificationToken);
                                 _logger.LogInformation("New verification email sent for {Username}", username);
                             }
                             catch (Exception ex)
@@ -457,42 +452,33 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
             _logger.LogInformation("Password updated successfully for UserId {UserId}", userId);
         }
 
-        public async Task<bool> DeleteUserAsync(int id)
-        {
-            if (!await _userRepository.ExistsAsync(id))
-            {
-                _logger.LogWarning("Delete failed: User not found with ID: {UserId}", id);
-                throw new InvalidOperationException(ErrorMessages.USER_NOT_FOUND);
-            }
-
-            var result = await _userRepository.DeleteAsync(id);
-            _logger.LogInformation("User deleted: {UserId}", id);
-            return result;
-        }
-
-        //public async Task<bool> ForgotPasswordAsync(string email)
+        //public async Task<bool> DeleteUserAsync(int id)
         //{
-        //    var user = await _userRepository.GetByEmailAsync(email);
-        //    if (user == null)
+        //    if (!await _userRepository.ExistsAsync(id))
         //    {
-        //        // Return true for security (prevent email enumeration)
-        //        _logger.LogWarning("Password reset requested for non-existent email: {Email}", email);
-        //        return true;
+        //        _logger.LogWarning("Delete failed: User not found with ID: {UserId}", id);
+        //        throw new InvalidOperationException(ErrorMessages.USER_NOT_FOUND);
         //    }
 
-        //    // Generate reset token using SecurityHelper
-        //    var resetToken = SecurityHelper.GenerateSecureToken();
-        //    user.ResetToken = Encoding.UTF8.GetBytes(resetToken);
-        //    user.ResetTokenExpiry = DateTime.UtcNow.AddHours(1);
-
-        //    await _userRepository.UpdateAsync(user);
-
-        //    // Send reset email
-        //    await _emailService.SendPasswordResetAsync(email, user.FullName, resetToken);
-
-        //    _logger.LogInformation("Password reset token generated for user: {Email}", email);
-        //    return true;
+        //    var result = await _userRepository.DeleteAsync(id);
+        //    _logger.LogInformation("User deleted: {UserId}", id);
+        //    return result;
         //}
+
+        public async Task<bool> DeleteUserAsync(int userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            // Check if user has customer
+            if (user?.Customer != null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot delete user with linked customer. " +
+                    "Please unlink or delete customer first.");
+            }
+
+            return await _userRepository.DeleteAsync(userId);
+        }
 
         public async Task<bool> ForgotPasswordAsync(string email)
         {
@@ -554,51 +540,6 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 throw new InvalidOperationException("Có lỗi xảy ra khi gửi email đặt lại mật khẩu. Vui lòng thử lại sau.");
             }
         }
-
-
-        //public async Task<bool> ResetPasswordAsync(string email, string token, string newPassword)
-        //{
-        //    var user = await _userRepository.GetByEmailAsync(email);
-        //    if (user == null || user.ResetToken == null || user.ResetTokenExpiry == null)
-        //    {
-        //        _logger.LogWarning("Invalid reset attempt for email: {Email}", email);
-        //        return false;
-        //    }
-
-        //    // Verify token and expiry
-        //    var storedToken = Encoding.UTF8.GetString(user.ResetToken);
-        //    if (storedToken != token || user.ResetTokenExpiry < DateTime.UtcNow)
-        //    {
-        //        _logger.LogWarning("Invalid or expired reset token for email: {Email}", email);
-        //        return false;
-        //    }
-
-        //    // Validate new password
-        //    var (isValid, errorMessage) = PasswordValidator.ValidatePassword(newPassword);
-        //    if (!isValid)
-        //    {
-        //        throw new ArgumentException(errorMessage);
-        //    }
-
-        //    // Update password using SecurityHelper
-        //    var salt = SecurityHelper.GenerateSalt();
-        //    var hash = SecurityHelper.HashPassword(newPassword, salt);
-        //    user.PasswordHash = Encoding.UTF8.GetBytes(hash);
-        //    user.PasswordSalt = Encoding.UTF8.GetBytes(salt);
-
-        //    // Clear reset token and failed attempts
-        //    user.ResetToken = null;
-        //    user.ResetTokenExpiry = null;
-        //    user.FailedLoginAttempts = 0;
-        //    user.IsAccountLocked = false;
-        //    user.AccountLockedUntil = null;
-
-        //    await _userRepository.UpdateAsync(user);
-
-        //    _logger.LogInformation("Password reset successful for user: {Email}", email);
-        //    return true;
-        //}
-
         public async Task<bool> ResetPasswordAsync(string email, string token, string newPassword)
         {
             try
@@ -771,7 +712,7 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
             await _userRepository.UpdateAsync(user);
 
             // Send verification email
-            await _emailService.SendEmailVerificationAsync(email, user.FullName, verificationToken);
+            await _emailService.SendCustomerEmailVerificationAsync(email, user.FullName, verificationToken);
 
             _logger.LogInformation("Verification email resent for user: {Email}", email);
             return true;
@@ -820,5 +761,93 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 
             return newCode;
         }
+
+        public Task<bool> IsUsernameExistsAsync(string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> IsEmailExistsAsync(string email)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<UserResponseDto> RegisterInternalUserAsync(User user, string plainPassword)
+        {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+
+            // Validate this is internal user
+            if (user.RoleId != (int)UserRoles.Admin &&
+                user.RoleId != (int)UserRoles.Staff &&
+                user.RoleId != (int)UserRoles.Technician)
+            {
+                throw new ArgumentException("This method is only for internal staff registration", nameof(user.RoleId));
+            }
+
+            // Validate password strength
+            var (isValid, errorMessage) = PasswordValidator.ValidatePassword(plainPassword);
+            if (!isValid)
+            {
+                throw new ArgumentException(errorMessage, nameof(plainPassword));
+            }
+
+            // Check for duplicates
+            if (await _userRepository.IsUsernameExistsAsync(user.Username))
+                throw new InvalidOperationException(ErrorMessages.DUPLICATE_USERNAME);
+
+            if (!string.IsNullOrEmpty(user.Email) && await _userRepository.IsEmailExistsAsync(user.Email))
+                throw new InvalidOperationException(ErrorMessages.DUPLICATE_EMAIL);
+
+            // Generate employee code for internal roles
+            user.EmployeeCode = await GenerateUniqueEmployeeCodeAsync();
+
+            // Password hashing
+            var salt = SecurityHelper.GenerateSalt();
+            var hash = SecurityHelper.HashPassword(plainPassword, salt);
+            var hashBytes = Encoding.UTF8.GetBytes(hash);
+            var saltBytes = Encoding.UTF8.GetBytes(salt);
+
+            if (hashBytes.Length > 64 || saltBytes.Length > 32)
+                throw new InvalidOperationException("Password hash/salt exceeds database limits.");
+
+            user.PasswordHash = hashBytes;
+            user.PasswordSalt = saltBytes;
+            user.IsActive = true;
+            user.CreatedDate = DateTime.UtcNow;
+
+            // Internal staff: Email verified by default, no verification needed
+            user.EmailVerified = true;
+            user.EmailVerificationToken = null;
+            user.EmailVerificationExpiry = null;
+
+            var createdUser = await _userRepository.CreateAsync(user);
+
+            // Send welcome email for internal staff
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                try
+                {
+                    await _emailService.SendInternalStaffWelcomeEmailAsync(
+                        user.Email,
+                        user.FullName,
+                        user.Username,
+                        ((UserRoles)user.RoleId).ToString(),
+                        user.Department
+                    );
+                    _logger.LogInformation("Welcome email sent to internal staff {Email} for user {Username}", user.Email, user.Username);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send welcome email for internal staff {Username}", user.Username);
+                    // Don't fail registration if email fails
+                }
+            }
+
+            _logger.LogInformation("Internal staff registered successfully: {Username}, Role: {Role}, EmployeeCode: {EmployeeCode}",
+                user.Username, (UserRoles)user.RoleId, user.EmployeeCode);
+
+            return _mapper.Map<UserResponseDto>(createdUser);
+        }
+       
     }
 }

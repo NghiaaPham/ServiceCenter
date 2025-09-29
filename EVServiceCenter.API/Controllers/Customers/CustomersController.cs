@@ -252,39 +252,29 @@ namespace EVServiceCenter.API.Controllers.Customers
         }
 
         /// <summary>
-        /// Create new customer
+        /// Create new walk-in customer (by Staff at counter)
         /// </summary>
-        /// <param name="request">Customer creation data</param>
-        /// <returns>Created customer details</returns>
         [HttpPost]
         [Authorize(Policy = "AdminOrStaff")]
-        public async Task<IActionResult> CreateCustomer([FromBody] CreateCustomerRequestDto request)
+        public async Task<IActionResult> CreateCustomer([FromBody] CreateWalkInCustomerDto request) 
         {
-            // Validate request using FluentValidation
-            var validationResult = await _createValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)
+            if (!IsValidRequest(request))
             {
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
                     Message = "Dữ liệu tạo khách hàng không hợp lệ",
                     ErrorCode = "VALIDATION_ERROR",
-                    ValidationErrors = validationResult.Errors.Select(e => new
-                    {
-                        Field = e.PropertyName,
-                        Message = e.ErrorMessage,
-                        AttemptedValue = e.AttemptedValue
-                    }),
                     Timestamp = DateTime.UtcNow
                 });
             }
 
             try
             {
-                var result = await _customerService.CreateAsync(request);
-
-                _logger.LogInformation("Customer created successfully by user {UserId}: {CustomerCode} - {FullName}",
-                    GetCurrentUserId(), result.CustomerCode, result.FullName);
+                var createdByUserId = GetCurrentUserId();
+                var result = await _customerService.CreateWalkInCustomerAsync(request, createdByUserId);  
+                _logger.LogInformation("Walk-in customer created by user {UserId}: {CustomerCode} - {FullName}",
+                    createdByUserId, result.CustomerCode, result.FullName);
 
                 return CreatedAtAction(
                     nameof(GetCustomerById),
@@ -309,7 +299,7 @@ namespace EVServiceCenter.API.Controllers.Customers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating customer: {FullName}", request.FullName);
+                _logger.LogError(ex, "Error creating walk-in customer: {FullName}", request.FullName);
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,

@@ -163,5 +163,28 @@ namespace EVServiceCenter.API.Controllers
         {
             return request != null && ModelState.IsValid;
         }
+
+        // Customer-specific helper methods
+        protected int GetCurrentCustomerId()
+        {
+            var customerIdClaim = User.FindFirst("CustomerId")?.Value;
+            return int.TryParse(customerIdClaim, out var customerId) ? customerId : 0;
+        }
+
+        protected string GetCustomerCode()
+        {
+            return User.FindFirst("CustomerCode")?.Value ?? string.Empty;
+        }
+
+        protected int GetCustomerLoyaltyPoints()
+        {
+            var pointsClaim = User.FindFirst("LoyaltyPoints")?.Value;
+            return int.TryParse(pointsClaim, out var points) ? points : 0;
+        }
+
+        protected bool IsRegisteredCustomer()
+        {
+            return IsCustomer() && GetCurrentCustomerId() > 0;
+        }
     }
 }
