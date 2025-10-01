@@ -1,4 +1,5 @@
 ﻿using EVServiceCenter.Core.Domains.Customers.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
 using System;
 using System.Collections.Generic;

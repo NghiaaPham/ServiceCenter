@@ -1,5 +1,6 @@
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.Customers.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Entities;
 
 namespace EVServiceCenter.API.Validators;

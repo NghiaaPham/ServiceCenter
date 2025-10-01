@@ -40,7 +40,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\" />
     <Folder Include="Mappings\" />
     <Folder Include="Validators\" />
   </ItemGroup>

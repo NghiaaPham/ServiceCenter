@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+using EVServiceCenter.Core.Domains.CarBrands.Entities;
+using EVServiceCenter.Core.Domains.CarModels.Entities;
 using EVServiceCenter.Core.Domains.Customers.Entities;
 using EVServiceCenter.Core.Domains.CustomerTypes.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
+using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.Core.Entities;

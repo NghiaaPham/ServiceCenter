@@ -3,6 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Domains.Customers.Entities;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 
 namespace EVServiceCenter.Core.Domains.Identity.Entities;
 

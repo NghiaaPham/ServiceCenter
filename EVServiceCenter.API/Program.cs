@@ -1,27 +1,32 @@
-﻿using EVServiceCenter.API.Mappings;
+﻿using EVServiceCenter.API.Extensions;
+using EVServiceCenter.API.Mappings;
 using EVServiceCenter.API.Middleware;
 using EVServiceCenter.API.Validators;
-
+using EVServiceCenter.Core.Domains.CustomerTypes.Validators; // Added for FluentValidation integration
+using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
-using EVServiceCenter.Infrastructure; 
+using EVServiceCenter.Infrastructure.JsonConverters;
+using EVServiceCenter.Infrastructure.Persistence.Seeders; // Added for ServiceCenterSeeder
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore; // Added for Database.Migrate()
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
-using FluentValidation.AspNetCore;
-using EVServiceCenter.Core.Domains.CustomerTypes.Validators; // Added for FluentValidation integration
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllers()
-    .AddFluentValidation(fv => 
+    .AddFluentValidation(fv =>
     {
         fv.RegisterValidatorsFromAssemblyContaining<Program>();
         // Add customer validators
         fv.RegisterValidatorsFromAssemblyContaining<CreateCustomerTypeRequestValidator>();
         fv.RegisterValidatorsFromAssemblyContaining<UpdateCustomerTypeRequestValidator>();
         fv.RegisterValidatorsFromAssemblyContaining<CustomerTypeQueryValidator>();
+    }).AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter());
     });
 
 // Keep existing validator registration
@@ -155,8 +160,35 @@ builder.Services.AddCors(options =>
 
 // 🔥 ĐĂNG KÝ INFRASTRUCTURE (DbContext, Repositories, Services)
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddServiceCenterModule();
+builder.Services.AddCarBrandModule();
+builder.Services.AddCarModelModule();
+builder.Services.AddCustomerVehicleModule();
 
 var app = builder.Build();
+
+// Seed data only in Development environment
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<EVDbContext>();
+        context.Database.Migrate(); // Apply any pending migrations
+        ServiceCenterSeeder.SeedData(context); // Run the seeder
+        CarBrandSeeder.SeedCarBrands(context);
+        CarModelSeeder.SeedCarModels(context);
+        CustomerSeeder.SeedCustomers(context);
+        CustomerVehicleSeeder.SeedCustomerVehicles(context); // <-- Đã gọi seeder này
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+    }
+}
+app.UseMiddleware<GlobalExceptionHandler>();
 
 // Middleware pipeline
 app.UseHttpsRedirection();

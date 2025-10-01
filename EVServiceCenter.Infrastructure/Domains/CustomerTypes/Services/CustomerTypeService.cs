@@ -1,6 +1,6 @@
 ﻿using EVServiceCenter.Core.Domains.CustomerTypes.DTOs.Requests;
 using EVServiceCenter.Core.Domains.CustomerTypes.DTOs.Responses;
-using EVServiceCenter.Core.Domains.CustomerTypes.Interfaces;
+using EVServiceCenter.Core.Domains.CustomerTypes.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.Shared.Models;
 using Microsoft.Extensions.Logging;
 

@@ -1,6 +1,8 @@
 ﻿using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.Customers.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
+using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

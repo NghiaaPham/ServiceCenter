@@ -1,5 +1,7 @@
 ﻿using EVServiceCenter.Core.Domains.Customers.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
+using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using EVServiceCenter.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

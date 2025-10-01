@@ -1,4 +1,4 @@
-﻿using EVServiceCenter.Core.Entities;
+﻿using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

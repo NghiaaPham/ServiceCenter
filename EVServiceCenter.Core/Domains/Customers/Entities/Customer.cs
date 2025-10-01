@@ -5,6 +5,7 @@ using EVServiceCenter.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 namespace EVServiceCenter.Core.Domains.Customers.Entities;
 
 public partial class Customer

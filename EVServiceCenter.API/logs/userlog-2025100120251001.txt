@@ -1,0 +1,84 @@
+2025-10-01 07:33:38.487 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 07:33:38.573 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 07:33:38.647 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 07:33:38.653 +07:00 [INF] Hosting environment: Development
+2025-10-01 07:33:38.659 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 07:33:39.997 +07:00 [INF] Request: GET /
+2025-10-01 10:21:13.361 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 10:21:13.422 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 10:21:13.504 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 10:21:13.532 +07:00 [INF] Hosting environment: Development
+2025-10-01 10:21:13.540 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 10:21:14.236 +07:00 [INF] Request: GET /
+2025-10-01 10:38:48.486 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 10:38:48.715 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 10:38:49.146 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 10:38:49.161 +07:00 [INF] Hosting environment: Development
+2025-10-01 10:38:49.192 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 10:38:49.259 +07:00 [INF] Request: GET /
+2025-10-01 10:57:58.093 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2025-10-01 10:57:58.793 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 10:57:58.804 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 10:57:58.862 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 10:57:58.869 +07:00 [INF] Hosting environment: Development
+2025-10-01 10:57:58.876 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 10:57:59.522 +07:00 [INF] Request: GET /
+2025-10-01 10:59:05.326 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2025-10-01 10:59:06.103 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 10:59:06.116 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 10:59:06.188 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 10:59:06.193 +07:00 [INF] Hosting environment: Development
+2025-10-01 10:59:06.199 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 10:59:06.564 +07:00 [INF] Request: GET /
+2025-10-01 11:06:44.144 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2025-10-01 11:06:44.949 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 11:06:44.961 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 11:06:45.034 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 11:06:45.044 +07:00 [INF] Hosting environment: Development
+2025-10-01 11:06:45.050 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 11:06:45.473 +07:00 [INF] Request: GET /
+2025-10-01 11:12:03.548 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2025-10-01 11:12:04.363 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 11:12:04.372 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 11:12:04.426 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 11:12:04.462 +07:00 [INF] Hosting environment: Development
+2025-10-01 11:12:04.472 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 11:12:05.083 +07:00 [INF] Request: GET /
+2025-10-01 11:18:29.349 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-01 11:18:29.391 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-01 11:18:29.471 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-01 11:18:29.475 +07:00 [INF] Hosting environment: Development
+2025-10-01 11:18:29.480 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-01 11:18:30.456 +07:00 [INF] Request: GET /
+2025-10-01 11:26:41.993 +07:00 [INF] Request: POST /api/auth/login
+2025-10-01 11:26:43.184 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0
+2025-10-01 11:26:47.203 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-10-01 11:27:19.794 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-01 11:31:53.594 +07:00 [INF] Request: GET /api/customer-vehicles/1%0A
+2025-10-01 11:32:42.615 +07:00 [INF] Request: GET /api/customer-vehicles/by-customer/2
+2025-10-01 11:33:03.635 +07:00 [INF] Request: GET /api/customer-vehicles/by-license-plate/30A-12345
+2025-10-01 11:33:28.502 +07:00 [INF] Request: GET /api/customer-vehicles/by-license-plate/30B-67890
+2025-10-01 11:33:56.090 +07:00 [INF] Request: GET /api/customer-vehicles/by-license-plate/30A-12345
+2025-10-01 11:34:20.010 +07:00 [INF] Request: GET /api/customer-vehicles/maintenance-due
+2025-10-01 11:35:12.670 +07:00 [INF] Request: POST /api/customer-vehicles
+2025-10-01 11:35:12.949 +07:00 [INF] Vehicle created: 29A-99999 for customer 2
+2025-10-01 11:35:12.962 +07:00 [INF] Vehicle created by user 8: 29A-99999
+2025-10-01 11:36:13.505 +07:00 [INF] Request: PUT /api/customer-vehicles/1
+2025-10-01 11:36:46.129 +07:00 [INF] Request: PUT /api/customer-vehicles/1
+2025-10-01 11:37:19.343 +07:00 [INF] Request: PATCH /api/customer-vehicles/1/mileage
+2025-10-01 11:37:19.417 +07:00 [INF] Vehicle mileage updated by user 8: 1 -> 17000 km
+2025-10-01 11:37:37.100 +07:00 [INF] Request: GET /api/customer-vehicles/1/can-delete
+2025-10-01 11:37:50.416 +07:00 [INF] Request: DELETE /api/customer-vehicles/8
+2025-10-01 11:37:50.494 +07:00 [INF] Vehicle deleted by user 8: 8
+2025-10-01 11:38:19.625 +07:00 [INF] Request: GET /api/customer-vehicles/1/statistics
+2025-10-01 11:39:34.560 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-01 11:39:48.355 +07:00 [INF] Request: GET /api/customer-vehicles/by-customer/2/statistics
+2025-10-01 11:40:05.948 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-01 11:40:16.799 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-01 11:40:24.572 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-01 11:41:08.653 +07:00 [INF] Request: PUT /api/customer-vehicles/1
+2025-10-01 11:41:08.773 +07:00 [INF] Vehicle updated: 1
+2025-10-01 11:41:08.815 +07:00 [INF] Vehicle updated by user 8: 1
+2025-10-01 11:41:30.477 +07:00 [INF] Request: PUT /api/customer-vehicles/1
+2025-10-01 11:41:30.917 +07:00 [INF] Vehicle updated: 1
+2025-10-01 11:41:30.932 +07:00 [INF] Vehicle updated by user 8: 1

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using EVServiceCenter.Core.Domains.CarModels.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
