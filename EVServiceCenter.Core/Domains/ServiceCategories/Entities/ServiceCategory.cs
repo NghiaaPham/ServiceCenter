@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
+using EVServiceCenter.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EVServiceCenter.Core.Entities;
-
+namespace EVServiceCenter.Core.Domains.ServiceCategories.Entities;
 public partial class ServiceCategory
 {
     [Key]
     [Column("CategoryID")]
     public int CategoryId { get; set; }
 
+    [Required]
     [StringLength(100)]
     public string CategoryName { get; set; } = null!;
 
@@ -23,6 +23,9 @@ public partial class ServiceCategory
     public int? DisplayOrder { get; set; }
 
     public bool? IsActive { get; set; }
+
+    public DateTime? CreatedDate { get; set; }
+    public DateTime? UpdatedDate { get; set; }
 
     [InverseProperty("Category")]
     public virtual ICollection<ChecklistTemplate> ChecklistTemplates { get; set; } = new List<ChecklistTemplate>();

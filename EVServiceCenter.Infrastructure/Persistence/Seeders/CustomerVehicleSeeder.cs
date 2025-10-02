@@ -14,7 +14,6 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                 return;
             }
 
-            // ✅ Get customers with OrderBy to avoid warning
             var customers = context.Customers
                 .OrderBy(c => c.CustomerId)
                 .Take(10)

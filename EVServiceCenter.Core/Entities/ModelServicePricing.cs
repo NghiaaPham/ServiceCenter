@@ -1,8 +1,10 @@
 ﻿using EVServiceCenter.Core.Domains.CarModels.Entities;
+using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace EVServiceCenter.Core.Entities;
+namespace EVServiceCenter.Core.Entities; 
 
 [Table("ModelServicePricing")]
 public partial class ModelServicePricing
@@ -31,6 +33,10 @@ public partial class ModelServicePricing
 
     public DateOnly? ExpiryDate { get; set; }
 
+    public DateTime? CreatedDate { get; set; }
+    public DateTime? UpdatedDate { get; set; }
+
+    // Navigation properties
     [ForeignKey("ModelId")]
     [InverseProperty("ModelServicePricings")]
     public virtual CarModel Model { get; set; } = null!;

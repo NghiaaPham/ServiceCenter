@@ -164,6 +164,9 @@ builder.Services.AddServiceCenterModule();
 builder.Services.AddCarBrandModule();
 builder.Services.AddCarModelModule();
 builder.Services.AddCustomerVehicleModule();
+builder.Services.AddServiceCategoryModule();
+builder.Services.AddMaintenanceServiceModule();
+builder.Services.AddModelServicePricingModule();
 
 var app = builder.Build();
 
@@ -180,7 +183,11 @@ if (app.Environment.IsDevelopment())
         CarBrandSeeder.SeedCarBrands(context);
         CarModelSeeder.SeedCarModels(context);
         CustomerSeeder.SeedCustomers(context);
-        CustomerVehicleSeeder.SeedCustomerVehicles(context); // <-- Đã gọi seeder này
+        CustomerVehicleSeeder.SeedCustomerVehicles(context);
+        ServiceCategorySeeder.SeedServiceCategories(context);
+        MaintenanceServiceSeeder.SeedMaintenanceServices(context);
+        ModelServicePricingSeeder.SeedModelServicePricings(context);
+
     }
     catch (Exception ex)
     {

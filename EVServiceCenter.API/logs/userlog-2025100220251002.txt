@@ -1,0 +1,31 @@
+2025-10-02 00:05:35.074 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-02 00:05:35.139 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-02 00:05:35.225 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-02 00:05:35.230 +07:00 [INF] Hosting environment: Development
+2025-10-02 00:05:35.274 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-02 00:05:35.687 +07:00 [INF] Request: GET /
+2025-10-02 00:06:31.658 +07:00 [INF] Request: GET /api/model-service-pricings
+2025-10-02 07:24:52.192 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-02 07:24:52.245 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-02 07:24:52.324 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-02 07:24:52.327 +07:00 [INF] Hosting environment: Development
+2025-10-02 07:24:52.331 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-02 07:24:52.900 +07:00 [INF] Request: GET /
+2025-10-02 10:03:20.937 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-02 10:03:21.045 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-02 10:03:21.196 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-02 10:03:21.227 +07:00 [INF] Hosting environment: Development
+2025-10-02 10:03:21.235 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-02 10:03:22.050 +07:00 [INF] Request: GET /
+2025-10-02 10:22:02.993 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-02 10:22:03.066 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-02 10:22:03.138 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-02 10:22:03.317 +07:00 [INF] Hosting environment: Development
+2025-10-02 10:22:03.329 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-02 10:22:03.599 +07:00 [INF] Request: GET /
+2025-10-02 10:31:23.434 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-02 10:31:23.520 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-02 10:31:23.647 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-02 10:31:23.779 +07:00 [INF] Hosting environment: Development
+2025-10-02 10:31:23.787 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-02 10:31:24.035 +07:00 [INF] Request: GET /

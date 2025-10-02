@@ -7,6 +7,8 @@ using EVServiceCenter.Core.Domains.Customers.Entities;
 using EVServiceCenter.Core.Domains.CustomerTypes.Entities;
 using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
+using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
+using EVServiceCenter.Core.Domains.ServiceCategories.Entities;
 using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using Microsoft.EntityFrameworkCore;
 
