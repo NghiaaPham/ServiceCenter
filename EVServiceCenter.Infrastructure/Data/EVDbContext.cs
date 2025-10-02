@@ -10,6 +10,7 @@ using EVServiceCenter.Core.Domains.Identity.Entities;
 using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
 using EVServiceCenter.Core.Domains.ServiceCategories.Entities;
 using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
+using EVServiceCenter.Core.Domains.TimeSlots.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.Core.Entities;
@@ -1102,8 +1103,6 @@ public partial class EVDbContext : DbContext
             entity.HasKey(e => e.SlotId).HasName("PK__TimeSlot__0A124A4F359B1C4C");
 
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.CurrentBookings).HasDefaultValue(0);
-            entity.Property(e => e.IsAvailable).HasDefaultValue(true);
             entity.Property(e => e.MaxBookings).HasDefaultValue(1);
             entity.Property(e => e.SlotType).HasDefaultValue("Regular");
 

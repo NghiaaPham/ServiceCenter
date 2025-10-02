@@ -1,6 +1,6 @@
 ﻿using EVServiceCenter.Core.Domains.ServiceCenters.Interfaces.Repositories;
 using EVServiceCenter.Core.Entities;
-using EVServiceCenter.Core.Enums;
+using EVServiceCenter.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.Infrastructure.Domains.ServiceCenters.Repositories
@@ -15,9 +15,9 @@ namespace EVServiceCenter.Infrastructure.Domains.ServiceCenters.Repositories
         }
 
         public async Task<Dictionary<int, int>> GetDailyBookingCountsAsync(
-            IEnumerable<int> centerIds,
-            DateTime date,
-            CancellationToken cancellationToken = default)
+    IEnumerable<int> centerIds,
+    DateTime date,
+    CancellationToken cancellationToken = default)
         {
             var ids = centerIds.ToList();
             if (!ids.Any())
@@ -31,8 +31,7 @@ namespace EVServiceCenter.Infrastructure.Domains.ServiceCenters.Repositories
                     ids.Contains(a.ServiceCenterId) &&
                     a.AppointmentDate >= dateOnly &&
                     a.AppointmentDate < nextDay &&
-                    a.StatusId != (int)AppointmentStatus.Cancelled &&
-                    a.StatusId != (int)AppointmentStatus.NoShow)
+                    AppointmentStatusHelper.ActiveBookings.Contains(a.StatusId))  
                 .GroupBy(a => a.ServiceCenterId)
                 .Select(g => new { CenterId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.CenterId, x => x.Count, cancellationToken);
@@ -51,8 +50,7 @@ namespace EVServiceCenter.Infrastructure.Domains.ServiceCenters.Repositories
                     a.ServiceCenterId == centerId &&
                     a.AppointmentDate >= dateOnly &&
                     a.AppointmentDate < nextDay &&
-                    a.StatusId != (int)AppointmentStatus.Cancelled &&
-                    a.StatusId != (int)AppointmentStatus.NoShow)
+                    AppointmentStatusHelper.ActiveBookings.Contains(a.StatusId))  
                 .CountAsync(cancellationToken);
         }
     }

@@ -17,23 +17,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllers()
-    .AddFluentValidation(fv =>
-    {
-        fv.RegisterValidatorsFromAssemblyContaining<Program>();
-        // Add customer validators
-        fv.RegisterValidatorsFromAssemblyContaining<CreateCustomerTypeRequestValidator>();
-        fv.RegisterValidatorsFromAssemblyContaining<UpdateCustomerTypeRequestValidator>();
-        fv.RegisterValidatorsFromAssemblyContaining<CustomerTypeQueryValidator>();
-    }).AddJsonOptions(options =>
+    .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter());
     });
 
-// Keep existing validator registration
-builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
-
-// Optional: Enable client-side validation support (if needed for front-end)
+// Use recommended FluentValidation registration
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateCustomerTypeRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateCustomerTypeRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CustomerTypeQueryValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -101,7 +97,7 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
         ValidAudience = builder.Configuration["JwtSettings:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"])),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"] ?? string.Empty)),
         ClockSkew = TimeSpan.Zero
     };
 })
@@ -167,6 +163,7 @@ builder.Services.AddCustomerVehicleModule();
 builder.Services.AddServiceCategoryModule();
 builder.Services.AddMaintenanceServiceModule();
 builder.Services.AddModelServicePricingModule();
+builder.Services.AddTimeSlotModule();
 
 var app = builder.Build();
 
@@ -187,7 +184,8 @@ if (app.Environment.IsDevelopment())
         ServiceCategorySeeder.SeedServiceCategories(context);
         MaintenanceServiceSeeder.SeedMaintenanceServices(context);
         ModelServicePricingSeeder.SeedModelServicePricings(context);
-
+        AppointmentStatusSeeder.SeedAppointmentStatuses(context);
+        TimeSlotSeeder.SeedTimeSlots(context);
     }
     catch (Exception ex)
     {
@@ -199,6 +197,7 @@ app.UseMiddleware<GlobalExceptionHandler>();
 
 // Middleware pipeline
 app.UseHttpsRedirection();
+app.UseResponseCaching();
 
 if (app.Environment.IsDevelopment())
 {

@@ -23,7 +23,7 @@ public static class DependencyInjection
             services.AddDbContext<EVDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-            // 🔹 MemoryCache (bắt buộc vì TimeSlotRepository dùng IMemoryCache)
+            
             services.AddMemoryCache();
 
             // Repositories

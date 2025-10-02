@@ -1,5 +1,6 @@
 ﻿using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
+using EVServiceCenter.Core.Domains.TimeSlots.Entities;
 using EVServiceCenter.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
