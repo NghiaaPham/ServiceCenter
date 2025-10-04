@@ -10,7 +10,8 @@ namespace EVServiceCenter.API.Controllers.CustomerVehicles
 {
     [ApiController]
     [Route("api/customer-vehicles")]
-    [Authorize(Policy = "AllInternal")]
+    [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Staff - Vehicles")]
     public class CustomerVehicleQueryController : BaseController
     {
         private readonly ICustomerVehicleQueryService _queryService;

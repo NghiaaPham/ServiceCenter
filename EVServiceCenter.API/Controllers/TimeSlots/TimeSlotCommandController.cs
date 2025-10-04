@@ -7,8 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace EVServiceCenter.API.Controllers.TimeSlots
 {
     [ApiController]
-    [Route("api/timeslots")]
-    [Authorize(Roles = "Admin,Staff")]
+    [Route("api/time-slots")]
+    [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Time Slots")]
     public class TimeSlotCommandController : ControllerBase
     {
         private readonly ITimeSlotCommandService _commandService;

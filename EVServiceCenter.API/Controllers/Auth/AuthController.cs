@@ -14,6 +14,7 @@ namespace EVServiceCenter.API.Controllers.Auth
 {
     [Route("api/auth")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Public - Authentication")]
     public class AuthController : BaseController
     {
         private readonly IUserService _userService;

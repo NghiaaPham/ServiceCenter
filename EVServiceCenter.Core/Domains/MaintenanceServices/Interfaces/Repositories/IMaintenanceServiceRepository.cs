@@ -6,6 +6,9 @@ namespace EVServiceCenter.Core.Domains.MaintenanceServices.Interfaces.Repositori
 {
     public interface IMaintenanceServiceRepository : IRepository<MaintenanceService>
     {
+        Task<IEnumerable<MaintenanceService>> GetByIdsAsync(
+            List<int> serviceIds,
+            CancellationToken cancellationToken = default);
         Task<MaintenanceService?> GetByIdWithDetailsAsync(int serviceId, CancellationToken cancellationToken = default);
         Task<bool> IsServiceCodeExistsAsync(string serviceCode, int? excludeServiceId = null, CancellationToken cancellationToken = default);
         Task<IEnumerable<MaintenanceService>> GetServicesByCategoryAsync(int categoryId, CancellationToken cancellationToken = default);

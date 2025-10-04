@@ -11,6 +11,7 @@ namespace EVServiceCenter.API.Controllers.MaintenanceServices
     [ApiController]
     [Route("api/maintenance-services")]
     [Authorize(Policy = "AllInternal")]
+    [ApiExplorerSettings(GroupName = "Staff - Services")]
     public class MaintenanceServiceController : BaseController
     {
         private readonly IMaintenanceServiceService _service;

@@ -10,7 +10,8 @@
 
     [ApiController]
     [Route("api/service-centers")]
-    [Authorize(Policy = "AllInternal")]
+    [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Service Centers")]
     public class ServiceCenterController : BaseController
     {
         private readonly IServiceCenterService _service;

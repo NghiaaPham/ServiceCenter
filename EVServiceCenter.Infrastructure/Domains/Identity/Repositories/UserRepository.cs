@@ -13,8 +13,8 @@ public class UserRepository : Repository<User>, IUserRepository
 {
     public UserRepository(EVDbContext context) : base(context) { }
 
-    public override async Task<User?> GetByIdAsync(int id)
-    {
+    public override async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+      {
         return await _dbSet
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.UserId == id);

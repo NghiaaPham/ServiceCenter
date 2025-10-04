@@ -36,6 +36,26 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "EV Service Center API", Version = "v1" });
 
+    // Group endpoints by tags for better organization
+    c.TagActionsBy(api =>
+    {
+        if (api.GroupName != null)
+        {
+            return new[] { api.GroupName };
+        }
+
+        var controllerName = api.ActionDescriptor.DisplayName;
+        if (controllerName != null)
+        {
+            return new[] { controllerName.Split('.')[^1].Replace("Controller", "") };
+        }
+
+        return new[] { "Default" };
+    });
+
+    c.DocInclusionPredicate((name, api) => true);
+    c.OrderActionsBy(api => api.GroupName);
+
     // Add JWT authentication to Swagger
     c.AddSecurityDefinition("Bearer", new()
     {
@@ -164,6 +184,7 @@ builder.Services.AddServiceCategoryModule();
 builder.Services.AddMaintenanceServiceModule();
 builder.Services.AddModelServicePricingModule();
 builder.Services.AddTimeSlotModule();
+builder.Services.AddAppointmentModule(); // Appointment booking & management
 
 var app = builder.Build();
 

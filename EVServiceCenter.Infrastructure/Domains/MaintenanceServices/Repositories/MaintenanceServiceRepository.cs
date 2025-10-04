@@ -15,6 +15,17 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Repositorie
             return _dbSet.AsQueryable();
         }
 
+        public async Task<IEnumerable<MaintenanceService>> GetByIdsAsync(
+            List<int> serviceIds,
+            CancellationToken cancellationToken = default)
+        {
+            return await _dbSet
+                .Where(s => serviceIds.Contains(s.ServiceId))
+                .Include(s => s.Category)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<MaintenanceService?> GetByIdWithDetailsAsync(
             int serviceId,
             CancellationToken cancellationToken = default)

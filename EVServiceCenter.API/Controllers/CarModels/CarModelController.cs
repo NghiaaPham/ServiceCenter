@@ -11,6 +11,7 @@ namespace EVServiceCenter.API.Controllers.CarModels
     [ApiController]
     [Route("api/car-models")]
     [Authorize(Policy = "AllInternal")]
+    [ApiExplorerSettings(GroupName = "Staff - Car Models")]
     public class CarModelController : BaseController
     {
         private readonly ICarModelService _service;

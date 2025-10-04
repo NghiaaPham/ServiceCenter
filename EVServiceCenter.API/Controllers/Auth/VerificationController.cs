@@ -8,9 +8,10 @@ using EVServiceCenter.Core.Domains.Shared.Models;
 
 namespace EVServiceCenter.API.Controllers.Auth
 {
-    [Route("api/verification")]
     [ApiController]
+    [Route("api/verification")]
     [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Public - Verification")]
     public class VerificationController : BaseController
     {
         private readonly IUserService _userService;

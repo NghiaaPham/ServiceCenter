@@ -10,7 +10,8 @@ namespace EVServiceCenter.API.Controllers.ModelServicePricings
 {
     [ApiController]
     [Route("api/model-service-pricings")]
-    [Authorize(Policy = "AllInternal")]
+    [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Pricing")]
     public class ModelServicePricingController : BaseController
     {
         private readonly IModelServicePricingService _service;

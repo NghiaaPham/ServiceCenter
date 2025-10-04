@@ -143,5 +143,8 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
 
         [InverseProperty("Appointment")]
         public virtual ICollection<WorkOrder> WorkOrders { get; set; } = new List<WorkOrder>();
+
+        [InverseProperty("Appointment")]
+        public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
     }
 }

@@ -8,7 +8,8 @@ namespace EVServiceCenter.API.Controllers.ServiceCenters
 {
     [ApiController]
     [Route("api/service-centers")]
-    [Authorize(Policy = "AllInternal")]
+    [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Service Centers")]
     public class ServiceCenterAvailabilityController : BaseController
     {
         private readonly IServiceCenterAvailabilityService _availabilityService;

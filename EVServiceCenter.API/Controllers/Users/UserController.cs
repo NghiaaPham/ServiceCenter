@@ -11,6 +11,7 @@ namespace EVServiceCenter.API.Controllers.Users
     [Authorize]
     [Route("api/users")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Admin - Users")]
     public class UserController : BaseController
     {
         private readonly IUserService _userService;

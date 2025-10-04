@@ -42,5 +42,6 @@ namespace EVServiceCenter.Core.Domains.CustomerVehicles.Interfaces.Repositories
 
         Task<IEnumerable<CustomerVehicle>> GetMaintenanceDueVehiclesAsync(
             CancellationToken cancellationToken = default);
+
     }
 }

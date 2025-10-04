@@ -33,6 +33,7 @@ public partial class EVDbContext : DbContext
     public virtual DbSet<ApirequestLog> ApirequestLogs { get; set; }
 
     public virtual DbSet<Appointment> Appointments { get; set; }
+    public virtual DbSet<AppointmentService> AppointmentServices { get; set; }
 
     public virtual DbSet<AppointmentStatus> AppointmentStatuses { get; set; }
 
@@ -405,6 +406,27 @@ public partial class EVDbContext : DbContext
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.ChecklistTemplates).HasConstraintName("FK__Checklist__Creat__0D44F85C");
 
             entity.HasOne(d => d.Service).WithMany(p => p.ChecklistTemplates).HasConstraintName("FK__Checklist__Servi__0B5CAFEA");
+        });
+
+        modelBuilder.Entity<AppointmentService>(entity =>
+        {
+            entity.HasKey(e => e.AppointmentServiceId)
+                .HasName("PK__Appointm__ServiceID");
+
+            entity.Property(e => e.ServiceSource).HasDefaultValue("Extra");
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Appointment)
+                .WithMany(p => p.AppointmentServices)
+                .HasForeignKey(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__AppointmentServices__Appointment");
+
+            entity.HasOne(d => d.Service)
+                .WithMany(p => p.AppointmentServices)
+                .HasForeignKey(d => d.ServiceId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__AppointmentServices__Service");
         });
 
         modelBuilder.Entity<Customer>(entity =>

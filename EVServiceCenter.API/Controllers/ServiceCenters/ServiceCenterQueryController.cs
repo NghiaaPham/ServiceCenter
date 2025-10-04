@@ -10,7 +10,8 @@
 
     [ApiController]
     [Route("api/service-centers")]
-    [Authorize(Policy = "AllInternal")]
+    [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Staff - Service Centers")]
     public class ServiceCenterQueryController : BaseController
     {
         private readonly IServiceCenterQueryService _queryService;

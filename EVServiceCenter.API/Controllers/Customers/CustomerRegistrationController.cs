@@ -7,9 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EVServiceCenter.API.Controllers.Customers
 {
-    [Route("api/customer")]
     [ApiController]
+    [Route("api/customer-registration")]
     [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Public - Registration")]
     public class CustomerRegistrationController : BaseController
     {
         private readonly ICustomerAccountService _customerAccountService;

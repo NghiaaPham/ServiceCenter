@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EVServiceCenter.API.Controllers.Auth
 {
-    [Route("api/auth/external")]
     [ApiController]
+    [Route("api/auth/external")]
+    [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Public - Authentication")]
     public class ExternalAuthController : BaseController
     {
         private readonly IExternalAuthService _externalAuthService;
@@ -23,7 +25,6 @@ namespace EVServiceCenter.API.Controllers.Auth
         }
 
         [HttpPost("google")]
-        [AllowAnonymous]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequestDto request)
         {
             if (!ModelState.IsValid)
@@ -76,7 +77,6 @@ namespace EVServiceCenter.API.Controllers.Auth
         }
 
         [HttpPost("facebook")]
-        [AllowAnonymous]
         public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginRequestDto request)
         {
             if (!ModelState.IsValid)

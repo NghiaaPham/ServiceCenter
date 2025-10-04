@@ -8,6 +8,7 @@ namespace EVServiceCenter.API.Controllers.CarModels
     [ApiController]
     [Route("api/car-models")]
     [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Car Models")]
     public class CarModelStatisticsController : BaseController
     {
         private readonly ICarModelStatisticsService _statsService;

@@ -8,6 +8,7 @@ namespace EVServiceCenter.API.Controllers.ServiceCenters
     [ApiController]
     [Route("api/service-centers")]
     [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Service Centers")]
     public class ServiceCenterStatisticsController : BaseController
     {
         private readonly IServiceCenterStatisticsService _statsService;

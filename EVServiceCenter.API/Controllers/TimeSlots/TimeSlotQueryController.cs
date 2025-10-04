@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace EVServiceCenter.API.Controllers.TimeSlots
 {
     [ApiController]
-    [Route("api/timeslots")]
-    public class TimeSlotQueryController : ControllerBase
+    [Route("api/time-slots")]
+    [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Staff - Time Slots")]
+    public class TimeSlotQueryController : BaseController
     {
         private readonly ITimeSlotQueryService _queryService;
         private readonly IValidator<TimeSlotQueryDto> _queryValidator;

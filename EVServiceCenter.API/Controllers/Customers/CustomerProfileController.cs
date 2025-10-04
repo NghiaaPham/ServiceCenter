@@ -10,6 +10,7 @@ namespace EVServiceCenter.API.Controllers.Customers
     [Route("api/customer/profile")]
     [ApiController]
     [Authorize(Policy = "CustomerOnly")]
+    [ApiExplorerSettings(GroupName = "Customer - Profile")]     
     public class CustomerProfileController : BaseController
     {
         private readonly ICustomerAccountService _customerAccountService;
@@ -25,6 +26,33 @@ namespace EVServiceCenter.API.Controllers.Customers
             _logger = logger;
         }
 
+        /// <summary>
+        /// [Xem chi tiết] Thông tin hồ sơ của tôi
+        /// </summary>
+        /// <remarks>
+        /// Customer xem thông tin hồ sơ cá nhân của mình.
+        ///
+        /// **Bao gồm:**
+        /// - Thông tin cá nhân (tên, SĐT, email, địa chỉ)
+        /// - Mã khách hàng (CustomerCode)
+        /// - Loại khách hàng (Type: VIP, Regular, New)
+        /// - Điểm thưởng hiện tại (LoyaltyPoints)
+        /// - Ngày sinh, giới tính
+        /// - Preferences (ngôn ngữ, marketing opt-in)
+        ///
+        /// **Không bao gồm:**
+        /// - Danh sách xe (dùng API /vehicles)
+        /// - Lịch sử lịch hẹn (dùng API /appointments/my-appointments)
+        /// - Ghi chú nội bộ (Notes) - chỉ staff xem được
+        ///
+        /// **Use case:**
+        /// - Hiển thị profile trên app/website
+        /// - Trang "Tài khoản của tôi"
+        /// - Check điểm thưởng
+        ///
+        /// **Phân quyền:**
+        /// - Chỉ customer đăng nhập mới xem được hồ sơ của mình
+        /// </remarks>
         [HttpGet("me")]
         public async Task<IActionResult> GetMyProfile()
         {
@@ -49,6 +77,42 @@ namespace EVServiceCenter.API.Controllers.Customers
             });
         }
 
+        /// <summary>
+        /// [Cập nhật] Sửa thông tin hồ sơ của tôi
+        /// </summary>
+        /// <remarks>
+        /// Customer tự cập nhật thông tin hồ sơ cá nhân.
+        ///
+        /// **Customer có thể sửa:**
+        /// - Họ tên (FullName)
+        /// - Số điện thoại (PhoneNumber)
+        /// - Địa chỉ (Address)
+        /// - Ngày sinh (DateOfBirth)
+        /// - Giới tính (Gender)
+        /// - Ngôn ngữ ưa thích (PreferredLanguage)
+        /// - Marketing opt-in (MarketingOptIn)
+        ///
+        /// **Customer KHÔNG thể sửa:**
+        /// - Email (tied to User account, phải dùng API riêng)
+        /// - CustomerCode (auto-generated)
+        /// - TypeId (chỉ staff/admin mới đổi được)
+        /// - LoyaltyPoints (chỉ qua giao dịch)
+        /// - IsActive (chỉ staff/admin mới đổi được)
+        /// - Notes (internal, chỉ staff/admin)
+        ///
+        /// **Validation:**
+        /// - FullName: required, 2-100 ký tự
+        /// - PhoneNumber: format VN, unique
+        /// - Email: unique (nếu có)
+        ///
+        /// **Use case:**
+        /// - Customer tự update profile trên app/website
+        /// - Sửa thông tin sai
+        /// - Cập nhật địa chỉ mới
+        ///
+        /// **Phân quyền:**
+        /// - Chỉ customer đăng nhập mới sửa được hồ sơ của mình
+        /// </remarks>
         [HttpPut("me")]
         public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateCustomerProfileDto request)
         {

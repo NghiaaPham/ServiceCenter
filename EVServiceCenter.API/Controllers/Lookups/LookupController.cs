@@ -1,12 +1,15 @@
 ﻿using EVServiceCenter.Core.Domains.Shared.Models;
 using EVServiceCenter.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace EVServiceCenter.API.Controllers.Lookups  
+namespace EVServiceCenter.API.Controllers.Lookups
 {
     [ApiController]
     [Route("api/lookups")]
+    [AllowAnonymous]
+    [ApiExplorerSettings(GroupName = "Public - Lookups")]
     public class LookupController : BaseController  
     {
         private readonly EVDbContext _context;

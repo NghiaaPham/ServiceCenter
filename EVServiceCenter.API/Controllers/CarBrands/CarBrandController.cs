@@ -11,6 +11,7 @@ namespace EVServiceCenter.API.Controllers.CarBrands
     [ApiController]
     [Route("api/car-brands")]
     [Authorize(Policy = "AllInternal")]
+    [ApiExplorerSettings(GroupName = "Staff - Car Brands")]
     public class CarBrandController : BaseController
     {
         private readonly ICarBrandService _service;

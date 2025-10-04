@@ -80,4 +80,7 @@ public partial class MaintenanceService
 
     [InverseProperty("Service")]
     public virtual ICollection<WorkOrderService> WorkOrderServices { get; set; } = new List<WorkOrderService>();
+
+    [InverseProperty("Service")]
+    public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
 }

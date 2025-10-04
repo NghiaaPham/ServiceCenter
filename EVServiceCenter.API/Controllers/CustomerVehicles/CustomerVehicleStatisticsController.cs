@@ -8,6 +8,7 @@ namespace EVServiceCenter.API.Controllers.CustomerVehicles
     [ApiController]
     [Route("api/customer-vehicles")]
     [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Vehicles")]
     public class CustomerVehicleStatisticsController : BaseController
     {
         private readonly ICustomerVehicleStatisticsService _statsService;

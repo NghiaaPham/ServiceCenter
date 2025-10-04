@@ -11,6 +11,7 @@ namespace EVServiceCenter.API.Controllers.ServiceCategories
     [ApiController]
     [Route("api/service-categories")]
     [Authorize(Policy = "AllInternal")]
+    [ApiExplorerSettings(GroupName = "Staff - Service Categories")]
     public class ServiceCategoryController : BaseController
     {
         private readonly IServiceCategoryService _service;

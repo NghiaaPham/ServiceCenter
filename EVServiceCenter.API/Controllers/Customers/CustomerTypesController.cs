@@ -9,7 +9,8 @@ namespace EVServiceCenter.API.Controllers.Customers
 {
     [ApiController]
     [Route("api/customer-types")]
-    [Authorize(Policy = "AllInternal")] // Base policy: Admin/Staff/Technician
+    [Authorize(Policy = "AdminOrStaff")]
+    [ApiExplorerSettings(GroupName = "Staff - Customer Types")]
     public class CustomerTypesController : BaseController
     {
         private readonly ICustomerTypeService _customerTypeService;
