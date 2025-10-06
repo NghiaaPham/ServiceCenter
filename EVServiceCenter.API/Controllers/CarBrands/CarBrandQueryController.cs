@@ -63,9 +63,10 @@ namespace EVServiceCenter.API.Controllers.CarBrands
         }
 
         /// <summary>
-        /// Get active car brands
+        /// Get active car brands (Public - for customer vehicle registration)
         /// </summary>
         [HttpGet("active")]
+        [AllowAnonymous] // ✅ Cho phép Customer truy cập để đăng ký xe
         public async Task<IActionResult> GetActive(CancellationToken ct)
         {
             try

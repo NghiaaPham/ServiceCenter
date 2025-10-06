@@ -451,6 +451,11 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
                     }
                     entity.IdentityNumber = EncryptIdentityNumber(request.IdentityNumber);
                 }
+                else
+                {
+                    // ✅ FIX: Nếu IdentityNumber là null hoặc empty, set = null thay vì giữ giá trị cũ
+                    entity.IdentityNumber = null;
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -586,6 +591,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
 
         public async Task<bool> IdentityNumberExistsAsync(string identityNumber, int? excludeCustomerId = null, CancellationToken cancellationToken = default)
         {
+            // ✅ FIX: Check empty trước khi encrypt
+            if (string.IsNullOrWhiteSpace(identityNumber))
+            {
+                return false; // Empty identity number không cần check duplicate
+            }
+
             // Note: This is a simplified check - in production, you'd need to decrypt and compare
             // For now, we'll do a basic existence check on encrypted data
             var encryptedId = EncryptIdentityNumber(identityNumber);

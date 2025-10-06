@@ -63,9 +63,10 @@ namespace EVServiceCenter.API.Controllers.CarModels
         }
 
         /// <summary>
-        /// Get active car models
+        /// Get active car models (Public - for customer vehicle registration)
         /// </summary>
         [HttpGet("active")]
+        [AllowAnonymous] // ✅ Cho phép Customer truy cập để đăng ký xe
         public async Task<IActionResult> GetActive(CancellationToken ct)
         {
             try
@@ -82,9 +83,10 @@ namespace EVServiceCenter.API.Controllers.CarModels
         }
 
         /// <summary>
-        /// Get car models by brand
+        /// Get car models by brand (Public - for customer vehicle registration)
         /// </summary>
         [HttpGet("by-brand/{brandId:int}")]
+        [AllowAnonymous] // ✅ Cho phép Customer truy cập để đăng ký xe
         public async Task<IActionResult> GetByBrand(int brandId, CancellationToken ct)
         {
             try

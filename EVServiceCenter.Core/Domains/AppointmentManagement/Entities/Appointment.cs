@@ -35,6 +35,13 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [Column("PackageID")]
         public int? PackageId { get; set; }
 
+        /// <summary>
+        /// Subscription ID - Liên kết với CustomerPackageSubscription
+        /// Nếu customer dùng subscription để book appointment
+        /// </summary>
+        [Column("SubscriptionID")]
+        public int? SubscriptionId { get; set; }
+
         [Column("SlotID")]
         public int? SlotId { get; set; }
 
@@ -108,6 +115,10 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [ForeignKey("PackageId")]
         [InverseProperty("Appointments")]
         public virtual MaintenancePackage? Package { get; set; }
+
+        [ForeignKey("SubscriptionId")]
+        [InverseProperty("Appointments")]
+        public virtual CustomerPackageSubscription? Subscription { get; set; }
 
         [ForeignKey("PreferredTechnicianId")]
         [InverseProperty("AppointmentPreferredTechnicians")]

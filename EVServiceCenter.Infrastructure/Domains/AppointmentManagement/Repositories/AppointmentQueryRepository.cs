@@ -13,7 +13,6 @@ using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositories
 {
     public class AppointmentQueryRepository : IAppointmentQueryRepository
@@ -381,6 +380,107 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
                     AppointmentDate = a.AppointmentDate
                 })
                 .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<int> CountRescheduleTimesAsync(
+     int appointmentId,
+     CancellationToken cancellationToken = default)
+        {
+            // Đếm số appointment có RescheduledFromId trỏ về appointmentId này
+            return await _context.Appointments
+                .CountAsync(a => a.RescheduledFromId == appointmentId, cancellationToken);
+        }
+
+        public async Task<bool> HasBeenRescheduledAsync(
+            int appointmentId,
+            CancellationToken cancellationToken = default)
+        {
+            // Kiểm tra có appointment nào có RescheduledFromId = appointmentId không
+            return await _context.Appointments
+                .AnyAsync(a => a.RescheduledFromId == appointmentId, cancellationToken);
+        }
+
+        public async Task<List<int>> GetRescheduleChainAsync(
+            int appointmentId,
+            CancellationToken cancellationToken = default)
+        {
+            var chain = new List<int> { appointmentId };
+
+            // Bước 1: Tìm ngược về appointment gốc
+            var current = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId, cancellationToken);
+
+            while (current?.RescheduledFromId != null)
+            {
+                chain.Insert(0, current.RescheduledFromId.Value);
+                current = await _context.Appointments
+                    .FirstOrDefaultAsync(a => a.AppointmentId == current.RescheduledFromId, cancellationToken);
+            }
+
+            // Bước 2: Tìm tiến về các appointment mới (nếu có)
+            var appointmentIds = new Queue<int>(new[] { appointmentId });
+
+            while (appointmentIds.Count > 0)
+            {
+                var currentId = appointmentIds.Dequeue();
+                var children = await _context.Appointments
+                    .Where(a => a.RescheduledFromId == currentId)
+                    .Select(a => a.AppointmentId)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var childId in children)
+                {
+                    if (!chain.Contains(childId))
+                    {
+                        chain.Add(childId);
+                        appointmentIds.Enqueue(childId);
+                    }
+                }
+            }
+
+            return chain;
+        }
+
+        public async Task<List<Appointment>> GetVehicleAppointmentsByDateAsync(
+            int vehicleId,
+            DateOnly date,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Where(a => a.VehicleId == vehicleId && a.Slot!.SlotDate == date)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Appointment>> GetTechnicianAppointmentsByDateAsync(
+            int technicianId,
+            int serviceCenterId,
+            DateOnly date,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Where(a => a.PreferredTechnicianId == technicianId
+                         && a.ServiceCenterId == serviceCenterId  // ✅ PER CENTER
+                         && a.Slot!.SlotDate == date)
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<List<Appointment>> GetServiceCenterAppointmentsByDateAsync(
+            int serviceCenterId,
+            DateOnly date,
+            CancellationToken cancellationToken = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Where(a => a.ServiceCenterId == serviceCenterId && a.Slot!.SlotDate == date)
                 .ToListAsync(cancellationToken);
         }
     }

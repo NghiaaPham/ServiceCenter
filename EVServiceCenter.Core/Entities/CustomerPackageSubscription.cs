@@ -62,6 +62,17 @@ public partial class CustomerPackageSubscription
     [StringLength(500)]
     public string? CancellationReason { get; set; }
 
+    /// <summary>
+    /// Ngày mua gói (purchase date) - dùng để tracking
+    /// </summary>
+    public DateTime? PurchaseDate { get; set; }
+
+    /// <summary>
+    /// Số km ban đầu của xe khi mua gói
+    /// Dùng để tính validity theo mileage
+    /// </summary>
+    public int? InitialVehicleMileage { get; set; }
+
     public DateTime? CreatedDate { get; set; }
 
     public int? CreatedBy { get; set; }
@@ -85,4 +96,16 @@ public partial class CustomerPackageSubscription
     [ForeignKey("VehicleId")]
     [InverseProperty("CustomerPackageSubscriptions")]
     public virtual CustomerVehicle? Vehicle { get; set; }
+
+    /// <summary>
+    /// Navigation: Track usage của từng service trong subscription
+    /// </summary>
+    [InverseProperty("Subscription")]
+    public virtual ICollection<PackageServiceUsage> PackageServiceUsages { get; set; } = new List<PackageServiceUsage>();
+
+    /// <summary>
+    /// Navigation: Appointments đã sử dụng subscription này
+    /// </summary>
+    [InverseProperty("Subscription")]
+    public virtual ICollection<EVServiceCenter.Core.Domains.AppointmentManagement.Entities.Appointment> Appointments { get; set; } = new List<EVServiceCenter.Core.Domains.AppointmentManagement.Entities.Appointment>();
 }

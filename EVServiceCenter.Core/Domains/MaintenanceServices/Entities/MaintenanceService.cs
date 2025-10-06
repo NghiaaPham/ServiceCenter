@@ -83,4 +83,10 @@ public partial class MaintenanceService
 
     [InverseProperty("Service")]
     public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
+
+    /// <summary>
+    /// Navigation: Track usage trong subscriptions
+    /// </summary>
+    [InverseProperty("Service")]
+    public virtual ICollection<PackageServiceUsage> PackageServiceUsages { get; set; } = new List<PackageServiceUsage>();
 }

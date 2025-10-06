@@ -182,6 +182,8 @@ builder.Services.AddCarModelModule();
 builder.Services.AddCustomerVehicleModule();
 builder.Services.AddServiceCategoryModule();
 builder.Services.AddMaintenanceServiceModule();
+builder.Services.AddMaintenancePackageModule();
+builder.Services.AddPackageSubscriptionModule();
 builder.Services.AddModelServicePricingModule();
 builder.Services.AddTimeSlotModule();
 builder.Services.AddAppointmentModule(); // Appointment booking & management

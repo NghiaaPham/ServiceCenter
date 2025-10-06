@@ -40,5 +40,13 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
             int appointmentId,
             int currentUserId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Complete appointment và update subscription usage (nếu có)
+        /// </summary>
+        Task<bool> CompleteAppointmentAsync(
+            int appointmentId,
+            int currentUserId,
+            CancellationToken cancellationToken = default);
     }
 }

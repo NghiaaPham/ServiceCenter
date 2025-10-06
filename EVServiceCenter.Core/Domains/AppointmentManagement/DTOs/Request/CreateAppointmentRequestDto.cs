@@ -8,12 +8,18 @@
         public int SlotId { get; set; }
 
         /// <summary>
-        /// Gói dịch vụ (optional)
+        /// Gói dịch vụ (optional) - DEPRECATED, sử dụng SubscriptionId thay thế
         /// </summary>
         public int? PackageId { get; set; }
 
         /// <summary>
-        /// Danh sách dịch vụ đơn lẻ (có thể là extra services nếu có PackageId)
+        /// Subscription ID - Customer dùng subscription đã mua để book appointment
+        /// Nếu có SubscriptionId, services sẽ được lấy từ subscription
+        /// </summary>
+        public int? SubscriptionId { get; set; }
+
+        /// <summary>
+        /// Danh sách dịch vụ đơn lẻ (có thể là extra services nếu có PackageId hoặc SubscriptionId)
         /// </summary>
         public List<int> ServiceIds { get; set; } = new();
 

@@ -103,6 +103,8 @@ public partial class EVDbContext : DbContext
 
     public virtual DbSet<PackageService> PackageServices { get; set; }
 
+    public virtual DbSet<PackageServiceUsage> PackageServiceUsages { get; set; }
+
     public virtual DbSet<Part> Parts { get; set; }
 
     public virtual DbSet<PartCategory> PartCategories { get; set; }

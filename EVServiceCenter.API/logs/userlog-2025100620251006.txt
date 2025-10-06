@@ -1,0 +1,485 @@
+2025-10-06 00:47:29.459 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-06 00:47:29.502 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-06 00:47:29.565 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-06 00:47:29.575 +07:00 [INF] Hosting environment: Development
+2025-10-06 00:47:29.579 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-06 00:47:33.990 +07:00 [INF] Request: GET /
+2025-10-06 00:51:22.227 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 00:51:22.973 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 00:51:23.159 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 00:51:23.159 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 00:51:23.159 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:51:23.159 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:51:23.159 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 00:51:23.423 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 00:51:23.429 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 00:51:23.475 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:51:23.534 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:51:23.598 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 00:51:25.215 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:51:25.215 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:51:25.219 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:51:25.219 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:51:25.276 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:51:25.282 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:51:25.317 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:51:25.382 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:51:26.809 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-10-06 00:51:43.305 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:51:43.373 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:51:45.727 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:51:45.745 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:51:46.792 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:51:46.792 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:51:46.792 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:51:46.792 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:51:46.893 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:51:46.882 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:51:46.880 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:51:46.936 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:52:38.052 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:52:38.052 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:52:38.062 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:52:38.058 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:52:38.142 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:52:38.149 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:52:38.169 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:52:38.225 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:52:38.650 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:52:38.669 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:52:39.703 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:52:39.717 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 00:52:40.002 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:52:40.002 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:52:40.002 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:52:40.002 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:52:40.037 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:52:40.042 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 00:52:40.067 +07:00 [INF] Request: GET /api/customers
+2025-10-06 00:52:40.079 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:52:40.323 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:52:40.323 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:52:40.326 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 00:52:40.326 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 00:52:40.326 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 00:52:40.386 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 00:52:40.394 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 00:52:40.399 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 00:52:40.407 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 00:52:40.426 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 00:52:52.359 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 00:52:52.807 +07:00 [INF] User nghiadaucau1@gmail.com (ID: 2067, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 01:10:52.183 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-06 01:10:52.228 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-06 01:10:52.281 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-06 01:10:52.286 +07:00 [INF] Hosting environment: Development
+2025-10-06 01:10:52.293 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-06 01:10:52.847 +07:00 [INF] Request: GET /
+2025-10-06 01:26:30.757 +07:00 [INF] Request: POST /api/auth/google
+2025-10-06 01:26:42.407 +07:00 [INF] Request: POST /api/auth/google
+2025-10-06 01:31:46.791 +07:00 [INF] Request: POST /api/auth/google
+2025-10-06 06:56:18.097 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-06 06:56:18.151 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-06 06:56:18.222 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-06 06:56:18.243 +07:00 [INF] Hosting environment: Development
+2025-10-06 06:56:18.250 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-06 06:56:19.287 +07:00 [INF] Request: GET /
+2025-10-06 06:57:16.382 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 06:57:17.723 +07:00 [INF] User nghiadaucau1@gmail.com (ID: 2067, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 06:57:49.032 +07:00 [INF] Request: GET /api/package-subscriptions/my-subscriptions
+2025-10-06 06:57:49.101 +07:00 [INF] Getting subscriptions for customer 2067
+2025-10-06 06:57:55.075 +07:00 [INF] Request: GET /api/package-subscriptions/my-subscriptions
+2025-10-06 06:57:55.112 +07:00 [INF] Getting subscriptions for customer 2067
+2025-10-06 06:57:55.587 +07:00 [INF] Request: GET /api/package-subscriptions/my-subscriptions
+2025-10-06 06:57:55.610 +07:00 [INF] Getting subscriptions for customer 2067
+2025-10-06 06:58:20.030 +07:00 [INF] Request: GET /api/package-subscriptions/vehicle/7/active
+2025-10-06 06:59:13.411 +07:00 [INF] Request: GET /api/customer/profile/me
+2025-10-06 06:59:31.637 +07:00 [INF] Request: GET /api/customer/profile/my-vehicles
+2025-10-06 07:04:25.898 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 07:04:26.176 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 07:04:26.304 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:04:26.304 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:04:26.304 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:04:26.304 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:04:26.373 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:04:26.555 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:04:26.584 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:04:26.627 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:04:26.686 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:04:26.705 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:04:28.409 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:04:28.409 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:04:28.412 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:04:28.412 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:04:28.465 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:04:28.474 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:04:28.517 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:04:28.578 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:04:31.378 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-10-06 07:04:44.937 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:04:46.954 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:04:51.538 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:05:48.891 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:05:48.921 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:05:48.942 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:05:48.976 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:05:48.976 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:05:49.051 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:05:49.055 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:05:49.097 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:05:49.103 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:05:49.103 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:05:52.927 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:05:52.927 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:05:52.929 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:05:52.930 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:05:52.964 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:05:52.972 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:05:52.976 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:05:52.982 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:05:55.007 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 07:05:55.068 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 07:05:58.895 +07:00 [INF] Request: GET /api/customer-vehicles
+2025-10-06 07:06:02.390 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:06:02.390 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:06:02.390 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:06:02.390 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:06:02.431 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:06:02.432 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:06:02.438 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:06:02.441 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:06:05.280 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:06:05.280 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:06:05.284 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:06:05.285 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:06:05.285 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:06:05.336 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:06:05.338 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:06:05.343 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:06:05.349 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:06:05.359 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:06:10.276 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:06:10.277 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:06:10.277 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:06:10.277 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:06:10.312 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:06:10.314 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:06:10.318 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:06:10.319 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:24:41.856 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-06 07:24:41.910 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-06 07:24:42.041 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-06 07:24:42.051 +07:00 [INF] Hosting environment: Development
+2025-10-06 07:24:42.057 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-06 07:24:42.058 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 07:24:42.471 +07:00 [INF] Request: GET /
+2025-10-06 07:24:43.123 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 07:24:43.295 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:24:43.295 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:24:43.297 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:24:43.300 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:24:43.302 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:24:43.593 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:24:43.597 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:24:43.624 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:24:43.658 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:24:43.707 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:24:45.804 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:24:45.804 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:24:45.809 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:24:45.810 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:24:45.881 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:24:45.893 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:24:45.924 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:24:45.979 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:24:46.915 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-10-06 07:25:02.722 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:25:02.722 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:25:02.722 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:25:02.722 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:25:02.722 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:25:02.777 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:25:02.782 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 07:25:02.785 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:25:02.785 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 07:25:02.790 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 07:25:07.951 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:25:07.951 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:25:07.951 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:25:07.970 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 07:25:07.951 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:08.002 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 07:25:08.021 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 07:25:08.034 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:11.804 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:13.350 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:17.835 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:19.556 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:21.151 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:24.117 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:26.098 +07:00 [INF] Request: GET /api/customers
+2025-10-06 07:25:27.038 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:11:02.046 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-06 10:11:02.087 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-06 10:11:02.152 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-06 10:11:02.157 +07:00 [INF] Hosting environment: Development
+2025-10-06 10:11:02.161 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-06 10:11:08.386 +07:00 [INF] Request: GET /
+2025-10-06 10:11:19.433 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 10:11:20.469 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 10:11:20.705 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:11:20.705 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 10:11:20.705 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 10:11:20.705 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:11:20.705 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 10:11:21.047 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 10:11:21.070 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 10:11:21.105 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:11:21.147 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:11:21.206 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 10:11:22.236 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:11:22.236 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:11:22.238 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:11:22.239 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:11:22.283 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:11:22.290 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:11:22.348 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:11:22.403 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:11:24.788 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-10-06 10:11:29.494 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:11:30.632 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:11:32.473 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:11:34.336 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:12:46.144 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:12:47.349 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:12:49.434 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:12:51.425 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:12:52.797 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:12:55.804 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:07.499 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:13:07.499 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:13:07.499 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:13:07.499 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:07.529 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:13:07.535 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:07.536 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:13:07.541 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:13:14.697 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:14.729 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:14.824 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:15.521 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:15.644 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:15.730 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:15.905 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:16.639 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:17.496 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:17.688 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:17.688 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:17.693 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:17.694 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:20.065 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:23.104 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:30.509 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:31.996 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:35.189 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:13:39.220 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:39.897 +07:00 [INF] Request: POST /api/customers
+2025-10-06 10:24:40.134 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2025-10-06 10:24:40.175 +07:00 [INF] Created customer: KH2510009 - Tạ Thành Hiệu
+2025-10-06 10:24:40.202 +07:00 [INF] Walk-in customer created: KH2510009 - Tạ Thành Hiệu by user 8
+2025-10-06 10:24:40.211 +07:00 [INF] Walk-in customer created by user 8: KH2510009 - Tạ Thành Hiệu
+2025-10-06 10:24:40.240 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:40.258 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:24:40.290 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:24:46.984 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:51.020 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:55.092 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:56.268 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:57.594 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:57.780 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:58.323 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:58.410 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:58.543 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:58.600 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:24:58.766 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:25:01.017 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:25:01.024 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:25:01.024 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:25:01.024 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:25:01.134 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:25:01.140 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:25:01.168 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:25:01.182 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:25:06.924 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:25:30.095 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:27:55.344 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:27:56.297 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:27:58.125 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:33:13.248 +07:00 [INF] Request: DELETE /api/customers/1044
+2025-10-06 10:33:13.343 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2025-10-06 10:33:13.383 +07:00 [INF] Deleted customer: KH001037 - Viên Thị FF
+2025-10-06 10:33:13.386 +07:00 [INF] Successfully deleted customer: 1044
+2025-10-06 10:33:13.390 +07:00 [INF] Customer deleted successfully by user 8: 1044
+2025-10-06 10:33:13.396 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:33:13.430 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:33:13.471 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:33:25.539 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:33:25.539 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:33:25.540 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:33:25.540 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:33:25.573 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:33:25.580 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:33:25.587 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:33:25.605 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:33:26.114 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:33:26.114 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:33:26.118 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 10:33:26.118 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 10:33:26.118 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 10:33:26.140 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:33:26.220 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:33:26.275 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 10:33:26.281 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 10:33:26.291 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 10:33:36.871 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 10:33:37.206 +07:00 [INF] User nghiadaucau1@gmail.com (ID: 2067, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 10:35:30.782 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 10:35:30.986 +07:00 [INF] User NghiaPham (ID: 8, Role: "Admin") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 10:35:31.042 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 10:35:31.042 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 10:35:31.042 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 10:35:31.042 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:35:31.042 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:35:31.087 +07:00 [INF] Request: GET /api/customer-vehicles/statistics
+2025-10-06 10:35:31.100 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:35:31.106 +07:00 [INF] Request: GET /api/appointment-management/statistics/by-status
+2025-10-06 10:35:31.110 +07:00 [INF] Request: GET /api/appointment-management
+2025-10-06 10:35:31.122 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:35:32.575 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:35:32.575 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:35:32.577 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:35:32.576 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:35:32.599 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:35:32.613 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:35:32.621 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:35:32.621 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:35:34.442 +07:00 [INF] Email sent successfully to admin01@evservice.com with subject: Thông báo đăng nhập
+2025-10-06 10:35:42.616 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:35:42.813 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:35:42.895 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:35:43.008 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:36:20.195 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 10:36:20.606 +07:00 [INF] User nghiadaucau1@gmail.com (ID: 2067, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 10:38:11.388 +07:00 [INF] Request: GET /api/customer/profile/my-vehicles
+2025-10-06 10:49:34.145 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:34.195 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:34.359 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:34.521 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:52.089 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:53.097 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:55.995 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:49:57.805 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:50:02.110 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:50:03.817 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:51:18.090 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:51:18.164 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:51:18.164 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:51:18.164 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:51:18.207 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:51:18.233 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:51:18.244 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:51:18.248 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:52:25.116 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:52:25.116 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:52:25.116 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:52:25.139 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:25.172 +07:00 [INF] Request: GET /api/customers/maintenance-due
+2025-10-06 10:52:25.175 +07:00 [INF] Request: GET /api/customer-types/active
+2025-10-06 10:52:25.232 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:25.242 +07:00 [INF] Request: GET /api/customers/statistics
+2025-10-06 10:52:37.936 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:37.939 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:37.949 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:38.128 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:38.314 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:38.348 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:39.303 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:39.453 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:39.616 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:39.765 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:39.912 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:40.073 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:40.567 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:40.857 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:40.994 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:41.081 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:41.139 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:42.134 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:48.389 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:48.494 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:48.658 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:48.829 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:49.115 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:49.220 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:49.267 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:49.572 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.178 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.380 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.529 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.711 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.864 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.971 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:50.991 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:51.517 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:52.720 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:52.921 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:53.080 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:53.259 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:53.434 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:53.573 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:53.978 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.089 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.196 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.342 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.552 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.653 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.830 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:54.902 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:56.556 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:56.738 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:56.900 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:57.061 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:57.220 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:57.376 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:57.537 +07:00 [INF] Request: GET /api/customers
+2025-10-06 10:52:57.723 +07:00 [INF] Request: GET /api/customers
+2025-10-06 12:37:20.268 +07:00 [INF] Now listening on: https://localhost:7077
+2025-10-06 12:37:20.312 +07:00 [INF] Now listening on: http://localhost:5153
+2025-10-06 12:37:20.380 +07:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-10-06 12:37:20.391 +07:00 [INF] Hosting environment: Development
+2025-10-06 12:37:20.399 +07:00 [INF] Content root path: C:\Users\ADMIN\Desktop\EVServiceCenter-BackupV2-Done-main\EVServiceCenter-BackupV2-Done-main\EVServiceCenter.API
+2025-10-06 12:37:21.982 +07:00 [INF] Request: GET /
+2025-10-06 12:37:59.470 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 12:37:59.793 +07:00 [WRN] Login failed: Username nghiadaucau1@gm not found
+2025-10-06 12:38:08.463 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 12:38:08.548 +07:00 [WRN] Login failed: Username nghiadaucau1@gm not found
+2025-10-06 12:38:11.643 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 12:38:12.490 +07:00 [INF] User nghiadaucau1@gmail.com (ID: 2067, Role: "Customer") logged in successfully from IP: 14.161.6.119, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 12:46:28.998 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 12:46:29.176 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 12:59:40.657 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 12:59:40.792 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:00:06.664 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:00:06.769 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:05:04.096 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:05:04.233 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:06:09.877 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:06:09.979 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:06:27.284 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:06:27.386 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:08:05.989 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:08:06.072 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:21:36.022 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:21:36.214 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:23:17.091 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:23:17.178 +07:00 [INF] Request: GET /api/car-brands/active

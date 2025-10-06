@@ -41,7 +41,7 @@ public partial class Customer
     [StringLength(10)]
     public string? Gender { get; set; }
 
-    [MaxLength(128)]
+    [MaxLength(256)]
     public byte[]? IdentityNumber { get; set; }
 
     [Column("TypeID")]

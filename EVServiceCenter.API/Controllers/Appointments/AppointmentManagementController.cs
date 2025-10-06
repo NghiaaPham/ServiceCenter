@@ -384,6 +384,65 @@ namespace EVServiceCenter.API.Controllers.Appointments
         }
 
         /// <summary>
+        /// [Complete] Hoàn thành lịch hẹn và update subscription usage
+        /// </summary>
+        /// <remarks>
+        /// Đánh dấu lịch hẹn hoàn thành (InProgress → Completed).
+        /// Tự động update subscription usage nếu lịch hẹn được book bằng subscription.
+        ///
+        /// **Quy trình:**
+        /// 1. Kỹ thuật viên hoàn thành công việc
+        /// 2. Staff/Admin click Complete
+        /// 3. Status → Completed
+        /// 4. Nếu có SubscriptionId:
+        ///    - Trừ lượt sử dụng cho từng service (UsedQuantity +1, RemainingQuantity -1)
+        ///    - Update LastUsedDate và LastUsedAppointmentId
+        ///    - Tự động chuyển subscription sang FullyUsed nếu hết lượt
+        ///
+        /// **Điều kiện:**
+        /// - Trạng thái: InProgress (đang thực hiện)
+        /// - Không thể complete lại lịch đã Completed
+        ///
+        /// **Subscription Update:**
+        /// - Mỗi service trong appointment sẽ trừ 1 lượt từ subscription
+        /// - Nếu subscription hết lượt, status tự động → FullyUsed
+        /// - Ghi log đầy đủ để tracking
+        ///
+        /// **Phân quyền:**
+        /// - Staff/Admin/Technician
+        /// </remarks>
+        /// <param name="id">ID lịch hẹn</param>
+        /// <returns>Kết quả hoàn thành</returns>
+        [HttpPost("{id:int}/complete")]
+        [Authorize(Policy = "AllInternal")] // Admin, Staff, Technician
+        public async Task<IActionResult> CompleteAppointment(int id)
+        {
+            try
+            {
+                var result = await _commandService.CompleteAppointmentAsync(id, GetCurrentUserId());
+
+                _logger.LogInformation(
+                    "User {UserId} completed appointment {AppointmentId}",
+                    GetCurrentUserId(),
+                    id);
+
+                return Success(
+                    new { AppointmentId = id, Completed = result },
+                    "Hoàn thành lịch hẹn thành công. Subscription usage đã được cập nhật.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid complete attempt for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing appointment {AppointmentId}", id);
+                return ServerError("Có lỗi xảy ra khi hoàn thành lịch hẹn");
+            }
+        }
+
+        /// <summary>
         /// [Hủy lịch] Hủy lịch hẹn bởi Staff
         /// </summary>
         /// <remarks>
