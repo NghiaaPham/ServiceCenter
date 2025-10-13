@@ -483,3 +483,24 @@
 2025-10-06 13:21:36.214 +07:00 [INF] Request: GET /api/car-brands/active
 2025-10-06 13:23:17.091 +07:00 [INF] Request: GET /api/car-brands/active
 2025-10-06 13:23:17.178 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:57:42.313 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:57:42.471 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:57:43.984 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:57:44.075 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:58:45.319 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 13:58:45.485 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:22:05.293 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:22:05.562 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:22:28.840 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 14:22:29.193 +07:00 [WRN] Invalid password for user nghiadaucau1@gmail.com. Failed attempts: 1
+2025-10-06 14:22:33.991 +07:00 [INF] Request: POST /api/auth/login
+2025-10-06 14:22:34.311 +07:00 [INF] User nghiadaucau1@gmail.com (ID: 2067, Role: "Customer") logged in successfully from IP: 127.0.0.1, UserAgent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0
+2025-10-06 14:22:59.274 +07:00 [INF] Request: GET /api/customer/profile/me
+2025-10-06 14:23:10.137 +07:00 [INF] Request: GET /api/customer/profile/me
+2025-10-06 14:23:30.554 +07:00 [INF] Request: GET /api/customer/profile/me
+2025-10-06 14:34:02.550 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:34:02.755 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:58:09.702 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:58:09.883 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:58:22.662 +07:00 [INF] Request: GET /api/car-brands/active
+2025-10-06 14:58:22.842 +07:00 [INF] Request: GET /api/car-brands/active

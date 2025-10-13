@@ -89,4 +89,12 @@ public partial class MaintenanceService
     /// </summary>
     [InverseProperty("Service")]
     public virtual ICollection<PackageServiceUsage> PackageServiceUsages { get; set; } = new List<PackageServiceUsage>();
+
+    /// <summary>
+    /// Danh sách audit logs cho service này
+    /// Track mọi thay đổi ServiceSource khi service được dùng trong appointments
+    /// </summary>
+    [InverseProperty("Service")]
+    public virtual ICollection<ServiceSourceAuditLog> ServiceSourceAuditLogs { get; set; }
+        = new List<ServiceSourceAuditLog>();
 }

@@ -108,6 +108,19 @@ public partial class User
     [InverseProperty("UpdatedByNavigation")]
     public virtual ICollection<Appointment> AppointmentUpdatedByNavigations { get; set; } = new List<Appointment>();
 
+    /// <summary>
+    /// Danh sách appointments đã được complete bởi user này (Staff/Technician)
+    /// </summary>
+    [InverseProperty("CompletedByNavigation")]
+    public virtual ICollection<Appointment> AppointmentCompletedByNavigations { get; set; } = new List<Appointment>();
+
+    /// <summary>
+    /// Danh sách audit logs đã được thực hiện bởi user này (Admin/Staff)
+    /// Track mọi thay đổi ServiceSource
+    /// </summary>
+    [InverseProperty("ChangedByUser")]
+    public virtual ICollection<EVServiceCenter.Core.Entities.ServiceSourceAuditLog> ServiceSourceAuditLogs { get; set; } = new List<EVServiceCenter.Core.Entities.ServiceSourceAuditLog>();
+
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<AutoNotificationRule> AutoNotificationRules { get; set; } = new List<AutoNotificationRule>();
 

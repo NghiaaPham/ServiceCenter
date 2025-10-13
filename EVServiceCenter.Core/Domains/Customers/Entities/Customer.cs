@@ -1,5 +1,4 @@
-﻿
-using EVServiceCenter.Core.Domains.CustomerTypes.Entities;
+﻿using EVServiceCenter.Core.Domains.CustomerTypes.Entities;
 using EVServiceCenter.Core.Domains.Identity.Entities;
 using EVServiceCenter.Core.Entities;
 using System.ComponentModel.DataAnnotations;
@@ -113,4 +112,12 @@ public partial class Customer
 
     [InverseProperty("Customer")]
     public virtual ICollection<WorkOrder> WorkOrders { get; set; } = new List<WorkOrder>();
+
+    /// <summary>
+    /// Danh sách payment transactions cho customer này
+    /// Track tất cả các giao dịch thanh toán và refunds
+    /// </summary>
+    [InverseProperty("Customer")]
+    public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; }
+        = new List<PaymentTransaction>();
 }

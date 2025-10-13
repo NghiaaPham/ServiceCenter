@@ -19,6 +19,7 @@ namespace EVServiceCenter.API.Extensions
             services.AddScoped<ICustomerVehicleService, CustomerVehicleService>();
             services.AddScoped<ICustomerVehicleQueryService, CustomerVehicleQueryService>();
             services.AddScoped<ICustomerVehicleStatisticsService, CustomerVehicleStatisticsService>();
+            services.AddScoped<IVehicleMaintenanceService, VehicleMaintenanceService>(); // Smart Maintenance Reminder
 
             // Validators
             services.AddScoped<IValidator<CreateCustomerVehicleRequestDto>, CreateCustomerVehicleValidator>();
