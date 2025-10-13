@@ -45,4 +45,8 @@
     <ProjectReference Include="..\EVServiceCenter.Core\EVServiceCenter.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Persistence\Extensions\" />
+  </ItemGroup>
+
 </Project>
