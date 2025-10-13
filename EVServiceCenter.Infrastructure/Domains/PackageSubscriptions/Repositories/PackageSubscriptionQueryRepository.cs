@@ -406,6 +406,84 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
             };
         }
 
+        /// <summary>
+        /// [SMART DEDUPLICATION] Lấy tất cả active subscriptions của customer cho vehicle cụ thể
+        /// Dùng cho BuildAppointmentServicesAsync để tự động apply subscription
+        ///
+        /// Trả về CustomerPackageSubscription entities (KHÔNG phải DTO) với đầy đủ:
+        /// - ServiceUsages collection (để check RemainingQuantity)
+        /// - Package details
+        /// - ExpiryDate, PurchaseDate (để calculate priority)
+        ///
+        /// Filter logic:
+        /// - Status = "Active"
+        /// - CustomerId = customerId
+        /// - VehicleId = vehicleId
+        /// - ExpiryDate > NOW (hoặc NULL = không giới hạn thời gian)
+        /// - Có ít nhất 1 service còn RemainingQuantity > 0
+        /// </summary>
+        public async Task<List<CustomerPackageSubscription>> GetActiveSubscriptionsByCustomerAndVehicleAsync(
+            int customerId,
+            int vehicleId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+
+                var subscriptions = await _context.CustomerPackageSubscriptions
+                    .Include(s => s.Package) // Include package details
+                    .Include(s => s.PackageServiceUsages) // Include service usages (QUAN TRỌNG!)
+                        .ThenInclude(u => u.Service) // Include service details trong mỗi usage
+                    .Include(s => s.Vehicle) // Include vehicle info (để log)
+                    .Include(s => s.Customer) // Include customer info (để log)
+                    .Where(s =>
+                        // Filter theo customer và vehicle
+                        s.CustomerId == customerId &&
+                        s.VehicleId == vehicleId &&
+
+                        // Chỉ lấy subscriptions Active
+                        s.Status == SubscriptionStatusEnum.Active.ToString() &&
+
+                        // Chưa hết hạn (hoặc không có expiry date)
+                        (s.ExpirationDate == null || s.ExpirationDate > DateOnly.FromDateTime(now)) &&
+
+                        // Có ít nhất 1 service còn lượt > 0
+                        s.PackageServiceUsages.Any(u => u.RemainingQuantity > 0))
+                    .AsNoTracking() // Read-only query
+                    .ToListAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "🔍 GetActiveSubscriptions: CustomerId={CustomerId}, VehicleId={VehicleId}, " +
+                    "Found {Count} active subscriptions with remaining usages",
+                    customerId, vehicleId, subscriptions.Count);
+
+                // Log chi tiết từng subscription để debug
+                foreach (var sub in subscriptions)
+                {
+                    var totalRemaining = sub.PackageServiceUsages.Sum(u => u.RemainingQuantity);
+                    _logger.LogDebug(
+                        "  → Subscription {SubId} ({PackageName}): " +
+                        "{ServiceCount} services, {TotalRemaining} total usages remaining, " +
+                        "Expiry={Expiry}",
+                        sub.SubscriptionId,
+                        sub.Package?.PackageName ?? "N/A",
+                        sub.PackageServiceUsages.Count,
+                        totalRemaining,
+                        sub.ExpirationDate?.ToString() ?? "No expiry");
+                }
+
+                return subscriptions;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "❌ Error getting active subscriptions: CustomerId={CustomerId}, VehicleId={VehicleId}",
+                    customerId, vehicleId);
+                throw;
+            }
+        }
+
         #endregion
     }
 }

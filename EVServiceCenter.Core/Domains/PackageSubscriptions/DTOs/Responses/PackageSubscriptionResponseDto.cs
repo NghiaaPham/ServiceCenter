@@ -49,7 +49,48 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.DTOs.Responses
         public int? InitialVehicleMileage { get; set; }
 
         // ========== PRICING ==========
+        /// <summary>
+        /// ✅ PHASE 2: Giá gốc của package (chưa giảm giá)
+        /// </summary>
+        public decimal? OriginalPrice { get; set; }
+
+        /// <summary>
+        /// ✅ PHASE 2: % Discount của package
+        /// </summary>
+        public decimal? DiscountPercent { get; set; }
+
+        /// <summary>
+        /// ✅ PHASE 2: Số tiền được giảm (VNĐ)
+        /// </summary>
+        public decimal? DiscountAmount { get; set; }
+
+        /// <summary>
+        /// Số tiền customer đã thanh toán (Final Price sau khi giảm giá)
+        /// = OriginalPrice - DiscountAmount
+        /// </summary>
         public decimal PricePaid { get; set; }
+
+        /// <summary>
+        /// ✅ PHASE 2: Display text cho UI
+        /// Hiển thị breakdown giá cho customer
+        /// </summary>
+        public string? PricingDisplay
+        {
+            get
+            {
+                if (!OriginalPrice.HasValue) return null;
+
+                if (!DiscountPercent.HasValue || DiscountPercent.Value == 0)
+                {
+                    return $"💰 Thành tiền: {PricePaid:N0}đ";
+                }
+
+                return $"💰 Giá gốc: {OriginalPrice:N0}đ\n" +
+                       $"🎁 Giảm {DiscountPercent}%: -{DiscountAmount:N0}đ\n" +
+                       $"✅ Bạn tiết kiệm: {DiscountAmount:N0}đ\n" +
+                       $"💳 Thành tiền: {PricePaid:N0}đ";
+            }
+        }
 
         // ========== STATUS ==========
         public SubscriptionStatusEnum Status { get; set; }

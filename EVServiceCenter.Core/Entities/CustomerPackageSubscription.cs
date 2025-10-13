@@ -48,11 +48,34 @@ public partial class CustomerPackageSubscription
 
     public DateOnly? NextPaymentDate { get; set; }
 
+    /// <summary>
+    /// ✅ THÊM MỚI: Giá gốc của package khi mua (chưa giảm giá)
+    /// Lưu lại để tracking pricing history
+    /// </summary>
     [Column(TypeName = "decimal(15, 2)")]
-    public decimal? PaymentAmount { get; set; }
+    public decimal? OriginalPrice { get; set; }
 
+    /// <summary>
+    /// % Discount từ package (MaintenancePackage.DiscountPercent)
+    /// Đã có sẵn từ trước
+    /// </summary>
     [Column(TypeName = "decimal(5, 2)")]
     public decimal? DiscountPercent { get; set; }
+
+    /// <summary>
+    /// ✅ THÊM MỚI: Số tiền được giảm (VNĐ)
+    /// = OriginalPrice × (DiscountPercent / 100)
+    /// </summary>
+    [Column(TypeName = "decimal(15, 2)")]
+    public decimal? DiscountAmount { get; set; }
+
+    /// <summary>
+    /// Số tiền customer phải thanh toán thực tế (Final Price)
+    /// = OriginalPrice - DiscountAmount
+    /// Đã có sẵn từ trước, giờ sẽ dùng làm FinalPrice
+    /// </summary>
+    [Column(TypeName = "decimal(15, 2)")]
+    public decimal? PaymentAmount { get; set; }
 
     [StringLength(1000)]
     public string? Notes { get; set; }

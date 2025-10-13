@@ -79,6 +79,30 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                     throw new InvalidOperationException($"Không tìm thấy xe với ID: {request.VehicleId}");
                 }
 
+                // ═══════════════════════════════════════════════════════════
+                // ✅ PHASE 2: PACKAGE PURCHASE DISCOUNT CALCULATION
+                // ═══════════════════════════════════════════════════════════
+
+                // 1️⃣ Get prices from Package
+                decimal originalPrice = package.OriginalPriceBeforeDiscount;
+                decimal finalPrice = package.TotalPriceAfterDiscount;
+
+                // 2️⃣ Get DiscountPercent from Package (nếu package có discount)
+                decimal discountPercent = package.DiscountPercent ?? 0;
+
+                // 3️⃣ Calculate DiscountAmount (VNĐ)
+                decimal discountAmount = originalPrice - finalPrice;
+
+                // 5️⃣ Log discount information
+                _logger.LogInformation(
+                    "💰 Package Purchase Discount: PackageId={PackageId}, " +
+                    "OriginalPrice={Original}đ, DiscountPercent={Percent}%, " +
+                    "DiscountAmount={Discount}đ, FinalPrice={Final}đ",
+                    package.PackageId, originalPrice, discountPercent,
+                    discountAmount, finalPrice);
+
+                // ═══════════════════════════════════════════════════════════
+
                 // ========== CREATE SUBSCRIPTION ENTITY ==========
                 var purchaseDate = DateTime.UtcNow;
                 var startDate = DateOnly.FromDateTime(purchaseDate);
@@ -101,7 +125,11 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                     StartDate = startDate,
                     ExpirationDate = expirationDate,
                     InitialVehicleMileage = vehicle.Mileage,
-                    PaymentAmount = request.AmountPaid,
+                    // ✅ PHASE 2: Set pricing fields với discount
+                    OriginalPrice = originalPrice,
+                    DiscountPercent = discountPercent,
+                    DiscountAmount = discountAmount,
+                    PaymentAmount = finalPrice, // FinalPrice sau khi giảm giá
                     Status = SubscriptionStatusEnum.Active.ToString(),
                     Notes = string.IsNullOrWhiteSpace(request.CustomerNotes)
                         ? null
@@ -159,8 +187,28 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
 
         #endregion
 
-        #region UpdateServiceUsageAsync
+        #region UpdateServiceUsageAsync - With Pessimistic Lock
 
+        /// <summary>
+        /// ✅ ADVANCED: Update service usage với PESSIMISTIC LOCK (UPDLOCK, ROWLOCK)
+        ///
+        /// RACE CONDITION HANDLING:
+        /// - Dùng SQL UPDLOCK, ROWLOCK để lock row khi SELECT
+        /// - Ngăn 2 transactions cùng đọc RemainingQuantity = 1 và cùng trừ
+        /// - Transaction A lock row trước → Trừ thành công
+        /// - Transaction B đợi lock release → Đọc RemainingQuantity = 0 → Return FALSE
+        ///
+        /// IMPORTANT:
+        /// - Method này KHÔNG throw exception khi hết lượt
+        /// - Return TRUE nếu trừ thành công, FALSE nếu không đủ lượt
+        /// - Caller (CompleteAppointmentAsync) sẽ handle graceful degradation
+        /// </summary>
+        /// <param name="subscriptionId">ID của subscription cần trừ lượt</param>
+        /// <param name="serviceId">ID của service cần trừ lượt</param>
+        /// <param name="quantityUsed">Số lượt cần trừ (thường là 1)</param>
+        /// <param name="appointmentId">ID của appointment đang sử dụng service này</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>TRUE nếu trừ lượt thành công, FALSE nếu không đủ lượt hoặc không tìm thấy</returns>
         public async Task<bool> UpdateServiceUsageAsync(
             int subscriptionId,
             int serviceId,
@@ -171,51 +219,94 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
             try
             {
                 _logger.LogInformation(
-                    "Updating usage for subscription {SubscriptionId}, service {ServiceId}, quantity {Quantity}",
-                    subscriptionId, serviceId, quantityUsed);
+                    "🔒 [PESSIMISTIC LOCK] Updating usage: SubscriptionId={SubscriptionId}, " +
+                    "ServiceId={ServiceId}, QuantityToDeduct={Quantity}, AppointmentId={AppointmentId}",
+                    subscriptionId, serviceId, quantityUsed, appointmentId);
 
-                var usage = await _context.PackageServiceUsages
-                    .FirstOrDefaultAsync(u =>
-                        u.SubscriptionId == subscriptionId &&
-                        u.ServiceId == serviceId,
-                        cancellationToken);
+                // 🔒 BƯỚC 1: SELECT với UPDLOCK, ROWLOCK để lock row
+                // UPDLOCK: Shared lock cho read, nhưng signal rằng sẽ update sau
+                // ROWLOCK: Chỉ lock row này (không lock toàn table/page)
+                // WITH (UPDLOCK, ROWLOCK) ngăn dirty reads và lost updates
+                var sql = @"
+                    SELECT UsageID, SubscriptionID, ServiceID,
+                           TotalAllowedQuantity, UsedQuantity, RemainingQuantity,
+                           LastUsedDate, LastUsedAppointmentID
+                    FROM PackageServiceUsages WITH (UPDLOCK, ROWLOCK)
+                    WHERE SubscriptionID = {0} AND ServiceID = {1}";
+
+                var usageList = await _context.PackageServiceUsages
+                    .FromSqlRaw(sql, subscriptionId, serviceId)
+                    .ToListAsync(cancellationToken);
+
+                var usage = usageList.FirstOrDefault();
 
                 if (usage == null)
                 {
-                    _logger.LogWarning("Service usage not found for subscription {SubscriptionId}, service {ServiceId}",
+                    _logger.LogWarning(
+                        "⚠️ Service usage NOT FOUND: SubscriptionId={SubscriptionId}, ServiceId={ServiceId} " +
+                        "→ Return FALSE",
                         subscriptionId, serviceId);
                     return false;
                 }
 
-                // Check sufficient remaining quantity
-                var remaining = usage.RemainingQuantity;
-                if (remaining < quantityUsed)
+                // 🔒 BƯỚC 2: CHECK RemainingQuantity TRONG LOCK
+                // Tại thời điểm này, row đã bị lock, không ai khác có thể đọc/ghi
+                var remainingQuantityTruocKhiTru = usage.RemainingQuantity;
+
+                _logger.LogInformation(
+                    "🔍 Locked row: UsageId={UsageId}, RemainingQuantity={Remaining}, " +
+                    "QuantityToDeduct={ToDeduct}",
+                    usage.UsageId, remainingQuantityTruocKhiTru, quantityUsed);
+
+                // Nếu KHÔNG ĐỦ LƯỢT → Return FALSE (KHÔNG throw exception)
+                // Caller sẽ handle graceful degradation
+                if (remainingQuantityTruocKhiTru < quantityUsed)
                 {
-                    throw new InvalidOperationException(
-                        $"Không đủ lượt sử dụng. Còn {remaining} lượt, cần {quantityUsed} lượt.");
+                    _logger.LogWarning(
+                        "⚠️ INSUFFICIENT USAGE: SubscriptionId={SubscriptionId}, ServiceId={ServiceId}, " +
+                        "Remaining={Remaining}, Required={Required} → Return FALSE (graceful degradation)",
+                        subscriptionId, serviceId, remainingQuantityTruocKhiTru, quantityUsed);
+
+                    return false; // ❌ KHÔNG ĐỦ LƯỢT - Graceful degradation
                 }
 
-                // Update usage
-                var currentUsed = usage.UsedQuantity;
-                usage.UsedQuantity = currentUsed + quantityUsed;
-                usage.RemainingQuantity = remaining - quantityUsed;
+                // 🔒 BƯỚC 3: UPDATE USAGE (vẫn trong lock)
+                var usedQuantityTruocKhiTru = usage.UsedQuantity;
+                var usedQuantitySauKhiTru = usedQuantityTruocKhiTru + quantityUsed;
+                var remainingQuantitySauKhiTru = remainingQuantityTruocKhiTru - quantityUsed;
+
+                usage.UsedQuantity = usedQuantitySauKhiTru;
+                usage.RemainingQuantity = remainingQuantitySauKhiTru;
                 usage.LastUsedDate = DateTime.UtcNow;
                 usage.LastUsedAppointmentId = appointmentId;
 
+                _logger.LogInformation(
+                    "✏️ Updating usage: UsageId={UsageId}, " +
+                    "UsedQuantity: {OldUsed} → {NewUsed}, " +
+                    "RemainingQuantity: {OldRemaining} → {NewRemaining}",
+                    usage.UsageId,
+                    usedQuantityTruocKhiTru, usedQuantitySauKhiTru,
+                    remainingQuantityTruocKhiTru, remainingQuantitySauKhiTru);
+
+                // 🔒 BƯỚC 4: SAVE CHANGES (commit update và release lock)
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Check if subscription is fully used
+                _logger.LogInformation(
+                    "✅ Usage deducted successfully: SubscriptionId={SubscriptionId}, " +
+                    "ServiceId={ServiceId}, RemainingQuantity={NewRemaining}",
+                    subscriptionId, serviceId, remainingQuantitySauKhiTru);
+
+                // 🔒 BƯỚC 5: CHECK IF SUBSCRIPTION FULLY USED
+                // (Chạy sau SaveChanges, không cần lock nữa)
                 await CheckAndUpdateFullyUsedStatusAsync(subscriptionId, cancellationToken);
 
-                _logger.LogInformation("Successfully updated service usage for subscription {SubscriptionId}",
-                    subscriptionId);
-
-                return true;
+                return true; // ✅ TRỪ LƯỢT THÀNH CÔNG
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Error updating service usage for subscription {SubscriptionId}, service {ServiceId}",
+                    "❌ ERROR updating service usage (with pessimistic lock): " +
+                    "SubscriptionId={SubscriptionId}, ServiceId={ServiceId}",
                     subscriptionId, serviceId);
                 throw;
             }

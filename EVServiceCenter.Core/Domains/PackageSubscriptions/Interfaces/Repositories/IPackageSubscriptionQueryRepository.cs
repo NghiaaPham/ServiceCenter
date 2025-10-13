@@ -102,5 +102,30 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Repositor
             int subscriptionId,
             int customerId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// [SMART DEDUPLICATION] Lấy tất cả active subscriptions của customer cho vehicle cụ thể
+        /// Dùng cho BuildAppointmentServicesAsync để tự động apply subscription
+        ///
+        /// Trả về CustomerPackageSubscription entities (KHÔNG phải DTO) với đầy đủ:
+        /// - ServiceUsages collection (để check RemainingQuantity)
+        /// - Package details (để lấy thông tin gói)
+        /// - ExpiryDate, PurchaseDate (để calculate priority)
+        ///
+        /// Filter:
+        /// - Status = Active
+        /// - CustomerId = customerId
+        /// - VehicleId = vehicleId
+        /// - ExpiryDate > NOW (hoặc NULL)
+        /// - Có ít nhất 1 service còn RemainingQuantity > 0
+        /// </summary>
+        /// <param name="customerId">ID của customer</param>
+        /// <param name="vehicleId">ID của vehicle</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>List CustomerPackageSubscription entities (với ServiceUsages included)</returns>
+        Task<List<Core.Entities.CustomerPackageSubscription>> GetActiveSubscriptionsByCustomerAndVehicleAsync(
+            int customerId,
+            int vehicleId,
+            CancellationToken cancellationToken = default);
     }
 }
