@@ -95,6 +95,7 @@ namespace EVServiceCenter.Infrastructure.Domains.CustomerVehicles.Repositories
             CancellationToken cancellationToken = default)
         {
             return await _dbSet
+                .Include(v => v.Customer) // ✅ ADDED: Include Customer for name & code
                 .Include(v => v.Model)
                     .ThenInclude(m => m.Brand)
                 .Where(v => v.CustomerId == customerId)

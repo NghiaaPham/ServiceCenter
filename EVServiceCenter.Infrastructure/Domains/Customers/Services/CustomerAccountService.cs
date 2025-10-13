@@ -2,6 +2,7 @@
 using EVServiceCenter.Core.Domains.Customers.DTOs.Responses;
 using EVServiceCenter.Core.Domains.Customers.Entities;
 using EVServiceCenter.Core.Domains.Customers.Interfaces;
+using EVServiceCenter.Core.Domains.CustomerTypes.DTOs.Responses;
 using EVServiceCenter.Core.Domains.Identity.Entities;
 using EVServiceCenter.Core.Domains.Identity.Interfaces;
 using EVServiceCenter.Core.Entities;
@@ -172,20 +173,98 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
 
         public async Task<CustomerResponseDto?> GetCustomerByUserIdAsync(int userId)
         {
+            // ✅ FIX: Include CustomerType to get full customer info
             var customer = await _context.Customers
+                .AsNoTracking()
+                .Include(c => c.Type) // ✅ ADDED: Include CustomerType for TypeName
                 .Where(c => c.UserId == userId)
-                .Select(c => new CustomerResponseDto
+                .FirstOrDefaultAsync();
+
+            if (customer == null)
+            {
+                return null;
+            }
+
+            // ✅ FIX: Calculate Age
+            var age = customer.DateOfBirth.HasValue
+                ? DateTime.Today.Year - customer.DateOfBirth.Value.Year -
+                  (DateTime.Today.DayOfYear < customer.DateOfBirth.Value.DayOfYear ? 1 : 0)
+                : 0;
+
+            // ✅ FIX: Calculate LoyaltyStatus
+            var loyaltyStatus = (customer.LoyaltyPoints ?? 0) switch
+            {
+                >= 10000 => "VIP",
+                >= 5000 => "Gold",
+                >= 2000 => "Silver",
+                >= 500 => "Bronze",
+                _ => ""
+            };
+
+            // ✅ FIX: Calculate LastVisitStatus
+            var lastVisitStatus = customer.LastVisitDate.HasValue
+                ? (DateOnly.FromDateTime(DateTime.Today).DayNumber - customer.LastVisitDate.Value.DayNumber) switch
                 {
-                    CustomerId = c.CustomerId,
-                    CustomerCode = c.CustomerCode,
-                    FullName = c.FullName,
-                    PhoneNumber = c.PhoneNumber,
-                    Email = c.Email,
-                    IsActive = c.IsActive
+                    <= 7 => "Vừa ghé thăm",
+                    <= 30 => "Ghé thăm gần đây",
+                    <= 90 => "Lâu không ghé thăm",
+                    _ => "Khách hàng cũ"
+                }
+                : "";
+
+            // ✅ FIX: Load Vehicle Stats
+            var vehicleStats = await _context.CustomerVehicles
+                .Where(v => v.CustomerId == customer.CustomerId)
+                .GroupBy(v => v.CustomerId)
+                .Select(g => new
+                {
+                    VehicleCount = g.Count(),
+                    ActiveVehicleCount = g.Count(v => v.IsActive == true)
                 })
                 .FirstOrDefaultAsync();
 
-            return customer;
+            // ✅ FIX: Map ALL fields with computed properties
+            return new CustomerResponseDto
+            {
+                CustomerId = customer.CustomerId,
+                CustomerCode = customer.CustomerCode,
+                FullName = customer.FullName,
+                PhoneNumber = customer.PhoneNumber,
+                Email = customer.Email,
+                Address = customer.Address,
+                DateOfBirth = customer.DateOfBirth,
+                Gender = customer.Gender,
+                TypeId = customer.TypeId,
+                LastVisitDate = customer.LastVisitDate,
+                CustomerType = customer.Type != null ? new CustomerTypeResponseDto
+                {
+                    TypeId = customer.Type.TypeId,
+                    TypeName = customer.Type.TypeName,
+                    DiscountPercent = (decimal)(customer.Type.DiscountPercent ?? 0),
+                    Description = customer.Type.Description,
+                    IsActive = customer.Type.IsActive ?? false
+                } : null,
+                PreferredLanguage = customer.PreferredLanguage,
+                MarketingOptIn = customer.MarketingOptIn,
+                LoyaltyPoints = customer.LoyaltyPoints,
+                TotalSpent = customer.TotalSpent,
+                Notes = customer.Notes,
+                IsActive = customer.IsActive,
+                CreatedDate = customer.CreatedDate,
+                
+                // ✅ COMPUTED PROPERTIES
+                Age = age,
+                DisplayName = customer.CustomerCode + " - " + customer.FullName,
+                ContactInfo = !string.IsNullOrEmpty(customer.Email)
+                    ? customer.PhoneNumber + " / " + customer.Email
+                    : customer.PhoneNumber,
+                LoyaltyStatus = loyaltyStatus,
+                PotentialDiscount = customer.Type != null ? customer.Type.DiscountPercent ?? 0 : 0,
+                LastVisitStatus = lastVisitStatus,
+                VehicleCount = vehicleStats?.VehicleCount ?? 0,
+                ActiveVehicleCount = vehicleStats?.ActiveVehicleCount ?? 0,
+                RecentVehicles = new List<CustomerVehicleSummaryDto>()
+            };
         }
 
         public async Task<bool> LinkCustomerToUserAsync(int customerId, int userId)
@@ -215,8 +294,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
 
         private static byte[] EncryptIdentityNumber(string identityNumber)
         {
+        #if WINDOWS
             var bytes = Encoding.UTF8.GetBytes(identityNumber);
             return ProtectedData.Protect(bytes, null, DataProtectionScope.CurrentUser);
+        #else
+                    throw new PlatformNotSupportedException("Identity number encryption is only supported on Windows.");
+        #endif
         }
 
         public async Task<string> GenerateCustomerCodeAsync(CancellationToken cancellationToken = default)
