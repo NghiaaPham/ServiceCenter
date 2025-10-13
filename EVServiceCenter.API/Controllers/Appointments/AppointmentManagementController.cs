@@ -3,6 +3,7 @@ using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Request;
 using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using EVServiceCenter.Core.Domains.Shared.Models;
+using EVServiceCenter.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,15 +20,18 @@ namespace EVServiceCenter.API.Controllers.Appointments
     {
         private readonly IAppointmentCommandService _commandService;
         private readonly IAppointmentQueryService _queryService;
+        private readonly IServiceSourceAuditService _auditService;
         private readonly ILogger<AppointmentManagementController> _logger;
 
         public AppointmentManagementController(
             IAppointmentCommandService commandService,
             IAppointmentQueryService queryService,
+            IServiceSourceAuditService auditService,
             ILogger<AppointmentManagementController> logger)
         {
             _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
             _queryService = queryService ?? throw new ArgumentNullException(nameof(queryService));
+            _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -747,5 +751,153 @@ namespace EVServiceCenter.API.Controllers.Appointments
                 return ServerError("Có lỗi xảy ra khi tạo lịch hẹn");
             }
         }
+
+        #region Admin Tools - ServiceSource Adjustment
+
+        /// <summary>
+        /// [ADMIN ONLY] Điều chỉnh ServiceSource và giá của một AppointmentService
+        /// </summary>
+        /// <remarks>
+        /// **Use cases:**
+        /// 1. **Sửa lỗi hệ thống**: Customer đã có subscription nhưng bị charge nhầm (Extra → Subscription)
+        /// 2. **Hoàn tiền**: Dịch vụ không đạt yêu cầu, giảm giá hoặc miễn phí
+        /// 3. **Thu thêm phí**: Customer dùng service ngoài subscription
+        ///
+        /// **Features:**
+        /// - Validate appointment đã Completed
+        /// - Update ServiceSource (Subscription/Extra/Regular) và Price
+        /// - Tự động deduct subscription usage nếu chuyển Extra → Subscription
+        /// - Issue refund nếu giá mới < giá cũ và IssueRefund = true
+        /// - Log đầy đủ audit trail (IP, User Agent, Reason)
+        ///
+        /// **Important:**
+        /// - Chỉ áp dụng cho appointment đã Completed/CompletedWithUnpaidBalance
+        /// - Reason là bắt buộc (10-500 ký tự) để đảm bảo audit trail
+        /// - Refund chỉ được issue nếu giá mới < giá cũ
+        /// </remarks>
+        /// <param name="appointmentId">ID của appointment</param>
+        /// <param name="appointmentServiceId">ID của AppointmentService cần điều chỉnh</param>
+        /// <param name="request">Thông tin điều chỉnh</param>
+        /// <returns>Thông tin adjustment</returns>
+        [HttpPost("appointments/{appointmentId}/services/{appointmentServiceId}/adjust")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(typeof(ApiResponse<AdjustServiceSourceResponseDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        public async Task<IActionResult> AdjustServiceSource(
+            int appointmentId,
+            int appointmentServiceId,
+            [FromBody] AdjustServiceSourceRequestDto request)
+        {
+            if (!IsValidRequest(request))
+            {
+                return ValidationError("Dữ liệu điều chỉnh không hợp lệ");
+            }
+
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+                var result = await _commandService.AdjustServiceSourceAsync(
+                    appointmentId: appointmentId,
+                    appointmentServiceId: appointmentServiceId,
+                    newServiceSource: request.NewServiceSource,
+                    newPrice: request.NewPrice,
+                    reason: request.Reason,
+                    issueRefund: request.IssueRefund,
+                    userId: currentUserId,
+                    ipAddress: ipAddress,
+                    userAgent: userAgent);
+
+                _logger.LogInformation(
+                    "Admin {UserId} adjusted AppointmentService {AppointmentServiceId}: " +
+                    "{OldSource}({OldPrice}đ) → {NewSource}({NewPrice}đ), Refund={Refund}",
+                    currentUserId, appointmentServiceId,
+                    result.OldServiceSource, result.OldPrice,
+                    result.NewServiceSource, result.NewPrice,
+                    result.RefundIssued);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Điều chỉnh service source thành công",
+                    Data = result,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex,
+                    "Validation error adjusting service source: AppointmentId={AppointmentId}, " +
+                    "AppointmentServiceId={AppointmentServiceId}",
+                    appointmentId, appointmentServiceId);
+                return ValidationError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error adjusting service source: AppointmentId={AppointmentId}, " +
+                    "AppointmentServiceId={AppointmentServiceId}",
+                    appointmentId, appointmentServiceId);
+                return ServerError("Đã xảy ra lỗi khi điều chỉnh service source");
+            }
+        }
+
+        /// <summary>
+        /// [ADMIN ONLY] Lấy audit log của một appointment
+        /// </summary>
+        /// <remarks>
+        /// Xem lịch sử thay đổi ServiceSource của tất cả services trong appointment.
+        ///
+        /// **Thông tin audit log bao gồm:**
+        /// - ServiceName, ServiceSource cũ/mới, Price cũ/mới
+        /// - Người thực hiện thay đổi (ChangedBy)
+        /// - Thời gian thay đổi
+        /// - Loại thay đổi (AUTO_DEGRADE, MANUAL_ADJUST, REFUND)
+        /// - Lý do thay đổi
+        /// - IP address của request
+        /// - Refund/Usage deduction status
+        ///
+        /// **Use cases:**
+        /// - Dispute resolution
+        /// - Audit compliance
+        /// - Debugging pricing issues
+        /// </remarks>
+        /// <param name="appointmentId">ID của appointment</param>
+        /// <returns>Danh sách audit logs</returns>
+        [HttpGet("appointments/{appointmentId}/audit-log")]
+        [Authorize(Policy = "AdminOnly")]
+        [ProducesResponseType(typeof(ApiResponse<List<object>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+        public async Task<IActionResult> GetAuditLog(int appointmentId)
+        {
+            try
+            {
+                var logs = await _auditService.GetAuditLogsForAppointmentAsync(appointmentId);
+
+                _logger.LogInformation(
+                    "Admin {UserId} retrieved audit log for appointment {AppointmentId}: {Count} records",
+                    GetCurrentUserId(), appointmentId, logs.Count);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = $"Lấy audit log thành công ({logs.Count} bản ghi)",
+                    Data = logs,
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error getting audit log for appointment {AppointmentId}",
+                    appointmentId);
+                return ServerError("Đã xảy ra lỗi khi lấy audit log");
+            }
+        }
+
+        #endregion
     }
 }

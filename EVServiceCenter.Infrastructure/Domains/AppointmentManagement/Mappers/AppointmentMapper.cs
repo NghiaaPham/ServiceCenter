@@ -70,6 +70,9 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 EstimatedDuration = appointment.EstimatedDuration,
                 EstimatedCost = appointment.EstimatedCost,
 
+                // ✅ DISCOUNT INFO: Build DiscountSummary from stored fields
+                DiscountSummary = BuildDiscountSummary(appointment),
+
                 // Other
                 CustomerNotes = appointment.CustomerNotes,
                 Priority = appointment.Priority ?? "Normal",
@@ -140,12 +143,70 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 // Additional detail fields
                 ServiceDescription = appointment.ServiceDescription,
                 ConfirmationMethod = appointment.ConfirmationMethod,
-                ConfirmationStatus = appointment.ConfirmationStatus,
-                ReminderSent = appointment.ReminderSent,
+                ConfirmationStatus = appointment.ConfirmationStatus ?? "Pending",
+                ReminderSent = appointment.ReminderSent ?? false,
                 ReminderSentDate = appointment.ReminderSentDate,
-                NoShowFlag = appointment.NoShowFlag,
+                NoShowFlag = appointment.NoShowFlag ?? false,
                 CreatedBy = appointment.CreatedBy,
-                UpdatedBy = appointment.UpdatedBy
+                CreatedByName = appointment.CreatedByNavigation?.FullName,
+                UpdatedBy = appointment.UpdatedBy,
+                UpdatedByName = appointment.UpdatedByNavigation?.FullName,
+                
+                // ✅ TODO: WorkOrders mapping (needs WorkOrder entity check)
+                WorkOrders = new List<WorkOrderSummaryDto>(),
+
+                // ✅ DISCOUNT: Use baseDto's DiscountSummary (already built)
+                DiscountSummary = baseDto.DiscountSummary
+            };
+            }
+
+        /// <summary>
+        /// ✅ BUILD DISCOUNT SUMMARY from stored Appointment fields
+        ///
+        /// NOTE: Khi appointment được tạo, discount được tính toán chi tiết (CustomerTypeName, PromotionCode, etc.)
+        /// Nhưng chỉ có DiscountAmount, DiscountType, PromotionId được lưu vào DB.
+        ///
+        /// Method này rebuild DiscountSummary từ những gì có trong DB:
+        /// - OriginalTotal = EstimatedCost + DiscountAmount
+        /// - AppliedDiscountType = DiscountType
+        /// - FinalTotal = EstimatedCost
+        ///
+        /// Các field khác (CustomerTypeName, PromotionCodeUsed) sẽ để null vì không lưu trong DB.
+        /// Frontend vẫn có thể hiển thị discount amount và type cho customer.
+        /// </summary>
+        private static DiscountSummaryDto? BuildDiscountSummary(Appointment appointment)
+        {
+            // Nếu không có discount hoặc discount = 0 → return null
+            if (appointment.DiscountAmount == null || appointment.DiscountAmount.Value == 0)
+                return null;
+
+            // Tính OriginalTotal từ EstimatedCost + DiscountAmount
+            decimal originalTotal = (appointment.EstimatedCost ?? 0) + appointment.DiscountAmount.Value;
+            decimal finalTotal = appointment.EstimatedCost ?? 0;
+
+            // Phân tích DiscountType để set CustomerTypeDiscount hoặc PromotionDiscount
+            decimal customerTypeDiscount = 0;
+            decimal promotionDiscount = 0;
+
+            if (appointment.DiscountType == "CustomerType")
+            {
+                customerTypeDiscount = appointment.DiscountAmount.Value;
+            }
+            else if (appointment.DiscountType == "Promotion")
+            {
+                promotionDiscount = appointment.DiscountAmount.Value;
+            }
+
+            return new DiscountSummaryDto
+            {
+                OriginalTotal = originalTotal,
+                CustomerTypeDiscount = customerTypeDiscount,
+                CustomerTypeName = null, // ❌ Không lưu trong DB, để null
+                PromotionDiscount = promotionDiscount,
+                PromotionCodeUsed = null, // ❌ Không lưu trong DB, để null (chỉ có PromotionId)
+                FinalDiscount = appointment.DiscountAmount.Value,
+                AppliedDiscountType = appointment.DiscountType ?? "None",
+                FinalTotal = finalTotal
             };
         }
     }

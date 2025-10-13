@@ -28,13 +28,13 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             AppointmentQueryDto query,
             CancellationToken cancellationToken = default)
         {
-            // Base query without includes (for counting)
+            // ✅ PERFORMANCE: Base query without includes for fast counting
             var baseQuery = _context.Appointments.AsNoTracking().AsQueryable();
 
             // Apply filters
             baseQuery = ApplyFilters(baseQuery, query);
 
-            // COUNT without joins - FAST
+            // ✅ PERFORMANCE: COUNT without joins - FAST
             var totalCount = await baseQuery.CountAsync(cancellationToken);
 
             if (totalCount == 0)
@@ -45,90 +45,22 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             // Apply sorting
             baseQuery = ApplySorting(baseQuery, query);
 
-            // NOW add includes for actual data fetch
+            // ✅ FIX: Use Include instead of Select projection to preserve all IDs
+            // ✅ PERFORMANCE: AsSplitQuery() prevents cartesian explosion
             var items = await baseQuery
                 .Skip(query.Skip)
                 .Take(query.PageSize)
-                // Select specific fields only
-                .Select(a => new Appointment
-                {
-                    AppointmentId = a.AppointmentId,
-                    AppointmentCode = a.AppointmentCode,
-                    CustomerId = a.CustomerId,
-                    Customer = new Customer
-                    {
-                        CustomerId = a.Customer.CustomerId,
-                        FullName = a.Customer.FullName,
-                        PhoneNumber = a.Customer.PhoneNumber,
-                        Email = a.Customer.Email
-                    },
-                    VehicleId = a.VehicleId,
-                    Vehicle = new CustomerVehicle
-                    {
-                        VehicleId = a.Vehicle.VehicleId,
-                        LicensePlate = a.Vehicle.LicensePlate,
-                        Model = new CarModel
-                        {
-                            ModelId = a.Vehicle.Model.ModelId,
-                            ModelName = a.Vehicle.Model.ModelName,
-                            Year = a.Vehicle.Model.Year,
-                            Brand = new CarBrand
-                            {
-                                BrandId = a.Vehicle.Model.Brand.BrandId,
-                                BrandName = a.Vehicle.Model.Brand.BrandName
-                            }
-                        }
-                    },
-                    ServiceCenterId = a.ServiceCenterId,
-                    ServiceCenter = new ServiceCenter
-                    {
-                        CenterId = a.ServiceCenter.CenterId,
-                        CenterName = a.ServiceCenter.CenterName,
-                        Address = a.ServiceCenter.Address
-                    },
-                    SlotId = a.SlotId,
-                    Slot = a.Slot == null ? null : new TimeSlot
-                    {
-                        SlotId = a.Slot.SlotId,
-                        SlotDate = a.Slot.SlotDate,
-                        StartTime = a.Slot.StartTime,
-                        EndTime = a.Slot.EndTime
-                    },
-                    StatusId = a.StatusId,
-                    Status = new AppointmentStatus
-                    {
-                        StatusId = a.Status.StatusId,
-                        StatusName = a.Status.StatusName,
-                        StatusColor = a.Status.StatusColor
-                    },
-                    PackageId = a.PackageId,
-                    Package = a.Package == null ? null : new MaintenancePackage
-                    {
-                        PackageId = a.Package.PackageId,
-                        PackageName = a.Package.PackageName,
-                        TotalPrice = a.Package.TotalPrice
-                    },
-                    EstimatedDuration = a.EstimatedDuration,
-                    EstimatedCost = a.EstimatedCost,
-                    Priority = a.Priority,
-                    Source = a.Source,
-                    CreatedDate = a.CreatedDate,
-                    // Load services separately to avoid cartesian product
-                    AppointmentServices = a.AppointmentServices.Select(aps => new AppointmentService
-                    {
-                        AppointmentServiceId = aps.AppointmentServiceId,
-                        ServiceId = aps.ServiceId,
-                        ServiceSource = aps.ServiceSource,
-                        Price = aps.Price,
-                        EstimatedTime = aps.EstimatedTime,
-                        Service = new MaintenanceService
-                        {
-                            ServiceId = aps.Service.ServiceId,
-                            ServiceCode = aps.Service.ServiceCode,
-                            ServiceName = aps.Service.ServiceName
-                        }
-                    }).ToList()
-                })
+                .Include(a => a.Customer)
+                .Include(a => a.Vehicle)
+                    .ThenInclude(v => v.Model)
+                        .ThenInclude(m => m!.Brand)
+                .Include(a => a.ServiceCenter)
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Include(a => a.Package)
+                .Include(a => a.AppointmentServices)
+                    .ThenInclude(aps => aps.Service)
+                .AsSplitQuery() // ✅ CRITICAL: Split into multiple optimized queries
                 .ToListAsync(cancellationToken);
 
             return PagedResultFactory.Create(items, totalCount, query.Page, query.PageSize);
@@ -195,45 +127,22 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             int customerId,
             CancellationToken cancellationToken = default)
         {
+            // ✅ FIX: Include ALL navigation properties needed by mapper
             return await _context.Appointments
                 .AsNoTracking()
                 .Where(a => a.CustomerId == customerId)
-                .Select(a => new Appointment
-                {
-                    AppointmentId = a.AppointmentId,
-                    AppointmentCode = a.AppointmentCode,
-                    ServiceCenter = new ServiceCenter
-                    {
-                        CenterId = a.ServiceCenter.CenterId,
-                        CenterName = a.ServiceCenter.CenterName
-                    },
-                    Slot = a.Slot == null ? null : new TimeSlot
-                    {
-                        SlotDate = a.Slot.SlotDate,
-                        StartTime = a.Slot.StartTime,
-                        EndTime = a.Slot.EndTime
-                    },
-                    Status = new AppointmentStatus
-                    {
-                        StatusId = a.Status.StatusId,
-                        StatusName = a.Status.StatusName,
-                        StatusColor = a.Status.StatusColor
-                    },
-                    Vehicle = new CustomerVehicle
-                    {
-                        LicensePlate = a.Vehicle.LicensePlate,
-                        Model = new CarModel
-                        {
-                            ModelName = a.Vehicle.Model.ModelName,
-                            Brand = new CarBrand
-                            {
-                                BrandName = a.Vehicle.Model.Brand.BrandName
-                            }
-                        }
-                    },
-                    EstimatedCost = a.EstimatedCost,
-                    AppointmentDate = a.AppointmentDate
-                })
+                .Include(a => a.Customer) // ✅ ADDED: Customer info
+                .Include(a => a.ServiceCenter)
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Include(a => a.Vehicle)
+                    .ThenInclude(v => v.Model)
+                        .ThenInclude(m => m!.Brand)
+                .Include(a => a.Package) // ✅ ADDED: Package info (if subscription)
+                .Include(a => a.AppointmentServices) // ✅ ADDED: Services list
+                    .ThenInclude(aps => aps.Service)
+                .Include(a => a.PreferredTechnician) // ✅ ADDED: Technician info
+                .AsSplitQuery() // ✅ CRITICAL: Split into multiple optimized queries
                 .OrderByDescending(a => a.AppointmentDate)
                 .ToListAsync(cancellationToken);
         }
@@ -282,35 +191,25 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
 
+            // ✅ FIX: Use Include to load ALL navigation properties (same as GetByCustomerIdAsync)
             return await _context.Appointments
                 .AsNoTracking()
                 .Where(a => a.CustomerId == customerId && a.Slot!.SlotDate >= today)
                 .OrderBy(a => a.Slot!.SlotDate)
                     .ThenBy(a => a.Slot!.StartTime)
                 .Take(limit)
-                .Select(a => new Appointment
-                {
-                    AppointmentId = a.AppointmentId,
-                    AppointmentCode = a.AppointmentCode,
-                    ServiceCenter = new ServiceCenter
-                    {
-                        CenterName = a.ServiceCenter.CenterName,
-                        Address = a.ServiceCenter.Address
-                    },
-                    Slot = new TimeSlot
-                    {
-                        SlotDate = a.Slot!.SlotDate,
-                        StartTime = a.Slot.StartTime
-                    },
-                    Status = new AppointmentStatus
-                    {
-                        StatusName = a.Status.StatusName
-                    },
-                    Vehicle = new CustomerVehicle
-                    {
-                        LicensePlate = a.Vehicle.LicensePlate
-                    }
-                })
+                .Include(a => a.Customer) // ✅ ADDED: Customer info
+                .Include(a => a.ServiceCenter)
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Include(a => a.Vehicle)
+                    .ThenInclude(v => v.Model)
+                        .ThenInclude(m => m!.Brand)
+                .Include(a => a.Package) // ✅ ADDED: Package info (if subscription)
+                .Include(a => a.AppointmentServices) // ✅ ADDED: Services list
+                    .ThenInclude(aps => aps.Service)
+                .Include(a => a.PreferredTechnician) // ✅ ADDED: Technician info
+                .AsSplitQuery() // ✅ CRITICAL: Split into multiple optimized queries
                 .ToListAsync(cancellationToken);
         }
 

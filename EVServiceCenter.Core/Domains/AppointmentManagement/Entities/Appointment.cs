@@ -52,6 +52,25 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [Column(TypeName = "decimal(15, 2)")]
         public decimal? EstimatedCost { get; set; }
 
+        /// <summary>
+        /// Discount amount applied to this appointment
+        /// = OriginalTotal - FinalTotal (EstimatedCost)
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal? DiscountAmount { get; set; }
+
+        /// <summary>
+        /// Type of discount applied: "None", "CustomerType", "Promotion"
+        /// </summary>
+        [StringLength(20)]
+        public string? DiscountType { get; set; }
+
+        /// <summary>
+        /// Promotion ID if promotion was applied
+        /// </summary>
+        [Column("PromotionID")]
+        public int? PromotionId { get; set; }
+
         [StringLength(1000)]
         public string? ServiceDescription { get; set; }
 
@@ -98,6 +117,23 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
 
         public int? UpdatedBy { get; set; }
 
+        /// <summary>
+        /// Ngày giờ hoàn thành appointment
+        /// </summary>
+        public DateTime? CompletedDate { get; set; }
+
+        /// <summary>
+        /// User ID người đánh dấu completed (Staff/Technician)
+        /// </summary>
+        public int? CompletedBy { get; set; }
+
+        /// <summary>
+        /// RowVersion for optimistic concurrency control
+        /// Prevents double-complete and race conditions
+        /// </summary>
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = null!;
+
         [InverseProperty("RelatedAppointment")]
         public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
 
@@ -119,6 +155,10 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [ForeignKey("SubscriptionId")]
         [InverseProperty("Appointments")]
         public virtual CustomerPackageSubscription? Subscription { get; set; }
+
+        [ForeignKey("PromotionId")]
+        [InverseProperty("Appointments")]
+        public virtual Promotion? Promotion { get; set; }
 
         [ForeignKey("PreferredTechnicianId")]
         [InverseProperty("AppointmentPreferredTechnicians")]
@@ -148,6 +188,10 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [InverseProperty("AppointmentUpdatedByNavigations")]
         public virtual User? UpdatedByNavigation { get; set; }
 
+        [ForeignKey("CompletedBy")]
+        [InverseProperty("AppointmentCompletedByNavigations")]
+        public virtual User? CompletedByNavigation { get; set; }
+
         [ForeignKey("VehicleId")]
         [InverseProperty("Appointments")]
         public virtual CustomerVehicle Vehicle { get; set; } = null!;
@@ -157,5 +201,21 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
 
         [InverseProperty("Appointment")]
         public virtual ICollection<AppointmentService> AppointmentServices { get; set; } = new List<AppointmentService>();
+
+        /// <summary>
+        /// Danh sách audit logs cho appointment này
+        /// Track mọi thay đổi ServiceSource của tất cả services trong appointment
+        /// </summary>
+        [InverseProperty("Appointment")]
+        public virtual ICollection<ServiceSourceAuditLog> ServiceSourceAuditLogs { get; set; }
+            = new List<ServiceSourceAuditLog>();
+
+        /// <summary>
+        /// Danh sách payment transactions cho appointment này
+        /// Track tất cả các giao dịch thanh toán bổ sung và refunds
+        /// </summary>
+        [InverseProperty("Appointment")]
+        public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; }
+            = new List<PaymentTransaction>();
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
+using EVServiceCenter.Core.Entities;
 
 namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
 {
@@ -20,8 +21,25 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [StringLength(20)]
         public string ServiceSource { get; set; } = "Extra";
 
+        /// <summary>
+        /// Original price before any discount
+        /// Used for tracking discount amount
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal? OriginalPrice { get; set; }
+
+        /// <summary>
+        /// Final price after discount (what customer pays)
+        /// </summary>
         [Column(TypeName = "decimal(15, 2)")]
         public decimal Price { get; set; }
+
+        /// <summary>
+        /// Discount amount applied to this service
+        /// = OriginalPrice - Price
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal? DiscountAmount { get; set; }
 
         public int EstimatedTime { get; set; }
 
@@ -37,5 +55,13 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [ForeignKey("ServiceId")]
         [InverseProperty("AppointmentServices")]
         public virtual MaintenanceService Service { get; set; } = null!;
+
+        /// <summary>
+        /// Danh sách audit logs cho appointment service này
+        /// Track mọi thay đổi về ServiceSource và Price (từ Subscription → Extra, Manual Adjust, Refund)
+        /// </summary>
+        [InverseProperty("AppointmentService")]
+        public virtual ICollection<ServiceSourceAuditLog> ServiceSourceAuditLogs { get; set; }
+            = new List<ServiceSourceAuditLog>();
     }
 }

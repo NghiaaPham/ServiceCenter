@@ -19,9 +19,31 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Validators
             RuleFor(x => x.SlotId)
                 .GreaterThan(0).WithMessage("Slot thời gian không hợp lệ");
 
-            RuleFor(x => x.ServiceIds)
-                .NotEmpty().WithMessage("Phải chọn ít nhất một dịch vụ")
-                .Must(ids => ids.All(id => id > 0)).WithMessage("ID dịch vụ không hợp lệ");
+            // ✅ SMART DEDUPLICATION: ServiceIds có thể empty nếu SubscriptionId được cung cấp
+            // Customer có thể:
+            // 1. Đặt lịch chỉ với Subscription (ServiceIds empty) → Dùng tất cả services từ gói
+            // 2. Đặt lịch với Subscription + ServiceIds → Dùng gói trước, services ngoài gói tính thêm
+            // 3. Đặt lịch với ServiceIds only (no Subscription) → Thanh toán đầy đủ
+            RuleFor(x => x)
+                .Must(x => x.SubscriptionId.HasValue ||
+                           (x.ServiceIds != null && x.ServiceIds.Any()))
+                .WithMessage("Phải chọn ít nhất một gói dịch vụ (Subscription) hoặc dịch vụ đơn lẻ");
+
+            // Nếu có ServiceIds, validate từng ID phải > 0
+            When(x => x.ServiceIds != null && x.ServiceIds.Any(), () =>
+            {
+                RuleFor(x => x.ServiceIds)
+                    .Must(ids => ids.All(id => id > 0))
+                    .WithMessage("ID dịch vụ không hợp lệ");
+            });
+
+            // Nếu có SubscriptionId, validate phải > 0
+            When(x => x.SubscriptionId.HasValue, () =>
+            {
+                RuleFor(x => x.SubscriptionId)
+                    .GreaterThan(0)
+                    .WithMessage("Subscription ID không hợp lệ");
+            });
 
             When(x => x.PackageId.HasValue, () =>
             {

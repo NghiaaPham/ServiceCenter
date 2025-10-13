@@ -43,6 +43,13 @@
         public int? EstimatedDuration { get; set; }
         public decimal? EstimatedCost { get; set; }
 
+        /// <summary>
+        /// ✅ THÊM MỚI: Breakdown discount chi tiết
+        /// Hiển thị cho customer thấy rõ được giảm bao nhiêu từ đâu
+        /// NULL nếu không có discount (all subscription services hoặc no discount applied)
+        /// </summary>
+        public DiscountSummaryDto? DiscountSummary { get; set; }
+
         // Other
         public string? CustomerNotes { get; set; }
         public string Priority { get; set; } = null!;

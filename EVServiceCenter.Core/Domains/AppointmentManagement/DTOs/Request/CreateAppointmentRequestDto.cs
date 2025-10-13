@@ -23,6 +23,11 @@
         /// </summary>
         public List<int> ServiceIds { get; set; } = new();
 
+        /// <summary>
+        /// Mã khuyến mãi (optional) - Nếu có, hệ thống sẽ validate và apply discount
+        /// </summary>
+        public string? PromotionCode { get; set; }
+
         public string? CustomerNotes { get; set; }
         public int? PreferredTechnicianId { get; set; }
         public string Priority { get; set; } = "Normal"; // Normal, High, Urgent

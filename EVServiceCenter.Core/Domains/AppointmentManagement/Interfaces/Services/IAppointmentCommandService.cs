@@ -48,5 +48,21 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
             int appointmentId,
             int currentUserId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// [ADMIN TOOL] Điều chỉnh ServiceSource của một AppointmentService
+        /// Dùng để sửa lỗi hoặc hoàn tiền cho customer
+        /// </summary>
+        Task<AdjustServiceSourceResponseDto> AdjustServiceSourceAsync(
+            int appointmentId,
+            int appointmentServiceId,
+            string newServiceSource,
+            decimal newPrice,
+            string reason,
+            bool issueRefund,
+            int userId,
+            string? ipAddress = null,
+            string? userAgent = null,
+            CancellationToken cancellationToken = default);
     }
 }
