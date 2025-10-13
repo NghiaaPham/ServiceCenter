@@ -105,6 +105,18 @@ public partial class EVDbContext : DbContext
 
     public virtual DbSet<PackageServiceUsage> PackageServiceUsages { get; set; }
 
+    /// <summary>
+    /// Audit log cho mọi thay đổi ServiceSource của AppointmentService
+    /// Dùng cho transparency và dispute resolution
+    /// </summary>
+    public virtual DbSet<ServiceSourceAuditLog> ServiceSourceAuditLogs { get; set; }
+
+    /// <summary>
+    /// Transaction log cho mọi giao dịch thanh toán
+    /// Track payment gateway responses và refunds
+    /// </summary>
+    public virtual DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+
     public virtual DbSet<Part> Parts { get; set; }
 
     public virtual DbSet<PartCategory> PartCategories { get; set; }

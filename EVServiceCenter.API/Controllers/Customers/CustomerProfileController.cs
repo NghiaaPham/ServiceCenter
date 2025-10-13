@@ -459,8 +459,263 @@ namespace EVServiceCenter.API.Controllers.Customers
             }
         }
 
+        /// <summary>
+        /// [Xóa] Xóa xe của tôi
+        /// </summary>
+        /// <remarks>
+        /// Customer tự xóa xe của mình khỏi danh sách.
+        ///
+        /// **Điều kiện để xóa:**
+        /// - Xe phải thuộc về customer hiện tại
+        /// - Xe không có lịch hẹn đang active (Pending, Confirmed, CheckedIn, InProgress)
+        /// - Xe không có work order đang mở
+        /// - Xe không có subscription đang active
+        ///
+        /// **Use cases:**
+        /// - Khách hàng đã bán xe → Xóa khỏi danh sách
+        /// - Khách hàng đăng ký nhầm xe → Xóa để đăng ký lại
+        /// - Khách hàng không muốn quản lý xe cũ nữa
+        ///
+        /// **Logic xóa:**
+        /// - Nếu xe chưa có giao dịch nào: **Hard delete** (xóa hoàn toàn)
+        /// - Nếu xe đã có lịch hẹn/work order cũ: **Soft delete** (IsActive = false)
+        ///
+        /// **Lưu ý:**
+        /// - Nếu xe có lịch hẹn đang active → Không cho xóa
+        /// - Khuyến nghị: Hủy lịch hẹn trước khi xóa xe
+        /// - Xe đã soft delete có thể restore bởi Admin
+        ///
+        /// **Phân quyền:**
+        /// - Customer chỉ xóa được xe của mình
+        /// - Không xóa được xe của người khác
+        /// </remarks>
+        /// <param name="vehicleId">ID của xe cần xóa</param>
+        /// <returns>Kết quả xóa xe</returns>
+        [HttpDelete("my-vehicles/{vehicleId:int}")]
+        public async Task<IActionResult> DeleteMyVehicle(int vehicleId)
+        {
+            try
+            {
+                var customerId = GetCurrentCustomerId();
+
+                if (customerId == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy thông tin khách hàng",
+                        ErrorCode = "CUSTOMER_NOT_FOUND"
+                    });
+                }
+
+                // 1. Kiểm tra xe có tồn tại không
+                var vehicle = await _vehicleService.GetByIdAsync(vehicleId, CancellationToken.None);
+
+                if (vehicle == null)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"Không tìm thấy xe với ID {vehicleId}",
+                        ErrorCode = "VEHICLE_NOT_FOUND"
+                    });
+                }
+
+                // 2. Kiểm tra xe có thuộc customer này không (QUAN TRỌNG - Security check)
+                if (vehicle.CustomerId != customerId)
+                {
+                    _logger.LogWarning(
+                        "Customer {CustomerId} attempted to delete vehicle {VehicleId} belonging to customer {OwnerId}",
+                        customerId, vehicleId, vehicle.CustomerId);
+
+                    return Forbid(); // 403 Forbidden - Không cho xóa xe của người khác
+                }
+
+                // 3. Kiểm tra xe có thể xóa không (có lịch hẹn active, work order, subscription không)
+                var canDelete = await _vehicleService.CanDeleteAsync(vehicleId, CancellationToken.None);
+
+                if (!canDelete)
+                {
+                    _logger.LogInformation(
+                        "Customer {CustomerId} cannot delete vehicle {VehicleId} - has active appointments/work orders/subscriptions",
+                        customerId, vehicleId);
+
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Không thể xóa xe này vì đang có lịch hẹn, phiếu công việc hoặc gói dịch vụ đang hoạt động. " +
+                                  "Vui lòng hủy lịch hẹn/hoàn thành công việc trước khi xóa xe.",
+                        ErrorCode = "VEHICLE_HAS_ACTIVE_RELATIONS",
+                        Data = new
+                        {
+                            VehicleId = vehicleId,
+                            LicensePlate = vehicle.LicensePlate,
+                            CanDelete = false,
+                            Reason = "Xe đang có lịch hẹn, phiếu công việc hoặc gói dịch vụ đang hoạt động"
+                        }
+                    });
+                }
+
+                // 4. Thực hiện xóa (service sẽ tự quyết định soft/hard delete)
+                await _vehicleService.DeleteAsync(vehicleId, CancellationToken.None);
+
+                _logger.LogInformation(
+                    "Customer {CustomerId} successfully deleted their vehicle {VehicleId} ({LicensePlate})",
+                    customerId, vehicleId, vehicle.LicensePlate);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = $"Đã xóa xe {vehicle.LicensePlate} khỏi danh sách của bạn",
+                    Data = new
+                    {
+                        VehicleId = vehicleId,
+                        LicensePlate = vehicle.LicensePlate,
+                        DeletedAt = DateTime.UtcNow
+                    }
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Business rule violation (e.g., xe có lịch hẹn active)
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    ErrorCode = "BUSINESS_RULE_VIOLATION"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting vehicle {VehicleId} for customer {CustomerId}", 
+                    vehicleId, GetCurrentCustomerId());
+
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi xóa xe. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.",
+                    ErrorCode = "INTERNAL_ERROR"
+                });
+            }
+        }
+
+        /// <summary>
+        /// [Kiểm tra] Xe của tôi có thể xóa không
+        /// </summary>
+        /// <remarks>
+        /// Kiểm tra xem xe có thể xóa được hay không trước khi thực hiện xóa.
+        ///
+        /// **Điều kiện để xóa được:**
+        /// - Xe không có lịch hẹn đang active
+        /// - Xe không có work order đang mở
+        /// - Xe không có subscription đang active
+        ///
+        /// **Use case:**
+        /// - UI gọi trước khi hiển thị nút "Xóa xe"
+        /// - Disable nút xóa nếu `canDelete = false`
+        /// - Hiển thị lý do không thể xóa để hướng dẫn customer
+        ///
+        /// **Response:**
+        /// ```json
+        /// {
+        ///   "canDelete": true,
+        ///   "vehicleId": 123,
+        ///   "licensePlate": "30A-12345",
+        ///   "reason": null
+        /// }
+        /// ```
+        ///
+        /// Hoặc nếu không xóa được:
+        /// ```json
+        /// {
+        ///   "canDelete": false,
+        ///   "vehicleId": 123,
+        ///   "licensePlate": "30A-12345",
+        ///   "reason": "Xe đang có 2 lịch hẹn active"
+        /// }
+        /// ```
+        ///
+        /// **Phân quyền:**
+        /// - Customer chỉ check được xe của mình
+        /// </remarks>
+        /// <param name="vehicleId">ID của xe cần kiểm tra</param>
+        /// <returns>Trạng thái có thể xóa hay không</returns>
+        [HttpGet("my-vehicles/{vehicleId:int}/can-delete")]
+        public async Task<IActionResult> CanDeleteMyVehicle(int vehicleId)
+        {
+            try
+            {
+                var customerId = GetCurrentCustomerId();
+
+                if (customerId == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy thông tin khách hàng",
+                        ErrorCode = "CUSTOMER_NOT_FOUND"
+                    });
+                }
+
+                // 1. Kiểm tra xe có tồn tại không
+                var vehicle = await _vehicleService.GetByIdAsync(vehicleId, CancellationToken.None);
+
+                if (vehicle == null)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"Không tìm thấy xe với ID {vehicleId}",
+                        ErrorCode = "VEHICLE_NOT_FOUND"
+                    });
+                }
+
+                // 2. Security check: Xe có thuộc customer này không
+                if (vehicle.CustomerId != customerId)
+                {
+                    _logger.LogWarning(
+                        "Customer {CustomerId} attempted to check delete status of vehicle {VehicleId} belonging to customer {OwnerId}",
+                        customerId, vehicleId, vehicle.CustomerId);
+
+                    return Forbid(); // 403 Forbidden
+                }
+
+                // 3. Kiểm tra có thể xóa không
+                var canDelete = await _vehicleService.CanDeleteAsync(vehicleId, CancellationToken.None);
+
+                var message = canDelete
+                    ? "Xe có thể được xóa"
+                    : "Xe không thể xóa vì đang có lịch hẹn, phiếu công việc hoặc gói dịch vụ đang hoạt động";
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = message,
+                    Data = new
+                    {
+                        CanDelete = canDelete,
+                        VehicleId = vehicleId,
+                        LicensePlate = vehicle.LicensePlate,
+                        Reason = canDelete 
+                            ? null 
+                            : "Xe đang có lịch hẹn, phiếu công việc hoặc gói dịch vụ đang hoạt động"
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking if vehicle {VehicleId} can be deleted for customer {CustomerId}",
+                    vehicleId, GetCurrentCustomerId());
+
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi kiểm tra trạng thái xe",
+                    ErrorCode = "INTERNAL_ERROR"
+                });
+            }
+        }
+
         #endregion
-
-
     }
 }

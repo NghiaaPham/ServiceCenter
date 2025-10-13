@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet ef database:*)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(dotnet ef dbcontext scaffold:*)",
+      "Bash(sqlcmd:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet run:*)",
+      "Bash(dotnet clean)",
+      "Bash(dir Services)",
+      "Bash(findstr:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dir:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl http://localhost:5153/swagger/v1/swagger.json)",
+      "Bash(curl:*)",
+      "Bash(powershell:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

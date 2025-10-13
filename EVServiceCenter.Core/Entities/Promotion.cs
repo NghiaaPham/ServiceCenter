@@ -56,4 +56,11 @@ public partial class Promotion
     [ForeignKey("CreatedBy")]
     [InverseProperty("Promotions")]
     public virtual User? CreatedByNavigation { get; set; }
+
+    /// <summary>
+    /// Appointments that used this promotion
+    /// </summary>
+    [InverseProperty("Promotion")]
+    public virtual ICollection<EVServiceCenter.Core.Domains.AppointmentManagement.Entities.Appointment> Appointments { get; set; }
+        = new List<EVServiceCenter.Core.Domains.AppointmentManagement.Entities.Appointment>();
 }

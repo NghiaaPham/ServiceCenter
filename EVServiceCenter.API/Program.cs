@@ -5,6 +5,7 @@ using EVServiceCenter.API.Validators;
 using EVServiceCenter.Core.Domains.CustomerTypes.Validators; // Added for FluentValidation integration
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
+using EVServiceCenter.Core.Interfaces.Services;
 using EVServiceCenter.Infrastructure.JsonConverters;
 using EVServiceCenter.Infrastructure.Persistence.Seeders; // Added for ServiceCenterSeeder
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,6 +21,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new TimeOnlyJsonConverter());
+        // Fix Vietnamese characters encoding
+        options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
     });
 
 // Use recommended FluentValidation registration
@@ -187,6 +190,32 @@ builder.Services.AddPackageSubscriptionModule();
 builder.Services.AddModelServicePricingModule();
 builder.Services.AddTimeSlotModule();
 builder.Services.AddAppointmentModule(); // Appointment booking & management
+builder.Services.AddPricingModule(); // ✅ Discount calculation & promotion services
+
+// ✅ SMART SUBSCRIPTION: Service Source Audit Service
+// Try to load real implementation, fallback to stub if needed
+builder.Services.AddScoped<IServiceSourceAuditService>(sp =>
+{
+    var dbContext = sp.GetRequiredService<EVDbContext>();
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var infrastructureAssembly = System.Reflection.Assembly.Load("EVServiceCenter.Infrastructure");
+        var serviceType = infrastructureAssembly.GetType("EVServiceCenter.Infrastructure.Services.ServiceSourceAuditService");
+        if (serviceType != null)
+        {
+            return (IServiceSourceAuditService)Activator.CreateInstance(serviceType, dbContext, logger)!;
+        }
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning("Could not load ServiceSourceAuditService: {Message}. Using stub.", ex.Message);
+    }
+
+    // Fallback to stub implementation
+    return new EVServiceCenter.API.Services.StubServiceSourceAuditService(dbContext, logger);
+});
 
 var app = builder.Build();
 
@@ -198,8 +227,12 @@ if (app.Environment.IsDevelopment())
     try
     {
         var context = services.GetRequiredService<EVDbContext>();
+        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
         context.Database.Migrate(); // Apply any pending migrations
-        ServiceCenterSeeder.SeedData(context); // Run the seeder
+
+        // Seed master data
+        ServiceCenterSeeder.SeedData(context);
         CarBrandSeeder.SeedCarBrands(context);
         CarModelSeeder.SeedCarModels(context);
         CustomerSeeder.SeedCustomers(context);
@@ -209,6 +242,16 @@ if (app.Environment.IsDevelopment())
         ModelServicePricingSeeder.SeedModelServicePricings(context);
         AppointmentStatusSeeder.SeedAppointmentStatuses(context);
         TimeSlotSeeder.SeedTimeSlots(context);
+
+        // Seed maintenance packages
+        var packageLogger = loggerFactory.CreateLogger<MaintenancePackageSeeder>();
+        var packageSeeder = new MaintenancePackageSeeder(context, packageLogger);
+        packageSeeder.SeedAsync().Wait();
+
+        // Seed customer package subscriptions (test data for appointments)
+        var subscriptionLogger = loggerFactory.CreateLogger<CustomerPackageSubscriptionSeeder>();
+        var subscriptionSeeder = new CustomerPackageSubscriptionSeeder(context, subscriptionLogger);
+        subscriptionSeeder.SeedAsync().Wait();
     }
     catch (Exception ex)
     {

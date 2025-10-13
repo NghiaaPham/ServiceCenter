@@ -44,7 +44,7 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
         {
             try
             {
-                var customerId = GetCurrentUserId();
+                var customerId = GetCurrentCustomerId();
                 var result = await _service.GetMySubscriptionsAsync(customerId, statusFilter, ct);
 
                 return Ok(ApiResponse<List<PackageSubscriptionSummaryDto>>.WithSuccess(
@@ -68,7 +68,7 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
         {
             try
             {
-                var customerId = GetCurrentUserId();
+                var customerId = GetCurrentCustomerId();
                 var result = await _service.GetSubscriptionDetailsAsync(id, customerId, ct);
 
                 if (result == null)
@@ -101,7 +101,7 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
         {
             try
             {
-                var customerId = GetCurrentUserId();
+                var customerId = GetCurrentCustomerId();
                 var result = await _service.GetSubscriptionUsageDetailsAsync(id, customerId, ct);
 
                 return Ok(ApiResponse<List<PackageServiceUsageDto>>.WithSuccess(
@@ -132,7 +132,7 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
         {
             try
             {
-                var customerId = GetCurrentUserId();
+                var customerId = GetCurrentCustomerId();
                 var result = await _service.GetActiveSubscriptionsForVehicleAsync(
                     vehicleId, customerId, ct);
 
@@ -170,7 +170,7 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
 
             try
             {
-                var customerId = GetCurrentUserId();
+                var customerId = GetCurrentCustomerId();
                 var result = await _service.PurchasePackageAsync(request, customerId, ct);
 
                 _logger.LogInformation(
@@ -210,7 +210,7 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
         {
             try
             {
-                var customerId = GetCurrentUserId();
+                var customerId = GetCurrentCustomerId();
 
                 if (string.IsNullOrWhiteSpace(request.CancellationReason))
                 {
