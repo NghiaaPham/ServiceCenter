@@ -5,6 +5,8 @@ using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
 using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using EVServiceCenter.Core.Domains.TimeSlots.Entities;
 using EVServiceCenter.Core.Entities;
+using EVServiceCenter.Core.Domains.Payments.Entities;
+using EVServiceCenter.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -53,6 +55,12 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         public decimal? EstimatedCost { get; set; }
 
         /// <summary>
+        /// Chi phí cuối cùng sau khi hoàn tất dịch vụ
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal? FinalCost { get; set; }
+
+        /// <summary>
         /// Discount amount applied to this appointment
         /// = OriginalTotal - FinalTotal (EstimatedCost)
         /// </summary>
@@ -83,6 +91,29 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [Column("StatusID")]
         public int StatusId { get; set; }
 
+        /// <summary>
+        /// Trạng thái thanh toán hiện tại của appointment
+        /// </summary>
+        [StringLength(20)]
+        public string PaymentStatus { get; set; } = PaymentStatusEnum.Pending.ToString();
+
+        /// <summary>
+        /// Tổng số tiền khách đã thanh toán
+        /// </summary>
+        [Column(TypeName = "decimal(15, 2)")]
+        public decimal? PaidAmount { get; set; }
+
+        /// <summary>
+        /// Số lần tạo PaymentIntent cho appointment này
+        /// </summary>
+        public int PaymentIntentCount { get; set; }
+
+        /// <summary>
+        /// FK tới intent gần nhất
+        /// </summary>
+        [Column("LatestPaymentIntentID")]
+        public int? LatestPaymentIntentId { get; set; }
+
         [StringLength(20)]
         public string? Priority { get; set; }
 
@@ -102,6 +133,11 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         public DateTime? ReminderSentDate { get; set; }
 
         public bool? NoShowFlag { get; set; }
+
+        /// <summary>
+        /// Ngày appointment bị hủy (nếu có)
+        /// </summary>
+        public DateTime? CancelledDate { get; set; }
 
         [StringLength(500)]
         public string? CancellationReason { get; set; }
@@ -217,5 +253,12 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [InverseProperty("Appointment")]
         public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; }
             = new List<PaymentTransaction>();
+
+        [InverseProperty("Appointment")]
+        public virtual ICollection<PaymentIntent> PaymentIntents { get; set; }
+            = new List<PaymentIntent>();
+
+        [ForeignKey("LatestPaymentIntentId")]
+        public virtual PaymentIntent? LatestPaymentIntent { get; set; }
     }
 }

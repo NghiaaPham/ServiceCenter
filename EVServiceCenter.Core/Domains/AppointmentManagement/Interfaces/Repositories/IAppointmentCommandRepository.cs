@@ -1,4 +1,7 @@
-﻿using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+using EVServiceCenter.Core.Domains.Payments.Entities;
 
 namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Repositories
 {
@@ -7,6 +10,7 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Reposito
         Task<Appointment> CreateWithServicesAsync(
             Appointment appointment,
             List<AppointmentService> appointmentServices,
+            PaymentIntent? initialPaymentIntent = null,
             CancellationToken cancellationToken = default);
 
         Task UpdateServicesAsync(

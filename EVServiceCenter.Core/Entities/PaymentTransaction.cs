@@ -1,5 +1,6 @@
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.Customers.Entities;
+using EVServiceCenter.Core.Domains.Payments.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -24,6 +25,12 @@ namespace EVServiceCenter.Core.Entities
         /// </summary>
         [Column("AppointmentID")]
         public int AppointmentId { get; set; }
+
+        /// <summary>
+        /// FK tới PaymentIntent nếu giao dịch thuộc intent cụ thể
+        /// </summary>
+        [Column("PaymentIntentID")]
+        public int? PaymentIntentId { get; set; }
 
         /// <summary>
         /// FK to Customer
@@ -130,5 +137,9 @@ namespace EVServiceCenter.Core.Entities
         [ForeignKey("CustomerId")]
         [InverseProperty("PaymentTransactions")]
         public virtual Customer Customer { get; set; } = null!;
+
+        [ForeignKey("PaymentIntentId")]
+        [InverseProperty("PaymentTransactions")]
+        public virtual PaymentIntent? PaymentIntent { get; set; }
     }
 }

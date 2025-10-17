@@ -367,23 +367,207 @@ namespace EVServiceCenter.API.Controllers.Appointments
         {
             try
             {
-                // Note: Cần thêm CheckInAsync vào IAppointmentCommandService
-                // Hiện tại chưa có trong service, nên tạm thời trả về thông báo
+                var result = await _commandService.CheckInAsync(id, GetCurrentUserId());
 
-                _logger.LogWarning("CheckIn endpoint called but not yet implemented in service layer");
+                _logger.LogInformation(
+                    "Staff {UserId} checked in appointment {AppointmentId}",
+                    GetCurrentUserId(),
+                    id);
 
-                return Success(
-                    new { AppointmentId = id, Message = "Check-in feature will be implemented soon" },
-                    "Tính năng check-in đang được phát triển");
-
-                // TODO: Implement CheckInAsync in AppointmentCommandService
-                // var result = await _commandService.CheckInAsync(id, GetCurrentUserId());
-                // return Success(new { AppointmentId = id, CheckedIn = result }, "Check-in thành công");
+                return Success(result, "Check-in thành công. WorkOrder đã được tạo.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid check-in attempt for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking in appointment {AppointmentId}", id);
                 return ServerError("Có lỗi xảy ra khi check-in");
+            }
+        }
+
+        /// <summary>
+        /// [Thêm dịch vụ] Thêm dịch vụ phát sinh khi đang InProgress
+        /// </summary>
+        /// <remarks>
+        /// Thêm dịch vụ phát sinh khi kỹ thuật viên phát hiện vấn đề trong lúc kiểm tra.
+        ///
+        /// **Quy trình:**
+        /// 1. Kỹ thuật viên kiểm tra xe
+        /// 2. Phát hiện vấn đề cần sửa (vd: phanh mòn, lốp hư)
+        /// 3. Tư vấn khách hàng
+        /// 4. Khách đồng ý thêm dịch vụ
+        /// 5. Staff thêm dịch vụ vào appointment
+        /// 6. Tạo PaymentIntent mới cho phần phát sinh
+        /// 7. Khách thanh toán phần phát sinh
+        ///
+        /// **Điều kiện:**
+        /// - Appointment phải ở trạng thái InProgress
+        /// - Danh sách serviceIds không được rỗng
+        ///
+        /// **Kết quả:**
+        /// - AppointmentServices được thêm vào
+        /// - EstimatedCost và EstimatedDuration được cập nhật
+        /// - PaymentIntent mới được tạo
+        /// - PaymentStatus chuyển về Pending (vì có thêm tiền cần trả)
+        ///
+        /// **Use case:**
+        /// - Phanh mòn cần thay
+        /// - Lốp xe hư cần đổi
+        /// - Phát hiện rò rỉ dầu
+        /// - Cần thêm bảo dưỡng khác
+        /// </remarks>
+        /// <param name="id">ID lịch hẹn</param>
+        /// <param name="request">Danh sách service IDs cần thêm</param>
+        /// <returns>Appointment đã cập nhật</returns>
+        [HttpPost("{id:int}/add-services")]
+        [Authorize(Policy = "AdminOrStaff")]
+        public async Task<IActionResult> AddServices(
+            int id,
+            [FromBody] AddServicesRequestDto request)
+        {
+            if (!IsValidRequest(request) || !request.ServiceIds.Any())
+            {
+                return ValidationError("Danh sách dịch vụ không được rỗng");
+            }
+
+            try
+            {
+                var result = await _commandService.AddServicesAsync(
+                    id,
+                    request.ServiceIds,
+                    GetCurrentUserId());
+
+                _logger.LogInformation(
+                    "Staff {UserId} added {Count} services to appointment {AppointmentId}",
+                    GetCurrentUserId(),
+                    request.ServiceIds.Count,
+                    id);
+
+                return Success(result, $"Đã thêm {request.ServiceIds.Count} dịch vụ phát sinh. PaymentIntent mới đã được tạo.");
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid service IDs for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid add services attempt for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding services to appointment {AppointmentId}", id);
+                return ServerError("Có lỗi xảy ra khi thêm dịch vụ");
+            }
+        }
+
+        /// <summary>
+        /// [Thanh toán] Tạo PaymentIntent mới cho lịch hẹn
+        /// </summary>
+        /// <remarks>
+        /// Dùng khi cần khởi tạo lại intent thanh toán (ví dụ: khách yêu cầu thanh toán lại,
+        /// bổ sung phí sau khi điều chỉnh dịch vụ, hoặc intent trước đó đã hết hạn).
+        /// </remarks>
+        /// <param name="id">ID lịch hẹn</param>
+        /// <param name="request">Thông tin tạo intent</param>
+        [HttpPost("{id:int}/payments/create-intent")]
+        [Authorize(Policy = "AdminOrStaff")]
+        public async Task<IActionResult> CreatePaymentIntent(
+            int id,
+            [FromBody] CreatePaymentIntentRequestDto request)
+        {
+            if (!IsValidRequest(request))
+            {
+                return ValidationError("Thông tin tạo payment intent không hợp lệ");
+            }
+
+            if (id != request.AppointmentId)
+            {
+                return ValidationError("ID lịch hẹn trong URL không khớp với dữ liệu gửi lên");
+            }
+
+            try
+            {
+                var result = await _commandService.CreatePaymentIntentAsync(request, GetCurrentUserId());
+
+                return Success(result, "Đã tạo payment intent mới cho lịch hẹn");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid payment intent creation for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating payment intent for appointment {AppointmentId}", id);
+                return ServerError("Có lỗi xảy ra khi tạo payment intent mới");
+            }
+        }
+
+        /// <summary>
+        /// [Thanh toán] Danh sách PaymentIntent của lịch hẹn
+        /// </summary>
+        /// <param name="id">ID lịch hẹn</param>
+        [HttpGet("{id:int}/payments/intents")]
+        [Authorize(Policy = "AdminOrStaff")]
+        public async Task<IActionResult> GetPaymentIntents(int id)
+        {
+            try
+            {
+                var intents = await _queryService.GetPaymentIntentsAsync(id);
+
+                return Success(intents, $"Tìm thấy {intents.Count} payment intent cho lịch hẹn");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving payment intents for appointment {AppointmentId}", id);
+                return ServerError("Có lỗi xảy ra khi lấy danh sách payment intent");
+            }
+        }
+
+        /// <summary>
+        /// [Thanh toán] Ghi nhận kết quả PaymentIntent cho lịch hẹn
+        /// </summary>
+        /// <remarks>
+        /// Dùng khi nhận callback từ cổng thanh toán hoặc khi staff xác nhận khách đã thanh toán thành công/không thành công.
+        /// </remarks>
+        /// <param name="id">ID lịch hẹn</param>
+        /// <param name="request">Thông tin kết quả thanh toán</param>
+        [HttpPost("{id:int}/payments/record-result")]
+        [Authorize(Policy = "AdminOrStaff")]
+        public async Task<IActionResult> RecordPaymentResult(
+            int id,
+            [FromBody] RecordPaymentResultRequestDto request)
+        {
+            if (!IsValidRequest(request))
+            {
+                return ValidationError("Dữ liệu kết quả thanh toán không hợp lệ");
+            }
+
+            if (id != request.AppointmentId)
+            {
+                return ValidationError("ID lịch hẹn trong URL không khớp với dữ liệu gửi lên");
+            }
+
+            try
+            {
+                var result = await _commandService.RecordPaymentResultAsync(request, GetCurrentUserId());
+
+                return Success(result, "Đã cập nhật kết quả thanh toán cho lịch hẹn");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid payment result for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recording payment result for appointment {AppointmentId}", id);
+                return ServerError("Có lỗi xảy ra khi ghi nhận kết quả thanh toán");
             }
         }
 

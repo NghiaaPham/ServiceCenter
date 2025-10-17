@@ -18,6 +18,13 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [Column("ServiceID")]
         public int ServiceId { get; set; }
 
+        /// <summary>
+        /// ID của subscription được sử dụng cho service này (nếu ServiceSource = "Subscription")
+        /// NULL cho services với ServiceSource = "Regular" hoặc "Extra"
+        /// </summary>
+        [Column("SubscriptionID")]
+        public int? SubscriptionId { get; set; }
+
         [StringLength(20)]
         public string ServiceSource { get; set; } = "Extra";
 

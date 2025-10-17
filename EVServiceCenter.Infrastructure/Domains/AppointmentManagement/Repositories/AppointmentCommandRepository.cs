@@ -1,8 +1,9 @@
-﻿using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+﻿using System;
+using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Repositories;
+using EVServiceCenter.Core.Domains.Payments.Entities;
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositories
@@ -19,6 +20,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
         public async Task<Appointment> CreateWithServicesAsync(
             Appointment appointment,
             List<AppointmentService> appointmentServices,
+            PaymentIntent? initialPaymentIntent = null,
             CancellationToken cancellationToken = default)
         {
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -26,6 +28,19 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             {
                 await _context.Appointments.AddAsync(appointment, cancellationToken);
                 await _context.SaveChangesAsync(cancellationToken);
+
+                if (initialPaymentIntent != null)
+                {
+                    initialPaymentIntent.AppointmentId = appointment.AppointmentId;
+                    initialPaymentIntent.CustomerId = appointment.CustomerId;
+
+                    await _context.PaymentIntents.AddAsync(initialPaymentIntent, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    appointment.LatestPaymentIntentId = initialPaymentIntent.PaymentIntentId;
+                    appointment.PaymentIntentCount = Math.Max(appointment.PaymentIntentCount, 1);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
 
                 foreach (var service in appointmentServices)
                 {
