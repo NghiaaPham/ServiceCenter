@@ -14,12 +14,12 @@
         public int VehicleId { get; set; }
         public string VehicleName { get; set; } = null!;
         public string? LicensePlate { get; set; }
-        public string? VIN { get; set; }  
+        public string? VIN { get; set; }
 
         // Service Center & Slot
         public int ServiceCenterId { get; set; }
         public string ServiceCenterName { get; set; } = null!;
-        public string? ServiceCenterAddress { get; set; }  
+        public string? ServiceCenterAddress { get; set; }
 
         public int? SlotId { get; set; }
         public DateOnly? SlotDate { get; set; }
@@ -42,6 +42,7 @@
         // Cost & Time
         public int? EstimatedDuration { get; set; }
         public decimal? EstimatedCost { get; set; }
+        public decimal? FinalCost { get; set; }
 
         /// <summary>
         /// ✅ THÊM MỚI: Breakdown discount chi tiết
@@ -50,22 +51,29 @@
         /// </summary>
         public DiscountSummaryDto? DiscountSummary { get; set; }
 
+        // Payment
+        public string PaymentStatus { get; set; } = null!;
+        public decimal? PaidAmount { get; set; }
+        public int PaymentIntentCount { get; set; }
+        public int? LatestPaymentIntentId { get; set; }
+        public decimal OutstandingAmount { get; set; }
+
         // Other
         public string? CustomerNotes { get; set; }
         public string Priority { get; set; } = null!;
         public string Source { get; set; } = null!;
 
         // Preferred Technician
-        public int? PreferredTechnicianId { get; set; }  
-        public string? PreferredTechnicianName { get; set; }  
+        public int? PreferredTechnicianId { get; set; }
+        public string? PreferredTechnicianName { get; set; }
 
         // Dates
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }
-        public DateTime? ConfirmationDate { get; set; }  
+        public DateTime? ConfirmationDate { get; set; }
 
         // Cancellation/Reschedule
-        public string? CancellationReason { get; set; }  
-        public int? RescheduledFromId { get; set; } 
+        public string? CancellationReason { get; set; }
+        public int? RescheduledFromId { get; set; }
     }
 }

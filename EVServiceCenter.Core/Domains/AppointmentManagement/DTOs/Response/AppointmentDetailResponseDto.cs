@@ -1,6 +1,9 @@
-﻿namespace EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response
+﻿using System;
+using System.Collections.Generic;
+
+namespace EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response
 {
-    public class AppointmentDetailResponseDto : AppointmentResponseDto 
+    public class AppointmentDetailResponseDto : AppointmentResponseDto
     {
         // Service Description
         public string? ServiceDescription { get; set; }
@@ -24,5 +27,8 @@
 
         // Related Work Orders (if any)
         public List<WorkOrderSummaryDto>? WorkOrders { get; set; }
+
+        // Payment Intents
+        public List<PaymentIntentResponseDto>? PaymentIntents { get; set; }
     }
 }
