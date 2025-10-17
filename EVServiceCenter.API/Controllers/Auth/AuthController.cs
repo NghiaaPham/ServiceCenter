@@ -19,17 +19,20 @@ namespace EVServiceCenter.API.Controllers.Auth
     {
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
+        private readonly ITokenBlacklistService _blacklistService;
         private readonly ILogger<AuthController> _logger;
         private readonly EVDbContext _context;
 
         public AuthController(
             IUserService userService,
             ITokenService tokenService,
+            ITokenBlacklistService blacklistService,
             ILogger<AuthController> logger,
             EVDbContext context)
         {
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(tokenService));
+            _blacklistService = blacklistService ?? throw new ArgumentNullException(nameof(blacklistService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
@@ -220,26 +223,131 @@ namespace EVServiceCenter.API.Controllers.Auth
             }
         }
 
+        /// <summary>
+        /// [Đăng xuất] Logout và revoke JWT token
+        /// </summary>
+        /// <remarks>
+        /// Logout user và thêm JWT token vào blacklist.
+        ///
+        /// **🔒 SECURITY FEATURES:**
+        /// - Revoke JWT token (thêm vào blacklist)
+        /// - Token không thể sử dụng được nữa
+        /// - Log logout activity với IP và User Agent
+        /// - Invalidate user session
+        ///
+        /// **Process Flow:**
+        /// 1. Extract JWT token từ Authorization header
+        /// 2. Get userId từ claims
+        /// 3. Revoke token (thêm vào RevokedTokens table)
+        /// 4. Invalidate UserSession (nếu có)
+        /// 5. Return success
+        ///
+        /// **Use Cases:**
+        /// - User click "Logout" button
+        /// - Force logout all sessions (security)
+        /// - Logout sau khi đổi password
+        ///
+        /// **Security:**
+        /// - Token blacklist với expiry time
+        /// - Background job cleanup expired tokens
+        /// - IP và User Agent tracking
+        ///
+        /// **Response:**
+        /// - 200 OK: Logout thành công
+        /// - 401 Unauthorized: Token không hợp lệ
+        /// - 500 Internal Error: Server error
+        /// </remarks>
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
             try
             {
+                // 1. Get current user ID from claims
+                var userId = GetCurrentUserId();
+
+                if (userId == 0)
+                {
+                    _logger.LogWarning("Logout attempted with invalid user ID");
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Không thể xác định người dùng",
+                        ErrorCode = "UNAUTHORIZED"
+                    });
+                }
+
+                // 2. Extract JWT token from Authorization header
+                var authHeader = Request.Headers.Authorization.FirstOrDefault();
+
+                if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Logout attempted without valid Authorization header");
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Token không hợp lệ",
+                        ErrorCode = "INVALID_TOKEN"
+                    });
+                }
+
+                var token = authHeader.Substring("Bearer ".Length).Trim();
+
+                // 3. Get client IP and User Agent
+                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var userAgent = Request.Headers.UserAgent.FirstOrDefault();
+
+                // 4. Revoke token (add to blacklist)
+                var revoked = await _blacklistService.RevokeTokenAsync(
+                    token: token,
+                    userId: userId,
+                    reason: "Logout",
+                    ipAddress: ipAddress,
+                    userAgent: userAgent,
+                    cancellationToken: HttpContext.RequestAborted);
+
+                if (!revoked)
+                {
+                    _logger.LogWarning("Failed to revoke token for user {UserId}", userId);
+                }
+
+                // 5. Invalidate UserSession (optional - for tracking)
+                var activeSession = await _context.UserSessions
+                    .Where(s => s.UserId == userId && s.IsActive == true)
+                    .OrderByDescending(s => s.LoginTime)
+                    .FirstOrDefaultAsync(HttpContext.RequestAborted);
+
+                if (activeSession != null)
+                {
+                    activeSession.IsActive = false;
+                    activeSession.LogoutTime = DateTime.UtcNow;
+                    await _context.SaveChangesAsync(HttpContext.RequestAborted);
+                }
+
+                // 6. Log logout event
+                _logger.LogInformation(
+                    "User {UserId} logged out successfully from IP: {IP}, UserAgent: {UserAgent}",
+                    userId, ipAddress, userAgent);
+
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Logout successful",
-                    Data = null
+                    Message = "Đăng xuất thành công",
+                    Data = new
+                    {
+                        UserId = userId,
+                        LogoutTime = DateTime.UtcNow,
+                        Message = "Token đã được thu hồi. Vui lòng đăng nhập lại để tiếp tục."
+                    }
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during logout");
+                _logger.LogError(ex, "Error during logout for user {UserId}", GetCurrentUserId());
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Internal server error",
+                    Message = "Có lỗi xảy ra khi đăng xuất",
                     ErrorCode = "INTERNAL_ERROR"
                 });
             }
