@@ -72,6 +72,29 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Services
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Tạm dừng subscription
+        /// Customer có thể tạm dừng khi: xe đang sửa chữa, đi công tác
+        /// Staff có thể tạm dừng khi: phát hiện gian lận
+        /// Validate:
+        /// - Subscription phải đang Active
+        /// - Reason không được trống
+        /// </summary>
+        Task<bool> SuspendSubscriptionAsync(
+            int subscriptionId,
+            string reason,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Kích hoạt lại subscription đã bị Suspend
+        /// Validate:
+        /// - Subscription phải đang Suspended
+        /// - Chưa hết hạn
+        /// </summary>
+        Task<bool> ReactivateSubscriptionAsync(
+            int subscriptionId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Update service usage sau khi complete appointment
         /// INTERNAL USE - được gọi từ AppointmentService
         /// </summary>

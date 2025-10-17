@@ -247,6 +247,160 @@ namespace EVServiceCenter.API.Controllers.PackageSubscriptions
                     "Có lỗi xảy ra khi hủy subscription", "INTERNAL_ERROR", 500));
             }
         }
+
+        /// <summary>
+        /// Tạm dừng subscription
+        /// Customer có thể tạm dừng khi: xe đang sửa chữa lớn, đi công tác dài hạn
+        /// Staff có thể tạm dừng khi: phát hiện gian lận, vi phạm chính sách
+        /// </summary>
+        /// <param name="id">ID của subscription cần tạm dừng</param>
+        /// <param name="request">Lý do tạm dừng (bắt buộc)</param>
+        /// <param name="ct">Cancellation token</param>
+        [HttpPost("{id:int}/suspend")]
+        [Authorize(Policy = "CustomerOrStaff")] // Customer hoặc Staff đều có thể suspend
+        public async Task<IActionResult> SuspendSubscription(
+            int id,
+            [FromBody] SuspendSubscriptionRequestDto request,
+            CancellationToken ct)
+        {
+            try
+            {
+                var customerId = GetCurrentCustomerId();
+                bool isStaff = User.IsInRole("Staff") || User.IsInRole("Admin");
+
+                // Nếu là customer, validate ownership
+                if (!isStaff)
+                {
+                    var subscription = await _service.GetSubscriptionDetailsAsync(id, customerId, ct);
+                    if (subscription == null)
+                    {
+                        return NotFound(ApiResponse<object>.WithNotFound(
+                            $"Không tìm thấy subscription với ID: {id}"));
+                    }
+
+                    if (subscription.CustomerId != customerId)
+                    {
+                        return StatusCode(403, ApiResponse<object>.WithError(
+                            "Bạn không có quyền tạm dừng subscription này", "FORBIDDEN", 403));
+                    }
+                }
+
+                // Gọi service để suspend
+                var result = await _service.SuspendSubscriptionAsync(id, request.Reason, ct);
+
+                if (!result)
+                {
+                    return BadRequest(ApiResponse<object>.WithError(
+                        "Không thể tạm dừng subscription (có thể đã bị hủy hoặc hết hạn)", 
+                        "BUSINESS_RULE_VIOLATION"));
+                }
+
+                _logger.LogInformation(
+                    "Subscription {SubscriptionId} suspended by user {UserId} (Staff: {IsStaff}). Reason: {Reason}",
+                    id, customerId, isStaff, request.Reason);
+
+                return Ok(ApiResponse<object>.WithSuccess(new
+                {
+                    subscriptionId = id,
+                    suspended = true,
+                    suspendedDate = DateTime.UtcNow,
+                    reason = request.Reason
+                }, "Tạm dừng subscription thành công"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.WithError(ex.Message, "BUSINESS_RULE_VIOLATION"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ApiResponse<object>.WithError(ex.Message, "FORBIDDEN", 403));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error suspending subscription {Id}", id);
+                return StatusCode(500, ApiResponse<object>.WithError(
+                    "Có lỗi xảy ra khi tạm dừng subscription", "INTERNAL_ERROR", 500));
+            }
+        }
+
+        /// <summary>
+        /// Kích hoạt lại subscription đã bị tạm dừng
+        /// Chỉ reactivate được subscription đang ở trạng thái Suspended
+        /// </summary>
+        /// <param name="id">ID của subscription cần kích hoạt lại</param>
+        /// <param name="ct">Cancellation token</param>
+        [HttpPost("{id:int}/reactivate")]
+        [Authorize(Policy = "CustomerOrStaff")] // Customer hoặc Staff đều có thể reactivate
+        public async Task<IActionResult> ReactivateSubscription(int id, CancellationToken ct)
+        {
+            try
+            {
+                var customerId = GetCurrentCustomerId();
+                bool isStaff = User.IsInRole("Staff") || User.IsInRole("Admin");
+
+                // Nếu là customer, validate ownership và expiry
+                if (!isStaff)
+                {
+                    var subscription = await _service.GetSubscriptionDetailsAsync(id, customerId, ct);
+                    if (subscription == null)
+                    {
+                        return NotFound(ApiResponse<object>.WithNotFound(
+                            $"Không tìm thấy subscription với ID: {id}"));
+                    }
+
+                    if (subscription.CustomerId != customerId)
+                    {
+                        return StatusCode(403, ApiResponse<object>.WithError(
+                            "Bạn không có quyền kích hoạt lại subscription này", "FORBIDDEN", 403));
+                    }
+
+                    // Check expiry date (customer không thể reactivate subscription đã hết hạn)
+                    if (subscription.ExpiryDate.HasValue && 
+                        subscription.ExpiryDate.Value < DateTime.UtcNow)
+                    {
+                        return BadRequest(ApiResponse<object>.WithError(
+                            $"Không thể kích hoạt lại subscription đã hết hạn vào {subscription.ExpiryDate.Value:dd/MM/yyyy}. " +
+                            "Vui lòng mua gói mới.",
+                            "SUBSCRIPTION_EXPIRED"));
+                    }
+                }
+
+                // Gọi service để reactivate
+                var result = await _service.ReactivateSubscriptionAsync(id, ct);
+
+                if (!result)
+                {
+                    return BadRequest(ApiResponse<object>.WithError(
+                        "Không thể kích hoạt lại subscription", 
+                        "BUSINESS_RULE_VIOLATION"));
+                }
+
+                _logger.LogInformation(
+                    "Subscription {SubscriptionId} reactivated by user {UserId} (Staff: {IsStaff})",
+                    id, customerId, isStaff);
+
+                return Ok(ApiResponse<object>.WithSuccess(new
+                {
+                    subscriptionId = id,
+                    reactivated = true,
+                    reactivatedDate = DateTime.UtcNow
+                }, "Kích hoạt lại subscription thành công"));
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.WithError(ex.Message, "BUSINESS_RULE_VIOLATION"));
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ApiResponse<object>.WithError(ex.Message, "FORBIDDEN", 403));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reactivating subscription {Id}", id);
+                return StatusCode(500, ApiResponse<object>.WithError(
+                    "Có lỗi xảy ra khi kích hoạt lại subscription", "INTERNAL_ERROR", 500));
+            }
+        }
     }
 
     /// <summary>

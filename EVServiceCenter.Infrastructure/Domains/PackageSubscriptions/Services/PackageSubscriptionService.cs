@@ -209,6 +209,93 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
             }
         }
 
+        public async Task<bool> SuspendSubscriptionAsync(
+            int subscriptionId,
+            string reason,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Service: Suspending subscription {SubscriptionId}", subscriptionId);
+
+                // ========== BUSINESS VALIDATION ==========
+                var subscription = await _queryRepository.GetSubscriptionByIdAsync(
+                    subscriptionId, cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new InvalidOperationException($"Không tìm thấy subscription {subscriptionId}");
+                }
+
+                if (subscription.Status != SubscriptionStatusEnum.Active)
+                {
+                    throw new InvalidOperationException(
+                        $"Chỉ có thể tạm dừng subscription đang Active. " +
+                        $"Trạng thái hiện tại: {subscription.StatusDisplayName}");
+                }
+
+                // Validate reason
+                if (string.IsNullOrWhiteSpace(reason) || reason.Length < 10)
+                {
+                    throw new InvalidOperationException(
+                        "Lý do tạm dừng phải có ít nhất 10 ký tự");
+                }
+
+                // ========== DELEGATE TO COMMAND REPOSITORY ==========
+                return await _commandRepository.SuspendSubscriptionAsync(
+                    subscriptionId, reason, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Service: Error suspending subscription {SubscriptionId}", subscriptionId);
+                throw;
+            }
+        }
+
+        public async Task<bool> ReactivateSubscriptionAsync(
+            int subscriptionId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Service: Reactivating subscription {SubscriptionId}", subscriptionId);
+
+                // ========== BUSINESS VALIDATION ==========
+                var subscription = await _queryRepository.GetSubscriptionByIdAsync(
+                    subscriptionId, cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new InvalidOperationException($"Không tìm thấy subscription {subscriptionId}");
+                }
+
+                if (subscription.Status != SubscriptionStatusEnum.Suspended)
+                {
+                    throw new InvalidOperationException(
+                        $"Chỉ có thể kích hoạt lại subscription đang Suspended. " +
+                        $"Trạng thái hiện tại: {subscription.StatusDisplayName}");
+                }
+
+                // Check expiry (không cho reactivate subscription đã hết hạn)
+                if (subscription.ExpiryDate.HasValue && 
+                    subscription.ExpiryDate.Value < DateTime.UtcNow)
+                {
+                    throw new InvalidOperationException(
+                        $"Không thể kích hoạt lại subscription đã hết hạn vào {subscription.ExpiryDate.Value:dd/MM/yyyy}. " +
+                        "Vui lòng mua gói mới.");
+                }
+
+                // ========== DELEGATE TO COMMAND REPOSITORY ==========
+                return await _commandRepository.ReactivateSubscriptionAsync(
+                    subscriptionId, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Service: Error reactivating subscription {SubscriptionId}", subscriptionId);
+                throw;
+            }
+        }
+
         public async Task<bool> UpdateServiceUsageAfterAppointmentAsync(
             int subscriptionId,
             int serviceId,

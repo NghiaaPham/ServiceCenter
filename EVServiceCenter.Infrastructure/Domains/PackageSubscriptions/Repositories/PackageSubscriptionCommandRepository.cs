@@ -230,7 +230,7 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                 var sql = @"
                     SELECT UsageID, SubscriptionID, ServiceID,
                            TotalAllowedQuantity, UsedQuantity, RemainingQuantity,
-                           LastUsedDate, LastUsedAppointmentID
+                           LastUsedDate, LastUsedAppointmentID, Notes
                     FROM PackageServiceUsages WITH (UPDLOCK, ROWLOCK)
                     WHERE SubscriptionID = {0} AND ServiceID = {1}";
 
