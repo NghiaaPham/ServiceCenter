@@ -28,13 +28,13 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             AppointmentQueryDto query,
             CancellationToken cancellationToken = default)
         {
-            // ✅ PERFORMANCE: Base query without includes for fast counting
+            // ✅ STEP 1: Base query WITHOUT includes for fast counting
             var baseQuery = _context.Appointments.AsNoTracking().AsQueryable();
 
             // Apply filters
             baseQuery = ApplyFilters(baseQuery, query);
 
-            // ✅ PERFORMANCE: COUNT without joins - FAST
+            // ✅ STEP 2: COUNT without any joins - VERY FAST
             var totalCount = await baseQuery.CountAsync(cancellationToken);
 
             if (totalCount == 0)
@@ -45,25 +45,37 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             // Apply sorting
             baseQuery = ApplySorting(baseQuery, query);
 
-            // ✅ FIX: Use Include instead of Select projection to preserve all IDs
-            // ✅ PERFORMANCE: AsSplitQuery() prevents cartesian explosion
-            var items = await baseQuery
+            // ✅ STEP 3: Get IDs only first (super fast, minimal data transfer)
+            var appointmentIds = await baseQuery
                 .Skip(query.Skip)
                 .Take(query.PageSize)
-                .Include(a => a.Customer)
-                .Include(a => a.Vehicle)
-                    .ThenInclude(v => v.Model)
-                        .ThenInclude(m => m!.Brand)
-                .Include(a => a.ServiceCenter)
-                .Include(a => a.Slot)
-                .Include(a => a.Status)
-                .Include(a => a.Package)
-                .Include(a => a.AppointmentServices)
-                    .ThenInclude(aps => aps.Service)
-                .AsSplitQuery() // ✅ CRITICAL: Split into multiple optimized queries
+                .Select(a => a.AppointmentId)
                 .ToListAsync(cancellationToken);
 
-            return PagedResultFactory.Create(items, totalCount, query.Page, query.PageSize);
+            // ✅ STEP 4: Load full entities with optimized includes
+            // Use AsSplitQuery to prevent cartesian explosion
+            var items = await _context.Appointments
+                .AsNoTracking()
+                .Where(a => appointmentIds.Contains(a.AppointmentId))
+                .Include(a => a.Customer) // Essential for display
+                .Include(a => a.Vehicle)
+                    .ThenInclude(v => v.Model) // Need model name
+                        .ThenInclude(m => m!.Brand) // Need brand name
+                .Include(a => a.ServiceCenter) // Essential for display
+                .Include(a => a.Slot) // Essential for time display
+                .Include(a => a.Status) // Essential for status display
+                // ✅ OPTIMIZED: Only load AppointmentServices with essential data
+                .Include(a => a.AppointmentServices)
+                    .ThenInclude(aps => aps.Service)
+                .AsSplitQuery() // ✅ CRITICAL: Prevents cartesian explosion
+                .ToListAsync(cancellationToken);
+
+            // ✅ STEP 5: Restore original order (preserve sorting from step 3)
+            var orderedItems = appointmentIds
+                .Select(id => items.First(a => a.AppointmentId == id))
+                .ToList();
+
+            return PagedResultFactory.Create(orderedItems, totalCount, query.Page, query.PageSize);
         }
 
         private IQueryable<Appointment> ApplyFilters(
@@ -127,24 +139,57 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             int customerId,
             CancellationToken cancellationToken = default)
         {
-            // ✅ FIX: Include ALL navigation properties needed by mapper
-            return await _context.Appointments
+            // ⚡ PERFORMANCE OPTIMIZED: 2-step query pattern
+            
+            // STEP 1: Get appointment IDs only (FAST - no joins)
+            var appointmentIds = await _context.Appointments
                 .AsNoTracking()
                 .Where(a => a.CustomerId == customerId)
-                .Include(a => a.Customer) // ✅ ADDED: Customer info
+                .OrderByDescending(a => a.AppointmentDate)
+                .Take(100) // ✅ LIMIT to prevent loading too many
+                .Select(a => a.AppointmentId)
+                .ToListAsync(cancellationToken);
+
+            if (!appointmentIds.Any())
+                return Enumerable.Empty<Appointment>();
+
+            // STEP 2: Load full entities with essential includes only
+            return await _context.Appointments
+                .AsNoTracking()
+                .Where(a => appointmentIds.Contains(a.AppointmentId))
+                // ✅ ESSENTIAL ONLY (reduce from 11 to 7 includes)
+                .Include(a => a.Customer)
                 .Include(a => a.ServiceCenter)
                 .Include(a => a.Slot)
                 .Include(a => a.Status)
                 .Include(a => a.Vehicle)
                     .ThenInclude(v => v.Model)
                         .ThenInclude(m => m!.Brand)
-                .Include(a => a.Package) // ✅ ADDED: Package info (if subscription)
-                .Include(a => a.AppointmentServices) // ✅ ADDED: Services list
-                    .ThenInclude(aps => aps.Service)
-                .Include(a => a.PreferredTechnician) // ✅ ADDED: Technician info
-                .AsSplitQuery() // ✅ CRITICAL: Split into multiple optimized queries
-                .OrderByDescending(a => a.AppointmentDate)
-                .ToListAsync(cancellationToken);
+                // ✅ LOAD SERVICES SEPARATELY (reduce cartesian explosion)
+                .AsSplitQuery()
+                .ToListAsync(cancellationToken)
+                .ContinueWith(async task =>
+                {
+                    var appointments = await task;
+                    
+                    // STEP 3: Load AppointmentServices in separate query
+                    var services = await _context.AppointmentServices
+                        .AsNoTracking()
+                        .Where(aps => appointmentIds.Contains(aps.AppointmentId))
+                        .Include(aps => aps.Service)
+                        .ToListAsync(cancellationToken);
+                    
+                    // STEP 4: Manually attach services to appointments
+                    foreach (var appointment in appointments)
+                    {
+                        appointment.AppointmentServices = services
+                            .Where(s => s.AppointmentId == appointment.AppointmentId)
+                            .ToList();
+                    }
+                    
+                    return appointments;
+                })
+                .Unwrap();
         }
 
         public async Task<IEnumerable<Appointment>> GetByServiceCenterAndDateAsync(
@@ -191,26 +236,54 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
 
-            // ✅ FIX: Use Include to load ALL navigation properties (same as GetByCustomerIdAsync)
-            return await _context.Appointments
+            // ⚡ PERFORMANCE OPTIMIZED: 2-step query pattern
+            
+            // STEP 1: Get appointment IDs only (FAST)
+            var appointmentIds = await _context.Appointments
                 .AsNoTracking()
                 .Where(a => a.CustomerId == customerId && a.Slot!.SlotDate >= today)
                 .OrderBy(a => a.Slot!.SlotDate)
                     .ThenBy(a => a.Slot!.StartTime)
                 .Take(limit)
-                .Include(a => a.Customer) // ✅ ADDED: Customer info
+                .Select(a => a.AppointmentId)
+                .ToListAsync(cancellationToken);
+
+            if (!appointmentIds.Any())
+                return Enumerable.Empty<Appointment>();
+
+            // STEP 2: Load full entities with essential includes
+            var appointments = await _context.Appointments
+                .AsNoTracking()
+                .Where(a => appointmentIds.Contains(a.AppointmentId))
+                .Include(a => a.Customer)
                 .Include(a => a.ServiceCenter)
                 .Include(a => a.Slot)
                 .Include(a => a.Status)
                 .Include(a => a.Vehicle)
                     .ThenInclude(v => v.Model)
                         .ThenInclude(m => m!.Brand)
-                .Include(a => a.Package) // ✅ ADDED: Package info (if subscription)
-                .Include(a => a.AppointmentServices) // ✅ ADDED: Services list
-                    .ThenInclude(aps => aps.Service)
-                .Include(a => a.PreferredTechnician) // ✅ ADDED: Technician info
-                .AsSplitQuery() // ✅ CRITICAL: Split into multiple optimized queries
+                .AsSplitQuery()
                 .ToListAsync(cancellationToken);
+
+            // STEP 3: Load services separately (reduce cartesian explosion)
+            var services = await _context.AppointmentServices
+                .AsNoTracking()
+                .Where(aps => appointmentIds.Contains(aps.AppointmentId))
+                .Include(aps => aps.Service)
+                .ToListAsync(cancellationToken);
+
+            // STEP 4: Attach services to appointments
+            foreach (var appointment in appointments)
+            {
+                appointment.AppointmentServices = services
+                    .Where(s => s.AppointmentId == appointment.AppointmentId)
+                    .ToList();
+            }
+
+            // STEP 5: Restore original order
+            return appointmentIds
+                .Select(id => appointments.First(a => a.AppointmentId == id))
+                .ToList();
         }
 
         public async Task<int> GetCountByStatusAsync(

@@ -1,5 +1,9 @@
-﻿using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
+using EVServiceCenter.Core.Domains.Payments.Entities;
 
 
 namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
@@ -69,6 +73,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 // Cost & Duration
                 EstimatedDuration = appointment.EstimatedDuration,
                 EstimatedCost = appointment.EstimatedCost,
+                FinalCost = appointment.FinalCost,
+                PaymentStatus = appointment.PaymentStatus,
+                PaidAmount = appointment.PaidAmount,
+                PaymentIntentCount = appointment.PaymentIntentCount,
+                LatestPaymentIntentId = appointment.LatestPaymentIntentId,
+                OutstandingAmount = CalculateOutstandingAmount(appointment),
 
                 // ✅ DISCOUNT INFO: Build DiscountSummary from stored fields
                 DiscountSummary = BuildDiscountSummary(appointment),
@@ -129,6 +139,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 StatusColor = baseDto.StatusColor,
                 EstimatedDuration = baseDto.EstimatedDuration,
                 EstimatedCost = baseDto.EstimatedCost,
+                FinalCost = baseDto.FinalCost, // ✅ FIX: Copy FinalCost
+                PaymentStatus = baseDto.PaymentStatus, // ✅ FIX: Copy PaymentStatus
+                PaidAmount = baseDto.PaidAmount, // ✅ FIX: Copy PaidAmount
+                PaymentIntentCount = baseDto.PaymentIntentCount, // ✅ FIX: Copy PaymentIntentCount
+                LatestPaymentIntentId = baseDto.LatestPaymentIntentId, // ✅ FIX: Copy LatestPaymentIntentId
+                OutstandingAmount = baseDto.OutstandingAmount, // ✅ FIX: Copy OutstandingAmount
                 CustomerNotes = baseDto.CustomerNotes,
                 Priority = baseDto.Priority,
                 Source = baseDto.Source,
@@ -151,14 +167,79 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 CreatedByName = appointment.CreatedByNavigation?.FullName,
                 UpdatedBy = appointment.UpdatedBy,
                 UpdatedByName = appointment.UpdatedByNavigation?.FullName,
-                
+
                 // ✅ TODO: WorkOrders mapping (needs WorkOrder entity check)
-                WorkOrders = new List<WorkOrderSummaryDto>(),
+                WorkOrders = appointment.WorkOrders?
+                    .Select(wo => new WorkOrderSummaryDto
+                    {
+                        WorkOrderId = wo.WorkOrderId,
+                        WorkOrderNumber = wo.WorkOrderCode,
+                        StatusName = wo.Status?.StatusName ?? "",
+                        TotalAmount = wo.TotalAmount,
+                        CreatedDate = wo.CreatedDate ?? DateTime.UtcNow
+                    })
+                    .ToList() ?? new List<WorkOrderSummaryDto>(),
 
                 // ✅ DISCOUNT: Use baseDto's DiscountSummary (already built)
-                DiscountSummary = baseDto.DiscountSummary
+                DiscountSummary = baseDto.DiscountSummary,
+
+                // Payment intents (descending by creation date for convenience)
+                PaymentIntents = appointment.PaymentIntents?
+                    .OrderByDescending(pi => pi.CreatedDate)
+                    .Select(ToPaymentIntentResponseDto)
+                    .ToList()
             };
+        }
+
+        public static PaymentIntentResponseDto ToPaymentIntentResponseDto(PaymentIntent intent)
+        {
+            if (intent == null)
+            {
+                throw new ArgumentNullException(nameof(intent), "PaymentIntent không được null");
             }
+
+            return new PaymentIntentResponseDto
+            {
+                PaymentIntentId = intent.PaymentIntentId,
+                IntentCode = intent.IntentCode,
+                Amount = intent.Amount,
+                CapturedAmount = intent.CapturedAmount,
+                RefundedAmount = intent.RefundedAmount,
+                Currency = intent.Currency,
+                Status = intent.Status,
+                CreatedDate = intent.CreatedDate,
+                ConfirmedDate = intent.ConfirmedDate,
+                CancelledDate = intent.CancelledDate,
+                FailedDate = intent.FailedDate,
+                ExpiredDate = intent.ExpiredDate,
+                ExpiresAt = intent.ExpiresAt,
+                PaymentMethod = intent.PaymentMethod,
+                Notes = intent.Notes,
+                Transactions = intent.PaymentTransactions
+                    .OrderByDescending(t => t.CreatedDate)
+                    .Select(t => new PaymentTransactionResponseDto
+                    {
+                        PaymentTransactionId = t.TransactionId,
+                        PaymentIntentId = t.PaymentIntentId,
+                        Amount = t.Amount,
+                        Currency = t.Currency,
+                        Status = t.Status,
+                        PaymentMethod = t.PaymentMethod,
+                        GatewayName = t.GatewayName,
+                        GatewayTransactionId = t.GatewayTransactionId,
+                        GatewayResponse = t.GatewayResponse,
+                        Notes = t.Notes,
+                        CreatedDate = t.CreatedDate,
+                        AuthorizedDate = t.AuthorizedDate,
+                        CapturedDate = t.CapturedDate,
+                        RefundedDate = t.RefundedDate,
+                        FailedDate = t.FailedDate,
+                        ErrorCode = t.ErrorCode,
+                        ErrorMessage = t.ErrorMessage
+                    })
+                    .ToList()
+            };
+        }
 
         /// <summary>
         /// ✅ BUILD DISCOUNT SUMMARY from stored Appointment fields
@@ -208,6 +289,14 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 AppliedDiscountType = appointment.DiscountType ?? "None",
                 FinalTotal = finalTotal
             };
+        }
+
+        private static decimal CalculateOutstandingAmount(Appointment appointment)
+        {
+            decimal finalCost = appointment.FinalCost ?? appointment.EstimatedCost ?? 0m;
+            decimal paidAmount = appointment.PaidAmount ?? 0m;
+            var outstanding = finalCost - paidAmount;
+            return outstanding > 0 ? outstanding : 0;
         }
     }
 }
