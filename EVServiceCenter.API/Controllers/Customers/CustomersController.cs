@@ -1,4 +1,5 @@
-﻿using EVServiceCenter.Core.Domains.Customers.DTOs.Requests;
+﻿using EVServiceCenter.Core.Constants;
+using EVServiceCenter.Core.Domains.Customers.DTOs.Requests;
 using EVServiceCenter.Core.Domains.Customers.DTOs.Responses;
 using EVServiceCenter.Core.Domains.Customers.Interfaces;
 using EVServiceCenter.Core.Domains.Shared.Models;
@@ -369,6 +370,15 @@ namespace EVServiceCenter.API.Controllers.Customers
 
             try
             {
+                // Gán TypeId mặc định là Standard (20) nếu không được cung cấp
+                // Walk-in customers are automatically assigned Standard type
+                if (!request.TypeId.HasValue)
+                {
+                    request.TypeId = CustomerConstants.DefaultCustomerTypeId;
+                    _logger.LogInformation("TypeId not provided for walk-in customer, using default: {TypeId}", 
+                        CustomerConstants.DefaultCustomerTypeId);
+                }
+
                 var createdByUserId = GetCurrentUserId();
                 var result = await _customerService.CreateWalkInCustomerAsync(request, createdByUserId);  
                 _logger.LogInformation("Walk-in customer created by user {UserId}: {CustomerCode} - {FullName}",

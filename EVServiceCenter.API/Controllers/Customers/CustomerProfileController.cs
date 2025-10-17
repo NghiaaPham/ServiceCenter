@@ -7,6 +7,7 @@ using EVServiceCenter.Core.Domains.CustomerVehicles.Interfaces.Services;
 using EVServiceCenter.Core.Domains.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
 
 namespace EVServiceCenter.API.Controllers.Customers
 {
@@ -20,6 +21,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         private readonly ICustomerService _customerService;
         private readonly ICustomerVehicleService _vehicleService;
         private readonly ICustomerVehicleQueryService _vehicleQueryService;
+        private readonly IValidator<UpdateMyVehicleRequestDto> _updateVehicleValidator;
         private readonly ILogger<CustomerProfileController> _logger;
 
         public CustomerProfileController(
@@ -27,12 +29,14 @@ namespace EVServiceCenter.API.Controllers.Customers
             ICustomerService customerService,
             ICustomerVehicleService vehicleService,
             ICustomerVehicleQueryService vehicleQueryService,
+            IValidator<UpdateMyVehicleRequestDto> updateVehicleValidator,
             ILogger<CustomerProfileController> logger)
         {
             _customerAccountService = customerAccountService;
             _customerService = customerService;
             _vehicleService = vehicleService;
             _vehicleQueryService = vehicleQueryService;
+            _updateVehicleValidator = updateVehicleValidator;
             _logger = logger;
         }
 
@@ -711,6 +715,233 @@ namespace EVServiceCenter.API.Controllers.Customers
                 {
                     Success = false,
                     Message = "Có lỗi xảy ra khi kiểm tra trạng thái xe",
+                    ErrorCode = "INTERNAL_ERROR"
+                });
+            }
+        }
+
+        /// <summary>
+        /// [Cập nhật] Cập nhật thông tin xe của tôi
+        /// </summary>
+        /// <remarks>
+        /// Customer tự cập nhật một số thông tin cơ bản của xe.
+        ///
+        /// **🚀 PERFORMANCE OPTIMIZATIONS:**
+        /// - Sử dụng GetByIdAsync với caching (5 phút)
+        /// - Chỉ update fields thay đổi (partial update)
+        /// - Invalidate cache sau khi update
+        /// - Minimal database queries
+        /// - Fast-fail validation
+        ///
+        /// **Customer có thể sửa:**
+        /// - Số km hiện tại (Mileage) - phải >= số km cũ
+        /// - Màu xe (Color)
+        /// - Thông tin bảo hiểm (InsuranceNumber, InsuranceExpiry)
+        /// - Thông tin đăng kiểm (RegistrationExpiry)
+        /// - Sức khỏe pin (BatteryHealthPercent)
+        /// - Tình trạng xe (VehicleCondition: Good, Fair, Poor, Excellent)
+        ///
+        /// **Customer KHÔNG thể sửa:**
+        /// - Biển số xe (LicensePlate) - phải liên hệ admin
+        /// - Số khung (VIN) - phải liên hệ admin
+        /// - Model xe (ModelId) - phải liên hệ admin
+        /// - Ngày mua (PurchaseDate) - không thay đổi
+        /// - Thông tin bảo dưỡng - do hệ thống tự động
+        ///
+        /// **Validation:**
+        /// - Mileage: Phải >= số km hiện tại
+        /// - BatteryHealthPercent: 0-100%
+        /// - VehicleCondition: Good, Fair, Poor, Excellent
+        ///
+        /// **Use case:**
+        /// - Cập nhật km sau khi đi xa
+        /// - Gia hạn bảo hiểm/đăng kiểm
+        /// - Sơn lại xe → đổi màu
+        /// - Cập nhật tình trạng pin
+        ///
+        /// **Phân quyền:**
+        /// - Chỉ customer đăng nhập mới sửa được xe của mình
+        /// - Không sửa được xe của người khác
+        /// </remarks>
+        /// <param name="vehicleId">ID của xe cần cập nhật</param>
+        /// <param name="request">Thông tin cần cập nhật (partial update supported)</param>
+        /// <returns>Thông tin xe sau khi cập nhật</returns>
+        [HttpPut("my-vehicles/{vehicleId:int}")]
+        [ProducesResponseType(typeof(ApiResponse<CustomerVehicleResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateMyVehicle(
+            int vehicleId,
+            [FromBody] UpdateMyVehicleRequestDto request,
+            CancellationToken ct = default)
+        {
+            // ⚡ PERFORMANCE: Fast-fail validation (no DB query)
+            var validation = await _updateVehicleValidator.ValidateAsync(request, ct);
+            if (!validation.IsValid)
+            {
+                var errors = validation.Errors.Select(e => new
+                {
+                    Field = e.PropertyName,
+                    Message = e.ErrorMessage
+                });
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ",
+                    ErrorCode = "VALIDATION_ERROR",
+                    ValidationErrors = errors
+                });
+            }
+
+            try
+            {
+                // ⚡ PERFORMANCE: Get customerId from claims (no DB query)
+                var customerId = GetCurrentCustomerId();
+
+                if (customerId == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy thông tin khách hàng",
+                        ErrorCode = "CUSTOMER_NOT_FOUND"
+                    });
+                }
+
+                // ⚡ PERFORMANCE: Single query with caching (5 min cache in service layer)
+                var vehicle = await _vehicleService.GetByIdAsync(vehicleId, ct);
+
+                if (vehicle == null)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"Không tìm thấy xe với ID {vehicleId}",
+                        ErrorCode = "VEHICLE_NOT_FOUND"
+                    });
+                }
+
+                // ⚡ PERFORMANCE: Security check (no extra DB query)
+                if (vehicle.CustomerId != customerId)
+                {
+                    _logger.LogWarning(
+                        "SECURITY: Customer {CustomerId} attempted to update vehicle {VehicleId} of customer {OwnerId}",
+                        customerId, vehicleId, vehicle.CustomerId);
+
+                    return StatusCode(403, new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Bạn không có quyền cập nhật xe này",
+                        ErrorCode = "FORBIDDEN"
+                    });
+                }
+
+                // ⚡ PERFORMANCE: Validate mileage BEFORE creating update object
+                if (request.Mileage.HasValue && request.Mileage < vehicle.Mileage)
+                {
+                    return BadRequest(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = $"Số km mới ({request.Mileage:N0}) không thể nhỏ hơn số km hiện tại ({vehicle.Mileage:N0})",
+                        ErrorCode = "INVALID_MILEAGE"
+                    });
+                }
+
+                // ⚡ PERFORMANCE: Build change log BEFORE update (for efficient logging)
+                var changes = new List<string>();
+                if (request.Mileage.HasValue && request.Mileage != vehicle.Mileage)
+                    changes.Add($"Mileage: {vehicle.Mileage:N0} → {request.Mileage:N0} km");
+                if (request.Color != null && request.Color != vehicle.Color)
+                    changes.Add($"Color: {vehicle.Color} → {request.Color}");
+                if (request.BatteryHealthPercent.HasValue && request.BatteryHealthPercent != vehicle.BatteryHealthPercent)
+                    changes.Add($"Battery: {vehicle.BatteryHealthPercent}% → {request.BatteryHealthPercent}%");
+                if (request.VehicleCondition != null && request.VehicleCondition != vehicle.VehicleCondition)
+                    changes.Add($"Condition: {vehicle.VehicleCondition} → {request.VehicleCondition}");
+                if (request.InsuranceNumber != null && request.InsuranceNumber != vehicle.InsuranceNumber)
+                    changes.Add($"Insurance: {vehicle.InsuranceNumber} → {request.InsuranceNumber}");
+                if (request.InsuranceExpiry.HasValue && request.InsuranceExpiry != vehicle.InsuranceExpiry)
+                    changes.Add($"InsuranceExpiry: {vehicle.InsuranceExpiry} → {request.InsuranceExpiry}");
+                if (request.RegistrationExpiry.HasValue && request.RegistrationExpiry != vehicle.RegistrationExpiry)
+                    changes.Add($"RegistrationExpiry: {vehicle.RegistrationExpiry} → {request.RegistrationExpiry}");
+
+                // ⚡ PERFORMANCE: Skip update if no changes
+                if (changes.Count == 0)
+                {
+                    return Ok(new ApiResponse<CustomerVehicleResponseDto>
+                    {
+                        Success = true,
+                        Message = "Không có thay đổi nào để cập nhật",
+                        Data = vehicle
+                    });
+                }
+
+                // ⚡ PERFORMANCE: Map only changed fields (partial update)
+                var updateRequest = new UpdateCustomerVehicleRequestDto
+                {
+                    VehicleId = vehicleId,
+                    
+                    // ❌ CRITICAL FIELDS - Không cho customer đổi
+                    CustomerId = vehicle.CustomerId,
+                    ModelId = vehicle.ModelId,
+                    LicensePlate = vehicle.LicensePlate,
+                    Vin = vehicle.Vin,
+                    PurchaseDate = vehicle.PurchaseDate,
+                    IsActive = vehicle.IsActive,
+                    
+                    // ❌ MAINTENANCE FIELDS - Do hệ thống quản lý
+                    LastMaintenanceDate = vehicle.LastMaintenanceDate,
+                    NextMaintenanceDate = vehicle.NextMaintenanceDate,
+                    LastMaintenanceMileage = vehicle.LastMaintenanceMileage,
+                    NextMaintenanceMileage = vehicle.NextMaintenanceMileage,
+                    Notes = vehicle.Notes,
+                    
+                    // ✅ UPDATABLE FIELDS - Cho phép customer update (null-coalescing for partial update)
+                    Mileage = request.Mileage ?? vehicle.Mileage,
+                    Color = request.Color ?? vehicle.Color,
+                    BatteryHealthPercent = request.BatteryHealthPercent ?? vehicle.BatteryHealthPercent,
+                    VehicleCondition = request.VehicleCondition ?? vehicle.VehicleCondition,
+                    InsuranceNumber = request.InsuranceNumber ?? vehicle.InsuranceNumber,
+                    InsuranceExpiry = request.InsuranceExpiry ?? vehicle.InsuranceExpiry,
+                    RegistrationExpiry = request.RegistrationExpiry ?? vehicle.RegistrationExpiry
+                };
+
+                // ⚡ PERFORMANCE: Single update query, cache will be invalidated in service
+                var userId = GetCurrentUserId();
+                var result = await _vehicleService.UpdateAsync(updateRequest, userId, ct);
+
+                // ⚡ PERFORMANCE: Structured logging (efficient)
+                _logger.LogInformation(
+                    "Customer {CustomerId} updated vehicle {VehicleId} ({LicensePlate}). Changes: {ChangeCount} - {Changes}",
+                    customerId, vehicleId, vehicle.LicensePlate, changes.Count, string.Join("; ", changes));
+
+                return Ok(new ApiResponse<CustomerVehicleResponseDto>
+                {
+                    Success = true,
+                    Message = $"Cập nhật thông tin xe thành công ({changes.Count} thay đổi)",
+                    Data = result
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Business rule violation when updating vehicle {VehicleId}", vehicleId);
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    ErrorCode = "BUSINESS_RULE_VIOLATION"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating vehicle {VehicleId} for customer {CustomerId}",
+                    vehicleId, GetCurrentCustomerId());
+
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi cập nhật thông tin xe. Vui lòng thử lại sau.",
                     ErrorCode = "INTERNAL_ERROR"
                 });
             }
