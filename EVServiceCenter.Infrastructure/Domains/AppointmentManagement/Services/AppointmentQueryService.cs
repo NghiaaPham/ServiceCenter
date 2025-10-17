@@ -1,8 +1,11 @@
-﻿using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Query;
+﻿using System.Collections.Generic;
+using System.Linq;
+using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Query;
 using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using EVServiceCenter.Core.Domains.Shared.Models;
+using EVServiceCenter.Core.Domains.Payments.Interfaces.Services;
 using EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers;
 using Microsoft.Extensions.Logging;
 
@@ -13,14 +16,18 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
     {
         private readonly IAppointmentRepository _repository;
         private readonly IAppointmentQueryRepository _queryRepository;
+        private readonly IPaymentIntentService _paymentIntentService;
         private readonly ILogger<AppointmentQueryService> _logger;
 
         public AppointmentQueryService(
             IAppointmentRepository repository,
-            IAppointmentQueryRepository queryRepository, ILogger<AppointmentQueryService> logger)
+            IAppointmentQueryRepository queryRepository,
+            IPaymentIntentService paymentIntentService,
+            ILogger<AppointmentQueryService> logger)
         {
             _repository = repository;
             _queryRepository = queryRepository;
+            _paymentIntentService = paymentIntentService;
             _logger = logger;
         }
 
@@ -104,6 +111,16 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             CancellationToken cancellationToken = default)
         {
             return await _queryRepository.GetCountByStatusAsync(statusId, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<PaymentIntentResponseDto>> GetPaymentIntentsAsync(
+            int appointmentId,
+            CancellationToken cancellationToken = default)
+        {
+            var intents = await _paymentIntentService.GetByAppointmentAsync(appointmentId, cancellationToken);
+            return intents
+                .Select(AppointmentMapper.ToPaymentIntentResponseDto)
+                .ToList();
         }
     }
 }

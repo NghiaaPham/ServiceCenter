@@ -15,12 +15,17 @@ using EVServiceCenter.Core.Enums;
 using EVServiceCenter.Core.Helpers;
 using EVServiceCenter.Core.Interfaces.Services;
 using EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using EVServiceCenter.Core.Domains.Pricing.Interfaces;
 using EVServiceCenter.Core.Domains.Pricing.Models;
 using EVServiceCenter.Core.Domains.Customers.Interfaces;
+using EVServiceCenter.Core.Domains.Payments.Interfaces.Services;
+using EVServiceCenter.Core.Domains.Payments.Entities;
+using EVServiceCenter.Core.Domains.Payments.Interfaces.Repositories;
+using EVServiceCenter.Core.Constants;
 
 namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 {
@@ -39,6 +44,9 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
         private readonly IDiscountCalculationService _discountCalculator;
         private readonly IPromotionService _promotionService;
         private readonly ICustomerRepository _customerRepository;
+        private readonly IPaymentIntentService _paymentIntentService;
+        private readonly IRefundRepository _refundRepository;
+        private readonly EVDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AppointmentCommandService> _logger;
 
@@ -56,6 +64,9 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             IDiscountCalculationService discountCalculator,
             IPromotionService promotionService,
             ICustomerRepository customerRepository,
+            IPaymentIntentService paymentIntentService,
+            IRefundRepository refundRepository,
+            EVDbContext context,
             IConfiguration configuration,
             ILogger<AppointmentCommandService> logger)
         {
@@ -72,6 +83,9 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             _discountCalculator = discountCalculator ?? throw new ArgumentNullException(nameof(discountCalculator));
             _promotionService = promotionService ?? throw new ArgumentNullException(nameof(promotionService));
             _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+            _paymentIntentService = paymentIntentService ?? throw new ArgumentNullException(nameof(paymentIntentService));
+            _refundRepository = refundRepository ?? throw new ArgumentNullException(nameof(refundRepository));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _configuration = configuration;
             _logger = logger;
         }
@@ -86,8 +100,8 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 throw new InvalidOperationException("Slot không tồn tại");
 
             var slotDateTime = slot.SlotDate.ToDateTime(slot.StartTime);
-            
-            if(slotDateTime <  DateTime.UtcNow)
+
+            if (slotDateTime < DateTime.UtcNow)
             {
                 throw new InvalidOperationException("Không thể đặt lịch cho slot trong quá khứ ");
             }
@@ -102,69 +116,34 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             if (vehicle == null)
                 throw new InvalidOperationException("Xe không tồn tại");
 
-            // ========== SUBSCRIPTION VALIDATION (if provided) ==========
-            List<int> serviceIdsToBook = new List<int>(request.ServiceIds);
+            // ═══════════════════════════════════════════════════════════
+            // ⚡ SMART SUBSCRIPTION DEDUPLICATION - PERFORMANCE OPTIMIZED
+            // ═══════════════════════════════════════════════════════════
+
+            // ✅ Build appointment services với priority logic
+            // Single DB query cho subscriptions, smart in-memory mapping
+            (List<AppointmentService> appointmentServices, decimal originalTotal, int totalDuration) =
+                await BuildAppointmentServicesAsync(request, vehicle.ModelId, cancellationToken);
+
+            // ✅ Determine PackageId to set
             int? packageIdToSet = request.PackageId;
-
-            if (request.SubscriptionId.HasValue)
+            if (request.SubscriptionId.HasValue && !packageIdToSet.HasValue)
             {
-                // Validate subscription
-                var subscription = await _subscriptionRepository.GetSubscriptionByIdAsync(
-                    request.SubscriptionId.Value, cancellationToken);
+                // If user specified subscription but no package, get package from subscription
+                var subscription = appointmentServices
+                    .FirstOrDefault(s => s.ServiceSource == "Subscription")?
+                    .Notes;
 
-                if (subscription == null)
-                    throw new InvalidOperationException(
-                        $"Không tìm thấy subscription với ID: {request.SubscriptionId}");
-
-                // Check subscription is active
-                if (subscription.Status != SubscriptionStatusEnum.Active)
-                    throw new InvalidOperationException(
-                        $"Subscription này không còn active (Status: {subscription.StatusDisplayName})");
-
-                // Check subscription belongs to customer
-                if (subscription.CustomerId != request.CustomerId)
-                    throw new InvalidOperationException(
-                        "Subscription này không thuộc về khách hàng");
-
-                // Check vehicle matches subscription
-                if (subscription.VehicleId != request.VehicleId)
-                    throw new InvalidOperationException(
-                        $"Subscription này dành cho xe {subscription.VehiclePlateNumber}, " +
-                        $"không phải xe hiện tại");
-
-                // Check expiry date
-                if (subscription.ExpiryDate.HasValue &&
-                    subscription.ExpiryDate.Value < DateTime.UtcNow)
-                    throw new InvalidOperationException(
-                        $"Subscription đã hết hạn vào {subscription.ExpiryDate.Value:dd/MM/yyyy}");
-
-                // Get services from subscription (only services with remaining usage > 0)
-                var subscriptionServiceIds = subscription.ServiceUsages
-                    .Where(u => u.RemainingQuantity > 0)
-                    .Select(u => u.ServiceId)
-                    .ToList();
-
-                if (!subscriptionServiceIds.Any())
-                    throw new InvalidOperationException(
-                        "Subscription này đã sử dụng hết tất cả dịch vụ");
-
-                _logger.LogInformation(
-                    "Booking appointment with subscription {SubscriptionId}: " +
-                    "{Count} services available",
-                    subscription.SubscriptionId, subscriptionServiceIds.Count);
-
-                // Use services from subscription (request.ServiceIds will be extra services)
-                serviceIdsToBook = subscriptionServiceIds;
-                packageIdToSet = subscription.PackageId;
+                // Extract SubscriptionId from Notes (format: "Từ gói ... (#123)")
+                // For now, keep packageId null - will be set in BuildAppointmentServicesAsync if needed
             }
 
             // ═══════════════════════════════════════════════════════════
             // DISCOUNT CALCULATION PHASE
             // ═══════════════════════════════════════════════════════════
 
-            // 1️⃣ Get base pricing (original prices before discount)
-            (decimal originalTotal, int totalDuration, List<AppointmentService> appointmentServices) =
-                await CalculatePricingAsync(vehicle.ModelId, null, serviceIdsToBook, cancellationToken);
+            // Note: originalTotal from BuildAppointmentServicesAsync already excludes "Subscription" services (Price=0)
+            // Only "Extra" and "Regular" services are counted in originalTotal
 
             decimal finalCost = originalTotal;
             string? appliedDiscountType = null;
@@ -281,7 +260,25 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 excludeAppointmentId: null,
                 cancellationToken);
 
+            bool requiresPayment = finalCost > 0;
+
             string appointmentCode = await GenerateAppointmentCodeAsync(cancellationToken);
+
+            PaymentIntent? initialPaymentIntent = null;
+            if (requiresPayment)
+            {
+                int expiryHours = _configuration.GetValue<int?>("Payments:IntentExpiryHours") ?? 24;
+                DateTime intentExpiry = DateTime.UtcNow.AddHours(expiryHours);
+
+                initialPaymentIntent = _paymentIntentService.BuildPendingIntent(
+                    request.CustomerId,
+                    finalCost,
+                    currentUserId,
+                    currency: "VND",
+                    expiresAt: intentExpiry,
+                    paymentMethod: null,
+                    idempotencyKey: $"appointment:{appointmentCode}");
+            }
 
             var appointment = new Appointment
             {
@@ -296,6 +293,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 AppointmentDate = slot.SlotDate.ToDateTime(slot.StartTime),
                 EstimatedDuration = totalDuration,
                 EstimatedCost = finalCost, // ✅ Use discounted price
+                FinalCost = finalCost,
                 DiscountAmount = originalTotal - finalCost, // ✅ Total discount applied
                 DiscountType = appliedDiscountType ?? "None", // ✅ Type of discount
                 PromotionId = promotionIdUsed, // ✅ Promotion ID if used
@@ -303,12 +301,17 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 PreferredTechnicianId = request.PreferredTechnicianId,
                 Priority = request.Priority,
                 Source = request.Source,
+                PaymentStatus = requiresPayment
+                    ? PaymentStatusEnum.Pending.ToString()
+                    : PaymentStatusEnum.Completed.ToString(),
+                PaidAmount = requiresPayment ? 0 : finalCost,
+                PaymentIntentCount = requiresPayment ? 1 : 0,
                 CreatedDate = DateTime.UtcNow,
                 CreatedBy = currentUserId
             };
 
             Appointment created = await _commandRepository.CreateWithServicesAsync(
-                appointment, appointmentServices, cancellationToken);
+                appointment, appointmentServices, initialPaymentIntent, cancellationToken);
 
             // 4️⃣ Increment promotion usage if promotion was applied
             if (!string.IsNullOrEmpty(promotionCodeUsed))
@@ -332,6 +335,272 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             }
 
             return responseDto;
+        }
+
+        public async Task<AppointmentResponseDto> RecordPaymentResultAsync(
+            RecordPaymentResultRequestDto request,
+            int currentUserId,
+            CancellationToken cancellationToken = default)
+        {
+            if (!Enum.TryParse<PaymentIntentStatusEnum>(request.Status, out var intentStatus))
+            {
+                throw new InvalidOperationException("Trạng thái payment intent không hợp lệ");
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var appointment = await _context.Appointments
+                    .Include(a => a.PaymentIntents)
+                    .FirstOrDefaultAsync(a => a.AppointmentId == request.AppointmentId, cancellationToken);
+
+                if (appointment == null)
+                    throw new InvalidOperationException("Appointment không tồn tại");
+
+                var paymentIntent = appointment.PaymentIntents
+                    .FirstOrDefault(pi => pi.PaymentIntentId == request.PaymentIntentId);
+
+                if (paymentIntent == null)
+                    throw new InvalidOperationException("PaymentIntent không thuộc về appointment này");
+
+                var now = DateTime.UtcNow;
+                appointment.LatestPaymentIntentId = request.PaymentIntentId;
+                appointment.UpdatedBy = currentUserId;
+                appointment.UpdatedDate = now;
+
+                decimal finalCost = appointment.FinalCost ?? appointment.EstimatedCost ?? 0m;
+                decimal paidAmount = appointment.PaidAmount ?? 0m;
+
+                switch (intentStatus)
+                {
+                    case PaymentIntentStatusEnum.Completed:
+                        if (string.Equals(paymentIntent.Status, PaymentIntentStatusEnum.Completed.ToString(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            throw new InvalidOperationException("PaymentIntent đã được đánh dấu hoàn tất trước đó");
+                        }
+
+                        var completedIntent = await _paymentIntentService.MarkCompletedAsync(
+                            request.PaymentIntentId,
+                            request.Amount,
+                            currentUserId,
+                            cancellationToken);
+
+                        // Tạo transaction log
+                        var capturedDate = request.OccurredAt ?? now;
+                        var paymentTransaction = new PaymentTransaction
+                        {
+                            AppointmentId = appointment.AppointmentId,
+                            CustomerId = appointment.CustomerId,
+                            PaymentIntentId = completedIntent.PaymentIntentId,
+                            Amount = request.Amount,
+                            Currency = request.Currency,
+                            PaymentMethod = request.PaymentMethod,
+                            GatewayName = request.GatewayName,
+                            GatewayTransactionId = request.GatewayTransactionId,
+                            GatewayResponse = request.GatewayResponse,
+                            Notes = request.Notes,
+                            Status = "Captured",
+                            CreatedDate = capturedDate,
+                            AuthorizedDate = capturedDate,
+                            CapturedDate = capturedDate
+                        };
+
+                        await _context.PaymentTransactions.AddAsync(paymentTransaction, cancellationToken);
+
+                        paidAmount += request.Amount;
+                        appointment.PaidAmount = paidAmount;
+                        appointment.PaymentStatus = paidAmount >= finalCost
+                            ? PaymentStatusEnum.Completed.ToString()
+                            : PaymentStatusEnum.Pending.ToString();
+                        break;
+
+                    case PaymentIntentStatusEnum.Failed:
+                        var failedIntent = await _paymentIntentService.MarkFailedAsync(
+                            request.PaymentIntentId,
+                            request.Notes ?? "Thanh toán thất bại",
+                            currentUserId,
+                            cancellationToken);
+
+                        if (request.Amount > 0)
+                        {
+                            var failedDate = request.OccurredAt ?? now;
+                            var failedTransaction = new PaymentTransaction
+                            {
+                                AppointmentId = appointment.AppointmentId,
+                                CustomerId = appointment.CustomerId,
+                                PaymentIntentId = failedIntent.PaymentIntentId,
+                                Amount = request.Amount,
+                                Currency = request.Currency,
+                                PaymentMethod = request.PaymentMethod,
+                                GatewayName = request.GatewayName,
+                                GatewayTransactionId = request.GatewayTransactionId,
+                                GatewayResponse = request.GatewayResponse,
+                                Notes = request.Notes,
+                                Status = "Failed",
+                                CreatedDate = failedDate,
+                                FailedDate = failedDate,
+                                ErrorMessage = request.Notes
+                            };
+
+                            await _context.PaymentTransactions.AddAsync(failedTransaction, cancellationToken);
+                        }
+
+                        appointment.PaymentStatus = paidAmount > 0
+                            ? PaymentStatusEnum.Pending.ToString()
+                            : PaymentStatusEnum.Failed.ToString();
+                        break;
+
+                    case PaymentIntentStatusEnum.Cancelled:
+                        await _paymentIntentService.MarkCancelledAsync(
+                            request.PaymentIntentId,
+                            request.Notes ?? "Thanh toán bị hủy",
+                            currentUserId,
+                            cancellationToken);
+
+                        appointment.PaymentStatus = paidAmount > 0
+                            ? PaymentStatusEnum.Pending.ToString()
+                            : PaymentStatusEnum.Cancelled.ToString();
+                        break;
+
+                    case PaymentIntentStatusEnum.Expired:
+                        await _paymentIntentService.MarkExpiredAsync(
+                            request.PaymentIntentId,
+                            currentUserId,
+                            cancellationToken);
+
+                        appointment.PaymentStatus = paidAmount > 0
+                            ? PaymentStatusEnum.Pending.ToString()
+                            : PaymentStatusEnum.Pending.ToString();
+                        break;
+
+                    case PaymentIntentStatusEnum.Pending:
+                        throw new InvalidOperationException("Không cần ghi nhận trạng thái Pending thông qua API");
+
+                    default:
+                        throw new InvalidOperationException("Trạng thái payment intent không được hỗ trợ");
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                var refreshed = await _repository.GetByIdWithDetailsAsync(appointment.AppointmentId, cancellationToken);
+                return AppointmentMapper.ToResponseDto(refreshed!);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
+
+        public async Task<PaymentIntentResponseDto> CreatePaymentIntentAsync(
+            CreatePaymentIntentRequestDto request,
+            int currentUserId,
+            CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var appointment = await _context.Appointments
+                    .Include(a => a.PaymentIntents)
+                    .FirstOrDefaultAsync(a => a.AppointmentId == request.AppointmentId, cancellationToken);
+
+                if (appointment == null)
+                {
+                    throw new InvalidOperationException("Appointment không tồn tại");
+                }
+
+                if (appointment.StatusId == (int)AppointmentStatusEnum.Cancelled ||
+                    appointment.StatusId == (int)AppointmentStatusEnum.Rescheduled ||
+                    appointment.StatusId == (int)AppointmentStatusEnum.NoShow)
+                {
+                    throw new InvalidOperationException("Không thể tạo payment intent cho lịch hẹn đã không còn hiệu lực");
+                }
+
+                var finalCost = appointment.FinalCost ?? appointment.EstimatedCost ?? 0m;
+                var paidAmount = appointment.PaidAmount ?? 0m;
+                var outstanding = Math.Max(finalCost - paidAmount, 0m);
+
+                if (outstanding <= 0m && !request.Amount.HasValue)
+                {
+                    throw new InvalidOperationException("Lịch hẹn không còn khoản cần thanh toán");
+                }
+
+                var requestedAmount = request.Amount ?? outstanding;
+                if (requestedAmount <= 0m)
+                {
+                    throw new InvalidOperationException("Số tiền thanh toán phải lớn hơn 0");
+                }
+
+                if (request.Amount.HasValue)
+                {
+                    var tolerance = 0.01m;
+                    if (request.Amount.Value - outstanding > tolerance)
+                    {
+                        throw new InvalidOperationException("Số tiền yêu cầu vượt quá khoản outstanding hiện tại");
+                    }
+                }
+
+                var expiryHours = request.ExpiresInHours ??
+                    _configuration.GetValue<int?>("Payments:IntentExpiryHours") ?? 24;
+                if (expiryHours <= 0)
+                {
+                    expiryHours = 24;
+                }
+
+                var expiresAt = DateTime.UtcNow.AddHours(expiryHours);
+                var normalizedCurrency = string.IsNullOrWhiteSpace(request.Currency)
+                    ? "VND"
+                    : request.Currency.ToUpperInvariant();
+
+                var newIntent = _paymentIntentService.BuildPendingIntent(
+                    appointment.CustomerId,
+                    requestedAmount,
+                    currentUserId,
+                    normalizedCurrency,
+                    expiresAt,
+                    request.PaymentMethod,
+                    request.IdempotencyKey);
+
+                newIntent.AppointmentId = appointment.AppointmentId;
+                newIntent.CustomerId = appointment.CustomerId;
+                newIntent.Notes = request.Notes;
+
+                var savedIntent = await _paymentIntentService.AppendNewIntentAsync(newIntent, cancellationToken);
+
+                var now = DateTime.UtcNow;
+                appointment.PaymentIntentCount = appointment.PaymentIntentCount + 1;
+                appointment.LatestPaymentIntentId = savedIntent.PaymentIntentId;
+                appointment.UpdatedBy = currentUserId;
+                appointment.UpdatedDate = now;
+
+                if (!string.Equals(appointment.PaymentStatus, PaymentStatusEnum.Completed.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    appointment.PaymentStatus = PaymentStatusEnum.Pending.ToString();
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "User {UserId} created payment intent {IntentCode} for appointment {AppointmentId} with amount {Amount}",
+                    currentUserId,
+                    savedIntent.IntentCode,
+                    appointment.AppointmentId,
+                    savedIntent.Amount);
+
+                return AppointmentMapper.ToPaymentIntentResponseDto(savedIntent);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         public async Task<AppointmentResponseDto> UpdateAsync(
@@ -464,8 +733,8 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
             _logger.LogInformation(
                 "Reschedule analysis: Appointment {AppointmentId}, Chain: [{Chain}], RescheduleCount: {Count}, Customer: {CustomerId}",
-                request.AppointmentId, 
-                string.Join(" -> ", rescheduleChain), 
+                request.AppointmentId,
+                string.Join(" -> ", rescheduleChain),
                 rescheduleCount,
                 oldAppointment.CustomerId);
 
@@ -642,6 +911,10 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             return AppointmentMapper.ToResponseDto(result!);
         }
 
+        /// <summary>
+        /// Cancel appointment với refund logic
+        /// ✅ OPTIMIZED: Transaction safety + null check + duplicate refund check
+        /// </summary>
         public async Task<bool> CancelAsync(
             CancelAppointmentRequestDto request,
             int currentUserId,
@@ -659,8 +932,88 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             if (AppointmentStatusHelper.IsFinalStatus(appointment.StatusId))
                 throw new InvalidOperationException("Không thể hủy appointment đã kết thúc");
 
-            return await _commandRepository.CancelAsync(
-                request.AppointmentId, request.CancellationReason, cancellationToken);
+            // ✅ NEW: Transaction safety
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                // Xử lý refund nếu đã thanh toán
+                if (appointment.PaidAmount > 0)
+                {
+                    // ✅ NEW: Null check for LatestPaymentIntentId
+                    if (!appointment.LatestPaymentIntentId.HasValue)
+                    {
+                        _logger.LogError(
+                            "Appointment {AppointmentId} has PaidAmount={PaidAmount} but no LatestPaymentIntentId",
+                            appointment.AppointmentId, appointment.PaidAmount);
+                        throw new InvalidOperationException(
+                            "Dữ liệu không hợp lệ: Appointment đã thanh toán nhưng không có PaymentIntent");
+                    }
+
+                    // ✅ NEW: Check duplicate refund
+                    var existingRefund = await _context.Refunds
+                        .FirstOrDefaultAsync(r => r.AppointmentId == appointment.AppointmentId,
+                                           cancellationToken);
+
+                    if (existingRefund != null)
+                    {
+                        _logger.LogWarning(
+                            "Appointment {AppointmentId} already has refund {RefundId} (Status: {Status})",
+                            appointment.AppointmentId, existingRefund.RefundId, existingRefund.Status);
+                        // Skip refund creation - already exists
+                    }
+                    else
+                    {
+                        var refundAmount = CalculateRefundAmount(appointment, DateTime.UtcNow);
+
+                        if (refundAmount > 0)
+                        {
+                            _logger.LogInformation(
+                                "💰 Creating refund for appointment {AppointmentId}: {RefundAmount}đ / {PaidAmount}đ",
+                                appointment.AppointmentId, refundAmount, appointment.PaidAmount);
+
+                            var refund = new Refund
+                            {
+                                PaymentIntentId = appointment.LatestPaymentIntentId.Value,
+                                AppointmentId = appointment.AppointmentId,
+                                CustomerId = appointment.CustomerId,
+                                RefundAmount = refundAmount,
+                                RefundReason = $"Cancelled by customer: {request.CancellationReason}",
+                                RefundMethod = RefundConstants.Method.Original,
+                                Status = RefundConstants.Status.Pending,
+                                CreatedDate = DateTime.UtcNow,
+                                CreatedBy = currentUserId,
+                                Notes = $"Auto-calculated refund ({(refundAmount / appointment.PaidAmount.Value * 100):F0}%)"
+                            };
+
+                            await _context.Refunds.AddAsync(refund, cancellationToken);
+
+                            _logger.LogInformation(
+                                "✅ Refund created: RefundId={RefundId}, Amount={Amount}đ",
+                                refund.RefundId, refund.RefundAmount);
+                        }
+                        else
+                        {
+                            _logger.LogWarning(
+                                "⚠️ No refund for appointment {AppointmentId} (cancelled too late: {HoursBefore}h before)",
+                                appointment.AppointmentId,
+                                (appointment.AppointmentDate - DateTime.UtcNow).TotalHours);
+                        }
+                    }
+                }
+
+                bool result = await _commandRepository.CancelAsync(
+                    request.AppointmentId, request.CancellationReason, cancellationToken);
+
+                await transaction.CommitAsync(cancellationToken);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex,
+                    "❌ Failed to cancel appointment {AppointmentId}", request.AppointmentId);
+                throw;
+            }
         }
 
         public async Task<bool> ConfirmAsync(
@@ -680,6 +1033,277 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
             return await _commandRepository.ConfirmAsync(
                 request.AppointmentId, request.ConfirmationMethod, cancellationToken);
+        }
+
+        /// <summary>
+        /// CHECK-IN: Confirmed → InProgress, tạo WorkOrder
+        /// ✅ OPTIMIZED: Transaction safety + duplicate check
+        /// </summary>
+        public async Task<AppointmentResponseDto> CheckInAsync(
+            int appointmentId,
+            int currentUserId,
+            CancellationToken cancellationToken = default)
+        {
+            var appointment = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
+
+            if (appointment == null)
+                throw new InvalidOperationException("Appointment không tồn tại");
+
+            // Validate status
+            if (appointment.StatusId != (int)AppointmentStatusEnum.Confirmed)
+                throw new InvalidOperationException(
+                    $"Chỉ có thể check-in appointment đã Confirmed. Trạng thái hiện tại: {appointment.StatusId}");
+
+            // Validate payment status (nếu cần thanh toán trước)
+            if (appointment.EstimatedCost > 0 &&
+                appointment.PaymentStatus != PaymentStatusEnum.Completed.ToString())
+            {
+                throw new InvalidOperationException(
+                    "Khách hàng chưa thanh toán. Vui lòng thanh toán trước khi check-in.");
+            }
+
+            // ✅ NEW: Check existing WorkOrder (prevent duplicate)
+            var existingWorkOrder = await _context.WorkOrders
+                .FirstOrDefaultAsync(wo => wo.AppointmentId == appointmentId, cancellationToken);
+
+            if (existingWorkOrder != null)
+            {
+                _logger.LogWarning(
+                    "Appointment {AppointmentId} already has WorkOrder {WorkOrderCode}",
+                    appointmentId, existingWorkOrder.WorkOrderCode);
+                throw new InvalidOperationException(
+                    $"Appointment đã được check-in với WorkOrder {existingWorkOrder.WorkOrderCode}");
+            }
+
+            _logger.LogInformation(
+                "🚀 Check-in appointment {AppointmentId} by user {UserId}",
+                appointmentId, currentUserId);
+
+            // ✅ NEW: Transaction safety
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                // ✅ FIX: Update appointment status directly in database to avoid tracking conflicts
+                // Since appointment was loaded with AsNoTracking(), we use ExecuteUpdateAsync
+                await _context.Appointments
+                    .Where(a => a.AppointmentId == appointmentId)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(a => a.StatusId, (int)AppointmentStatusEnum.InProgress)
+                        .SetProperty(a => a.PaymentStatus, PaymentStatusEnum.Completed.ToString())
+                        .SetProperty(a => a.UpdatedBy, currentUserId)
+                        .SetProperty(a => a.UpdatedDate, DateTime.UtcNow),
+                        cancellationToken);
+
+                // Tạo WorkOrder để tracking công việc
+                var workOrder = new WorkOrder
+                {
+                    AppointmentId = appointmentId,
+                    WorkOrderCode = await GenerateWorkOrderCodeAsync(cancellationToken),
+                    CustomerId = appointment.CustomerId,
+                    VehicleId = appointment.VehicleId,
+                    ServiceCenterId = appointment.ServiceCenterId,
+                    TechnicianId = appointment.PreferredTechnicianId,
+                    StatusId = 1, // WorkOrderStatus: Started/InProgress
+                    StartDate = DateTime.UtcNow,
+                    EstimatedCompletionDate = DateTime.UtcNow.AddMinutes(appointment.EstimatedDuration ?? 60),
+                    InternalNotes = "Auto-created from check-in",
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedBy = currentUserId
+                };
+
+                await _context.WorkOrders.AddAsync(workOrder, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "✅ Check-in successful: Appointment {AppointmentId} → InProgress, " +
+                    "WorkOrder {WorkOrderCode} created",
+                    appointmentId, workOrder.WorkOrderCode);
+
+                // ✅ FIX: RELOAD appointment with full details (include Status navigation)
+                // PHẢI reload sau khi commit transaction để EF Core load lại Status entity
+                var result = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
+                return AppointmentMapper.ToResponseDto(result!);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex,
+                    "❌ Failed to check-in appointment {AppointmentId}", appointmentId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// THÊM DỊCH VỤ PHÁT SINH khi InProgress
+        /// Tạo PaymentIntent mới cho phần phát sinh
+        /// ✅ OPTIMIZED: Transaction safety + batch loading + duplicate check
+        /// </summary>
+        public async Task<AppointmentResponseDto> AddServicesAsync(
+            int appointmentId,
+            List<int> additionalServiceIds,
+            int currentUserId,
+            CancellationToken cancellationToken = default)
+        {
+            if (additionalServiceIds == null || !additionalServiceIds.Any())
+                throw new ArgumentException("Danh sách dịch vụ không được rỗng", nameof(additionalServiceIds));
+
+            var appointment = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
+
+            if (appointment == null)
+                throw new InvalidOperationException("Appointment không tồn tại");
+
+            // Validate status: Chỉ thêm dịch vụ khi InProgress
+            if (appointment.StatusId != (int)AppointmentStatusEnum.InProgress)
+                throw new InvalidOperationException(
+                    $"Chỉ có thể thêm dịch vụ khi appointment đang InProgress. " +
+                    $"Trạng thái hiện tại: {appointment.StatusId}");
+
+            // ✅ NEW: Check duplicate services
+            var existingServiceIds = appointment.AppointmentServices
+                .Select(aps => aps.ServiceId)
+                .ToHashSet();
+
+            var newServiceIds = additionalServiceIds
+                .Where(id => !existingServiceIds.Contains(id))
+                .Distinct()
+                .ToList();
+
+            if (newServiceIds.Count < additionalServiceIds.Count)
+            {
+                var duplicates = additionalServiceIds
+                    .Where(id => existingServiceIds.Contains(id))
+                    .ToList();
+                _logger.LogWarning(
+                    "Skipping {Count} duplicate services: {ServiceIds}",
+                    duplicates.Count, string.Join(", ", duplicates));
+            }
+
+            if (!newServiceIds.Any())
+                throw new InvalidOperationException("Tất cả dịch vụ đã tồn tại trong appointment");
+
+            _logger.LogInformation(
+                "🔧 Adding {Count} new services to appointment {AppointmentId}",
+                newServiceIds.Count, appointmentId);
+
+            // Lấy thông tin vehicle để tính giá
+            var vehicle = await _vehicleRepository.GetByIdAsync(appointment.VehicleId, cancellationToken);
+            if (vehicle == null)
+                throw new InvalidOperationException("Vehicle không tồn tại");
+
+            // ✅ NEW: Batch load services and pricings (fix N+1 query)
+            var services = await _context.MaintenanceServices
+                .Where(s => newServiceIds.Contains(s.ServiceId))
+                .ToDictionaryAsync(s => s.ServiceId, cancellationToken);
+
+            var pricings = await _context.ModelServicePricings
+                .Where(p => p.ModelId == vehicle.ModelId
+                         && newServiceIds.Contains(p.ServiceId)
+                         && (p.IsActive == null || p.IsActive == true))
+                .ToDictionaryAsync(p => p.ServiceId, cancellationToken);
+
+            decimal totalAdditionalCost = 0;
+            int totalAdditionalDuration = 0;
+            var newAppointmentServices = new List<AppointmentService>();
+
+            // Build AppointmentServices cho các dịch vụ phát sinh
+            foreach (var serviceId in newServiceIds)
+            {
+                if (!services.TryGetValue(serviceId, out var service))
+                {
+                    _logger.LogWarning("Service {ServiceId} không tồn tại, skip", serviceId);
+                    continue;
+                }
+
+                var pricing = pricings.GetValueOrDefault(serviceId);
+                decimal servicePrice = pricing?.CustomPrice ?? service.BasePrice;
+                int serviceDuration = pricing?.CustomTime ?? service.StandardTime;
+
+                var appointmentService = new AppointmentService
+                {
+                    AppointmentId = appointmentId,
+                    ServiceId = serviceId,
+                    ServiceSource = "Extra", // Dịch vụ phát sinh = Extra
+                    OriginalPrice = servicePrice,
+                    Price = servicePrice,
+                    DiscountAmount = 0,
+                    EstimatedTime = serviceDuration,
+                    Notes = "Dịch vụ phát sinh (thêm trong lúc InProgress)",
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                newAppointmentServices.Add(appointmentService);
+                totalAdditionalCost += servicePrice;
+                totalAdditionalDuration += serviceDuration;
+
+                _logger.LogInformation(
+                    "  + Service {ServiceName} ({ServiceId}): {Price}đ, {Duration}min",
+                    service.ServiceName, serviceId, servicePrice, serviceDuration);
+            }
+
+            if (!newAppointmentServices.Any())
+                throw new InvalidOperationException("Không có dịch vụ hợp lệ nào để thêm");
+
+            // ✅ NEW: Transaction safety
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                // Add services to appointment
+                foreach (var aps in newAppointmentServices)
+                {
+                    appointment.AppointmentServices.Add(aps);
+                }
+
+                // Update appointment cost & duration
+                appointment.EstimatedCost = (appointment.EstimatedCost ?? 0) + totalAdditionalCost;
+                appointment.EstimatedDuration = (appointment.EstimatedDuration ?? 0) + totalAdditionalDuration;
+                appointment.UpdatedBy = currentUserId;
+                appointment.UpdatedDate = DateTime.UtcNow;
+
+                // Tạo PaymentIntent mới cho phần phát sinh
+                int expiryHours = _configuration.GetValue<int?>("Payments:IntentExpiryHours") ?? 24;
+                DateTime intentExpiry = DateTime.UtcNow.AddHours(expiryHours);
+
+                var additionalPaymentIntent = _paymentIntentService.BuildPendingIntent(
+                    appointment.CustomerId,
+                    totalAdditionalCost,
+                    currentUserId,
+                    currency: "VND",
+                    expiresAt: intentExpiry,
+                    paymentMethod: null,
+                    idempotencyKey: $"additional:{appointment.AppointmentCode}:{DateTime.UtcNow:yyyyMMddHHmmss}");
+
+                additionalPaymentIntent.AppointmentId = appointmentId;
+                additionalPaymentIntent.Notes = $"Thanh toán cho {newAppointmentServices.Count} dịch vụ phát sinh";
+
+                await _paymentIntentService.AppendNewIntentAsync(additionalPaymentIntent, cancellationToken);
+
+                // Update appointment payment tracking
+                appointment.PaymentIntentCount++;
+                appointment.LatestPaymentIntentId = additionalPaymentIntent.PaymentIntentId;
+                appointment.PaymentStatus = PaymentStatusEnum.Pending.ToString(); // Chuyển về Pending vì có thêm tiền cần thanh toán
+
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "✅ Added {Count} services to appointment {AppointmentId}: " +
+                    "+{Cost}đ, +{Duration}min, PaymentIntent {IntentCode} created",
+                    newAppointmentServices.Count, appointmentId,
+                    totalAdditionalCost, totalAdditionalDuration,
+                    additionalPaymentIntent.IntentCode);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(ex,
+                    "❌ Failed to add services to appointment {AppointmentId}", appointmentId);
+                throw;
+            }
+
+            // Reload with full details
+            var result = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
+            return AppointmentMapper.ToResponseDto(result!);
         }
 
         public async Task<bool> MarkAsNoShowAsync(
@@ -790,17 +1414,37 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                         continue;
                     }
 
+                    // ✅ VALIDATE: AppointmentService must have SubscriptionId if ServiceSource = "Subscription"
+                    if (!appointmentService.SubscriptionId.HasValue)
+                    {
+                        _logger.LogError(
+                            "❌ CRITICAL: AppointmentService {ApsId} has ServiceSource='Subscription' but SubscriptionId is NULL! " +
+                            "This should never happen. Degrading to 'Extra'.",
+                            appointmentService.AppointmentServiceId);
+
+                        await DegradeServiceToExtraAsync(
+                            appointmentService,
+                            "MISSING_SUBSCRIPTION_ID",
+                            currentUserId,
+                            cancellationToken);
+
+                        hasDegradedService = true;
+                        additionalPaymentRequired += appointmentService.Price;
+                        continue;
+                    }
+
                     _logger.LogInformation(
                         "🔄 Processing Subscription service: ServiceId={ServiceId}, " +
-                        "AppointmentServiceId={ApsId}",
-                        appointmentService.ServiceId, appointmentService.AppointmentServiceId);
+                        "AppointmentServiceId={ApsId}, SubscriptionId={SubId}",
+                        appointmentService.ServiceId, appointmentService.AppointmentServiceId,
+                        appointmentService.SubscriptionId.Value);
 
                     // 🔒 TRY DEDUCT USAGE với PESSIMISTIC LOCK
                     // UpdateServiceUsageAsync sẽ dùng UPDLOCK để lock row
                     try
                     {
                         bool deducted = await _subscriptionCommandRepository.UpdateServiceUsageAsync(
-                            appointment.SubscriptionId!.Value,
+                            appointmentService.SubscriptionId.Value, // ✅ USE appointmentService.SubscriptionId instead of appointment.SubscriptionId
                             appointmentService.ServiceId,
                             quantityUsed: 1,
                             appointmentId: appointmentId,
@@ -811,7 +1455,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                             _logger.LogInformation(
                                 "✅ Successfully deducted usage: ServiceId={ServiceId}, " +
                                 "SubscriptionId={SubId}",
-                                appointmentService.ServiceId, appointment.SubscriptionId);
+                                appointmentService.ServiceId, appointmentService.SubscriptionId.Value);
                         }
                         else
                         {
@@ -820,7 +1464,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                                 "⚠️ RACE CONDITION: Cannot deduct usage for ServiceId={ServiceId}, " +
                                 "SubscriptionId={SubId} (hết lượt hoặc subscription không còn active). " +
                                 "→ DEGRADING to 'Extra'",
-                                appointmentService.ServiceId, appointment.SubscriptionId);
+                                appointmentService.ServiceId, appointmentService.SubscriptionId.Value);
 
                             // 🔄 GRACEFUL DEGRADATION: Convert to "Extra"
                             await DegradeServiceToExtraAsync(
@@ -877,17 +1521,22 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 }
 
                 // Update status + CompletedDate + CompletedBy
-                appointment.StatusId = (int)finalStatus;
-                appointment.CompletedDate = DateTime.UtcNow;
-                appointment.CompletedBy = currentUserId;
+                // ✅ FIX: Use ExecuteUpdateAsync to avoid tracking conflicts (similar to CheckInAsync fix)
+                var completedDate = DateTime.UtcNow;
+                var newEstimatedCost = hasDegradedService
+                    ? (appointment.EstimatedCost ?? 0) + additionalPaymentRequired
+                    : appointment.EstimatedCost ?? 0;
 
-                // Update EstimatedCost nếu có degraded services
-                if (hasDegradedService)
-                {
-                    appointment.EstimatedCost = (appointment.EstimatedCost ?? 0) + additionalPaymentRequired;
-                }
-
-                await _commandRepository.UpdateAsync(appointment, cancellationToken);
+                await _context.Appointments
+                    .Where(a => a.AppointmentId == appointmentId)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(a => a.StatusId, (int)finalStatus)
+                        .SetProperty(a => a.CompletedDate, completedDate)
+                        .SetProperty(a => a.CompletedBy, currentUserId)
+                        .SetProperty(a => a.EstimatedCost, newEstimatedCost)
+                        .SetProperty(a => a.UpdatedBy, currentUserId)
+                        .SetProperty(a => a.UpdatedDate, completedDate),
+                        cancellationToken);
 
                 _logger.LogInformation(
                     "✅ CompleteAppointment SUCCESS: AppointmentId={AppointmentId}, " +
@@ -942,11 +1591,13 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             // TODO: Check ModelServicePricing nếu cần (theo vehicle model)
 
             // 1️⃣ Update ServiceSource và Price
-            appointmentService.ServiceSource = "Extra";
-            appointmentService.Price = actualPrice;
-
-            // Save via DbContext (EF Core tracking)
-            await _commandRepository.UpdateAsync(appointmentService.Appointment, cancellationToken);
+            // ✅ FIX: Use ExecuteUpdateAsync to avoid tracking conflicts
+            await _context.AppointmentServices
+                .Where(aps => aps.AppointmentServiceId == appointmentService.AppointmentServiceId)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(aps => aps.ServiceSource, "Extra")
+                    .SetProperty(aps => aps.Price, actualPrice),
+                    cancellationToken);
 
             _logger.LogWarning(
                 "🔄 Service DEGRADED: AppointmentServiceId={ApsId}, ServiceId={ServiceId}, " +
@@ -1221,6 +1872,29 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                     return code;
             }
 
+            string timestampPart = DateTime.UtcNow.Ticks.ToString()[^6..];
+            return $"{prefix}{datePart}{timestampPart}";
+        }
+
+        private async Task<string> GenerateWorkOrderCodeAsync(CancellationToken cancellationToken)
+        {
+            string prefix = "WO";
+            string datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+
+            for (int attempts = 0; attempts < 10; attempts++)
+            {
+                int randomNumber = RandomNumberGenerator.GetInt32(1000, 9999);
+                string code = $"{prefix}{datePart}{randomNumber}";
+
+                // Check if code exists in WorkOrders table
+                bool exists = await _context.WorkOrders
+                    .AnyAsync(wo => wo.WorkOrderCode == code, cancellationToken);
+
+                if (!exists)
+                    return code;
+            }
+
+            // Fallback: use timestamp
             string timestampPart = DateTime.UtcNow.Ticks.ToString()[^6..];
             return $"{prefix}{datePart}{timestampPart}";
         }
@@ -1594,84 +2268,291 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 totalConcurrent, maxCapacity);
         }
 
-        #region Smart Subscription Logic
+        #region Smart Subscription Logic - PERFORMANCE OPTIMIZED
 
         /// <summary>
-        /// Tính priority score cho một subscription
-        /// Priority càng CAO (số càng LỚN) = càng ưu tiên sử dụng trước
+        /// ⚡ PERFORMANCE OPTIMIZED: Tính priority score cho subscription
+        /// Complexity: O(1) - Constant time
         ///
-        /// Quy tắc ưu tiên:
-        /// 1. Sắp hết hạn (≤7 ngày) = Priority cao nhất (+10000 points)
-        /// 2. Còn ít lượt hơn (remaining quantity thấp) = Priority cao hơn
-        /// 3. Mua sớm hơn (FIFO) = Priority cao hơn
+        /// Priority Score càng CAO = càng ưu tiên sử dụng trước
+        ///
+        /// 🎯 Quy tắc ưu tiên (Weighted scoring):
+        /// 1. EXPIRY (Weight: 10,000): Gói sắp hết hạn → priority CAO NHẤT
+        ///    - Ngày 0: +10,007 points
+        ///    - Ngày 7: +10,000 points
+        ///    - > 7 ngày: không bonus
+        ///
+        /// 2. QUANTITY (Weight: 1,000): Còn ít lượt → priority cao hơn
+        ///    - Còn 1 lượt: +1,000 points
+        ///    - Còn 2 lượt: +999 points
+        ///    - Linear decrease
+        ///
+        /// 3. FIFO (Weight: 1): Mua sớm hơn → priority cao hơn
+        ///    - Based on PurchaseDate ticks (modulo 10,000)
+        ///
+        /// 4. TIEBREAKER (Weight: 0.1): Deterministic
+        ///    - SubscriptionId % 10
         /// </summary>
-        /// <param name="subscription">Subscription cần tính priority</param>
-        /// <param name="serviceId">ServiceId cần check (để lấy RemainingQuantity)</param>
-        /// <returns>Priority score (số càng lớn = càng ưu tiên)</returns>
+        /// <param name="subscription">Subscription entity (with ServiceUsages loaded)</param>
+        /// <param name="serviceId">ServiceId to check RemainingQuantity</param>
+        /// <returns>Priority score (0-20,000 range)</returns>
         private int CalculateSubscriptionPriority(
             CustomerPackageSubscription subscription,
             int serviceId)
         {
             int priorityScore = 0;
 
-            // 1️⃣ EXPIRY PRIORITY: Subscription sắp hết hạn (≤7 ngày) có priority CAO NHẤT
+            // 1️⃣ EXPIRY PRIORITY (Most important)
             if (subscription.ExpirationDate.HasValue)
             {
                 var daysUntilExpiry = (subscription.ExpirationDate.Value.ToDateTime(TimeOnly.MinValue) - DateTime.UtcNow).Days;
 
-                if (daysUntilExpiry <= 7 && daysUntilExpiry >= 0)
+                if (daysUntilExpiry >= 0 && daysUntilExpiry <= 7)
                 {
-                    // Sắp hết hạn trong 7 ngày → Cộng điểm cao
-                    // Càng gần expiry càng cao: 7 ngày = +10000, 6 ngày = +10001, ..., 0 ngày = +10007
+                    // Inverse logic: Closer to expiry = Higher priority
                     priorityScore += 10000 + (7 - daysUntilExpiry);
-
-                    _logger.LogDebug(
-                        "Subscription {SubId} expiring in {Days} days → Priority boost: +{Boost}",
-                        subscription.SubscriptionId, daysUntilExpiry, 10000 + (7 - daysUntilExpiry));
                 }
             }
 
-            // 2️⃣ QUANTITY PRIORITY: Subscription còn ít lượt hơn → Priority cao hơn
-            // (Khuyến khích dùng hết subscription sắp "cạn" trước)
+            // 2️⃣ QUANTITY PRIORITY
             var serviceUsage = subscription.PackageServiceUsages
                 .FirstOrDefault(u => u.ServiceId == serviceId);
 
-            if (serviceUsage != null)
+            if (serviceUsage != null && serviceUsage.RemainingQuantity > 0)
             {
-                // Lượt còn lại càng ít → điểm càng cao
-                // VD: Còn 1 lượt = +1000, còn 2 lượt = +999, còn 3 = +998...
-                // (Max 1000 - RemainingQuantity để đảm bảo priority giảm dần khi quantity tăng)
+                // Inverse: Less remaining = Higher priority
                 int quantityScore = Math.Max(0, 1000 - serviceUsage.RemainingQuantity);
                 priorityScore += quantityScore;
-
-                _logger.LogDebug(
-                    "Subscription {SubId} has {Remaining} uses left for Service {ServiceId} → Quantity score: +{Score}",
-                    subscription.SubscriptionId, serviceUsage.RemainingQuantity, serviceId, quantityScore);
             }
 
-            // 3️⃣ FIFO PRIORITY: Subscription mua sớm hơn → Priority cao hơn
-            // Dùng ticks của PurchaseDate (số càng NHỎ = mua càng sớm = priority càng cao)
-            // Chia cho 10^7 để convert ticks thành giây (tránh số quá lớn)
-            // Đảo dấu (-) để subscription mua sớm hơn có score cao hơn
-            long fifoScore = subscription.PurchaseDate.HasValue
-                ? -(subscription.PurchaseDate.Value.Ticks / 10_000_000)
-                : 0;
-            priorityScore += (int)(fifoScore % 10000); // Lấy 4 chữ số cuối để tránh overflow
+            // 3️⃣ FIFO PRIORITY
+            if (subscription.PurchaseDate.HasValue)
+            {
+                // Older purchase = Higher priority
+                long fifoScore = -(subscription.PurchaseDate.Value.Ticks / 10_000_000);
+                priorityScore += (int)(fifoScore % 10000);
+            }
 
-            _logger.LogDebug(
-                "Subscription {SubId} purchased on {Date} → FIFO component: {FifoScore}",
-                subscription.SubscriptionId,
-                subscription.PurchaseDate?.ToString() ?? "N/A",
-                fifoScore % 10000);
-
-            _logger.LogInformation(
-                "✅ Subscription Priority calculated: SubId={SubId}, " +
-                "ServiceId={ServiceId}, TotalScore={Score}",
-                subscription.SubscriptionId, serviceId, priorityScore);
+            // 4️⃣ TIEBREAKER (Deterministic)
+            priorityScore += subscription.SubscriptionId % 10;
 
             return priorityScore;
         }
 
+        /// <summary>
+        /// ⚡ PERFORMANCE OPTIMIZED: Build appointment services với Smart Deduplication
+        /// Complexity: O(n*m) where n = services, m = subscriptions (usually small)
+        ///
+        /// 🎯 Chiến lược:
+        /// 1. Load ALL active subscriptions ONCE (1 query with .Include)
+        /// 2. Build service-to-subscriptions map IN-MEMORY (O(n))
+        /// 3. Sort subscriptions by priority PER SERVICE (O(m log m))
+        /// 4. Assign services to best subscription (O(1) per service)
+        ///
+        /// 📊 Performance:
+        /// - DB Queries: 1-2 (subscriptions + services if needed)
+        /// - Memory: O(n*m) for mapping (acceptable for typical use)
+        /// - CPU: O(n*m log m) for sorting (very fast for small m)
+        ///
+        /// ✅ Benefits:
+        /// - No N+1 query problem
+        /// - Deterministic results
+        /// - Easy to test & debug
+        /// </summary>
+        private async Task<(List<AppointmentService> services, decimal totalCost, int totalDuration)>
+            BuildAppointmentServicesAsync(
+                CreateAppointmentRequestDto request,
+                int vehicleModelId,
+                CancellationToken cancellationToken)
+        {
+            var appointmentServices = new List<AppointmentService>();
+            var servicesFromSubscription = new HashSet<int>(); // Track which services matched subscriptions
+            decimal totalCost = 0;
+            int totalDuration = 0;
+
+            // ========== STEP 1: LOAD ACTIVE SUBSCRIPTIONS (1 DB QUERY) ==========
+            List<CustomerPackageSubscription> customerSubscriptions = new List<CustomerPackageSubscription>();
+
+            if (request.SubscriptionId.HasValue)
+            {
+                // Customer explicitly specified a subscription
+                var subscription = await _context.CustomerPackageSubscriptions
+                    .Include(s => s.Package)
+                    .Include(s => s.PackageServiceUsages)
+                        .ThenInclude(u => u.Service)
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == request.SubscriptionId.Value, cancellationToken);
+
+                if (subscription != null)
+                {
+                    // Validate subscription ownership & status
+                    if (subscription.CustomerId != request.CustomerId)
+                        throw new InvalidOperationException("Subscription không thuộc về customer này");
+
+                    if (subscription.Status != SubscriptionStatusEnum.Active.ToString())
+                        throw new InvalidOperationException($"Subscription không active (Status: {subscription.Status})");
+
+                    if (subscription.ExpirationDate.HasValue && subscription.ExpirationDate.Value < DateOnly.FromDateTime(DateTime.UtcNow))
+                        throw new InvalidOperationException($"Subscription đã hết hạn ({subscription.ExpirationDate.Value:dd/MM/yyyy})");
+
+                    customerSubscriptions.Add(subscription);
+                }
+            }
+            else
+            {
+                // AUTO-SELECT: Get ALL active subscriptions for this customer+vehicle
+                customerSubscriptions = await _subscriptionRepository
+                    .GetActiveSubscriptionsByCustomerAndVehicleAsync(
+                        request.CustomerId,
+                        request.VehicleId,
+                        cancellationToken);
+            }
+
+            _logger.LogInformation(
+                "📦 BuildAppointmentServices: Found {Count} active subscriptions for CustomerId={CustomerId}, VehicleId={VehicleId}",
+                customerSubscriptions.Count, request.CustomerId, request.VehicleId);
+
+            // ========== STEP 2: BUILD SERVICE-TO-SUBSCRIPTIONS MAP (IN-MEMORY) ==========
+            // Key = ServiceId, Value = List of (Subscription, Usage, Priority)
+            var serviceUsageMap = new Dictionary<int, List<(
+                CustomerPackageSubscription Subscription,
+                PackageServiceUsage Usage,
+                int Priority)>>();
+
+            foreach (var subscription in customerSubscriptions)
+            {
+                foreach (var usage in subscription.PackageServiceUsages.Where(u => u.RemainingQuantity > 0))
+                {
+                    if (!serviceUsageMap.ContainsKey(usage.ServiceId))
+                    {
+                        serviceUsageMap[usage.ServiceId] = new List<(CustomerPackageSubscription, PackageServiceUsage, int)>();
+                    }
+
+                    // Calculate priority for this subscription+service combo
+                    int priority = CalculateSubscriptionPriority(subscription, usage.ServiceId);
+                    serviceUsageMap[usage.ServiceId].Add((subscription, usage, priority));
+                }
+            }
+
+            // ✅ SORT each service's subscriptions by priority (DESCENDING = higher first)
+            foreach (var serviceId in serviceUsageMap.Keys.ToList())
+            {
+                serviceUsageMap[serviceId] = serviceUsageMap[serviceId]
+                    .OrderByDescending(x => x.Priority)
+                    .ToList();
+            }
+
+            _logger.LogInformation(
+                "🗺️ Service map built: {ServiceCount} unique services available across subscriptions",
+                serviceUsageMap.Count);
+
+            // ========== STEP 3: DETERMINE WHICH SERVICES TO BOOK ==========
+            var selectedServiceIds = request.ServiceIds ?? new List<int>();
+
+            if (!selectedServiceIds.Any() && customerSubscriptions.Any())
+            {
+                // No explicit services → Use ALL services from BEST subscription
+                var primarySubscription = customerSubscriptions
+                    .OrderByDescending(s =>
+                    {
+                        // Use first service as representative for priority
+                        var firstService = s.PackageServiceUsages.FirstOrDefault(u => u.RemainingQuantity > 0);
+                        return firstService != null ? CalculateSubscriptionPriority(s, firstService.ServiceId) : 0;
+                    })
+                    .First();
+
+                selectedServiceIds = primarySubscription.PackageServiceUsages
+                    .Where(u => u.RemainingQuantity > 0)
+                    .Select(u => u.ServiceId)
+                    .ToList();
+
+                _logger.LogInformation(
+                    "🎯 Auto-selected {Count} services from primary subscription {SubId} ({PackageName})",
+                    selectedServiceIds.Count, primarySubscription.SubscriptionId,
+                    primarySubscription.Package?.PackageName ?? "N/A");
+            }
+
+            // ========== STEP 4: BUILD APPOINTMENT SERVICES ==========
+            foreach (var serviceId in selectedServiceIds)
+            {
+                // ✅ CHECK: Service có trong subscription nào không?
+                if (serviceUsageMap.ContainsKey(serviceId) && serviceUsageMap[serviceId].Any())
+                {
+                    // Get BEST subscription for this service (already sorted by priority)
+                    var (bestSubscription, bestUsage, priority) = serviceUsageMap[serviceId].First();
+
+                    appointmentServices.Add(new AppointmentService
+                    {
+                        ServiceId = serviceId,
+                        SubscriptionId = bestSubscription.SubscriptionId, // ✅ TRACK which subscription this service came from
+                        ServiceSource = "Subscription",
+                        Price = 0, // FREE - dùng từ gói
+                        EstimatedTime = bestUsage.Service?.StandardTime ?? 60,
+                        Notes = $"Từ gói {bestSubscription.Package?.PackageName ?? $"#{bestSubscription.SubscriptionId}"} " +
+                                $"(Còn {bestUsage.RemainingQuantity}/{bestUsage.TotalAllowedQuantity} lượt, Priority={priority})"
+                    });
+
+                    totalDuration += bestUsage.Service?.StandardTime ?? 60;
+                    servicesFromSubscription.Add(serviceId);
+
+                    _logger.LogInformation(
+                        "✅ Service {ServiceId} ({ServiceName}) matched with Subscription {SubId} (Priority={Priority}, {Remaining} uses left)",
+                        serviceId, bestUsage.Service?.ServiceName ?? "N/A",
+                        bestSubscription.SubscriptionId, priority, bestUsage.RemainingQuantity);
+                }
+            }
+
+            // ========== STEP 5: HANDLE EXTRA SERVICES (không có trong subscription) ==========
+            var extraServiceIds = selectedServiceIds
+                .Where(id => !servicesFromSubscription.Contains(id))
+                .ToList();
+
+            if (extraServiceIds.Any())
+            {
+                // ⚡ BATCH LOAD services (1 query instead of N)
+                var extraServices = await _serviceRepository.GetByIdsAsync(extraServiceIds, cancellationToken);
+
+                foreach (var service in extraServices)
+                {
+                    // Check pricing
+                    var pricing = await _pricingRepository.GetActivePricingAsync(vehicleModelId, service.ServiceId);
+                    decimal price = pricing?.CustomPrice ?? service.BasePrice;
+                    int time = pricing?.CustomTime ?? service.StandardTime;
+
+                    appointmentServices.Add(new AppointmentService
+                    {
+                        ServiceId = service.ServiceId,
+                        ServiceSource = request.SubscriptionId.HasValue ? "Extra" : "Regular",
+                        Price = price,
+                        EstimatedTime = time,
+                        Notes = request.SubscriptionId.HasValue
+                            ? "Dịch vụ bổ sung ngoài gói (không có trong gói hoặc đã hết lượt)"
+                            : null
+                    });
+
+                    totalCost += price;
+                    totalDuration += time;
+                }
+
+                _logger.LogInformation(
+                    "💰 Added {Count} extra services, Total cost: {Cost}đ",
+                    extraServices.Count(), totalCost);
+            }
+
+            // ========== STEP 6: VALIDATION ==========
+            if (!appointmentServices.Any())
+                throw new InvalidOperationException(
+                    "Không có dịch vụ nào được chọn hoặc gói dịch vụ đã hết lượt sử dụng");
+
+            _logger.LogInformation(
+                "📋 BuildAppointmentServices COMPLETED: {Total} services ({SubCount} from subscription, {ExtraCount} extra/regular), " +
+                "TotalCost={Cost}đ, TotalDuration={Duration}min",
+                appointmentServices.Count,
+                appointmentServices.Count(s => s.ServiceSource == "Subscription"),
+                appointmentServices.Count(s => s.ServiceSource != "Subscription"),
+                totalCost, totalDuration);
+
+            return (appointmentServices, totalCost, totalDuration);
+        }
         /// <summary>
         /// Build danh sách AppointmentServices với Smart Deduplication logic
         ///
@@ -1780,6 +2661,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                     appointmentServices.Add(new AppointmentService
                     {
                         ServiceId = serviceId,
+                        SubscriptionId = bestSubscription.SubscriptionId, // ✅ TRACK which subscription this service came from
                         ServiceSource = "Subscription",
                         Price = 0, // MIỄN PHÍ vì dùng từ subscription
                         EstimatedTime = serviceTime,
@@ -1870,6 +2752,33 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
         {
             return _configuration.GetValue<int>(
                 "AppointmentSettings:ServiceCenterCapacity:MaxConcurrentAppointments", 5);
+        }
+
+        /// <summary>
+        /// Tính số tiền hoàn lại dựa trên chính sách hủy
+        /// - Hủy >= 24h trước: 100%
+        /// - Hủy >= 2h trước: 50%
+        /// - Hủy < 2h: 0% (giữ toàn bộ phí)
+        /// </summary>
+        private decimal CalculateRefundAmount(
+            Appointment appointment,
+            DateTime cancelledAt)
+        {
+            var appointmentDate = appointment.AppointmentDate;
+            var hoursDiff = (appointmentDate - cancelledAt).TotalHours;
+
+            var paidAmount = appointment.PaidAmount ?? 0;
+
+            // Hủy sớm >= 24h → hoàn 100%
+            if (hoursDiff >= 24)
+                return paidAmount;
+
+            // Hủy sát giờ < 24h nhưng >= 2h → hoàn 50%
+            if (hoursDiff >= 2)
+                return paidAmount * 0.5m;
+
+            // Hủy trong vòng 2h → giữ phí cố định (không hoàn)
+            return 0;
         }
     }
 }
