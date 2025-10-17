@@ -38,18 +38,38 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 new Claim("FullName", user.FullName)
             };
 
-            if (customerId.HasValue && user.RoleId == (int)UserRoles.Customer)
+            // ✅ FIX: Nếu là Customer role → Load Customer data và thêm vào claims
+            if (user.RoleId == (int)UserRoles.Customer)
             {
-                var customer = _context.Customers
-                    .Include(c => c.Type)
-                    .FirstOrDefault(c => c.CustomerId == customerId.Value);
-
-                if (customer != null)
+                // Option 1: Customer ID được truyền vào (từ Login)
+                if (customerId.HasValue)
                 {
-                    claims.Add(new Claim("CustomerId", customer.CustomerId.ToString()));
-                    claims.Add(new Claim("CustomerCode", customer.CustomerCode));
-                    claims.Add(new Claim("CustomerType", customer.TypeId?.ToString() ?? "1"));
-                    claims.Add(new Claim("LoyaltyPoints", customer.LoyaltyPoints?.ToString() ?? "0"));
+                    var customer = _context.Customers
+                        .Include(c => c.Type)
+                        .FirstOrDefault(c => c.CustomerId == customerId.Value);
+
+                    if (customer != null)
+                    {
+                        claims.Add(new Claim("CustomerId", customer.CustomerId.ToString()));
+                        claims.Add(new Claim("CustomerCode", customer.CustomerCode));
+                        claims.Add(new Claim("CustomerType", customer.TypeId?.ToString() ?? "1"));
+                        claims.Add(new Claim("LoyaltyPoints", customer.LoyaltyPoints?.ToString() ?? "0"));
+                    }
+                }
+                // Option 2: Customer ID KHÔNG được truyền vào → Tìm Customer theo UserId
+                else
+                {
+                    var customer = _context.Customers
+                        .Include(c => c.Type)
+                        .FirstOrDefault(c => c.UserId == user.UserId);
+
+                    if (customer != null)
+                    {
+                        claims.Add(new Claim("CustomerId", customer.CustomerId.ToString()));
+                        claims.Add(new Claim("CustomerCode", customer.CustomerCode));
+                        claims.Add(new Claim("CustomerType", customer.TypeId?.ToString() ?? "1"));
+                        claims.Add(new Claim("LoyaltyPoints", customer.LoyaltyPoints?.ToString() ?? "0"));
+                    }
                 }
             }
 

@@ -5,8 +5,10 @@ using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Repositories
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Validators;
 using EVServiceCenter.Core.Interfaces.Services;
+using EVServiceCenter.Core.Domains.Payments.Interfaces.Repositories;
 using EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositories;
 using EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services;
+using EVServiceCenter.Infrastructure.Domains.Payments.Repositories;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
@@ -20,10 +22,15 @@ namespace EVServiceCenter.API.Extensions
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IAppointmentCommandRepository, AppointmentCommandRepository>();
             services.AddScoped<IAppointmentQueryRepository, AppointmentQueryRepository>();
+            services.AddScoped<IRefundRepository, RefundRepository>();
 
             // Services
             services.AddScoped<IAppointmentCommandService, AppointmentCommandService>();
             services.AddScoped<IAppointmentQueryService, AppointmentQueryService>();
+            services.AddScoped<IAppointmentReconciliationService, AppointmentReconciliationService>();
+            
+            // ✅ ADVANCED METRICS: Analytics Service
+            services.AddScoped<IAppointmentMetricsService, AppointmentMetricsService>();
 
             // ✅ SMART SUBSCRIPTION: Audit Service (using Stub implementation)
             services.AddScoped<IServiceSourceAuditService>(provider =>
@@ -40,6 +47,8 @@ namespace EVServiceCenter.API.Extensions
             services.AddScoped<IValidator<CancelAppointmentRequestDto>, CancelAppointmentValidator>();
             services.AddScoped<IValidator<ConfirmAppointmentRequestDto>, ConfirmAppointmentValidator>();
             services.AddScoped<IValidator<AppointmentQueryDto>, AppointmentQueryValidator>();
+            services.AddScoped<IValidator<CreatePaymentIntentRequestDto>, CreatePaymentIntentValidator>();
+            services.AddScoped<IValidator<RecordPaymentResultRequestDto>, RecordPaymentResultValidator>();
 
             // ✅ SMART SUBSCRIPTION: Adjust ServiceSource Validator
             services.AddScoped<IValidator<AdjustServiceSourceRequestDto>, AdjustServiceSourceValidator>();

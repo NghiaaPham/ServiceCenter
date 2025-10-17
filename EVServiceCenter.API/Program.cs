@@ -34,6 +34,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<UpdateCustomerTypeRequestVa
 builder.Services.AddValidatorsFromAssemblyContaining<CustomerTypeQueryValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
 
+// ✅ Customer Vehicle Update Validator
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Infrastructure.Domains.Customers.Validators.UpdateMyVehicleValidator>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -192,6 +195,13 @@ builder.Services.AddTimeSlotModule();
 builder.Services.AddAppointmentModule(); // Appointment booking & management
 builder.Services.AddPricingModule(); // ✅ Discount calculation & promotion services
 
+// 🔒 JWT Token Blacklist Service (for logout)
+builder.Services.AddScoped<EVServiceCenter.Core.Domains.Identity.Interfaces.ITokenBlacklistService, 
+    EVServiceCenter.Infrastructure.Domains.Identity.Services.TokenBlacklistService>();
+
+// ⚙️ BACKGROUND SERVICES (simple singleton pattern - no IHostedService needed)
+builder.Services.AddSingleton<EVServiceCenter.Infrastructure.BackgroundServices.AppointmentReconciliationService>();
+
 // ✅ SMART SUBSCRIPTION: Service Source Audit Service
 // Try to load real implementation, fallback to stub if needed
 builder.Services.AddScoped<IServiceSourceAuditService>(sp =>
@@ -241,6 +251,7 @@ if (app.Environment.IsDevelopment())
         MaintenanceServiceSeeder.SeedMaintenanceServices(context);
         ModelServicePricingSeeder.SeedModelServicePricings(context);
         AppointmentStatusSeeder.SeedAppointmentStatuses(context);
+        WorkOrderStatusSeeder.SeedWorkOrderStatuses(context); // ✅ ADDED: Seed WorkOrderStatus
         TimeSlotSeeder.SeedTimeSlots(context);
 
         // Seed maintenance packages
@@ -288,8 +299,13 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthentication();
+app.UseMiddleware<EVServiceCenter.API.Middlewares.TokenBlacklistMiddleware>(); // 🔒 Check revoked tokens
 app.UseMiddleware<PasswordResetRateLimitMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
+
+// ⚙️ Start background services
+var reconciliationService = app.Services.GetRequiredService<EVServiceCenter.Infrastructure.BackgroundServices.AppointmentReconciliationService>();
+reconciliationService.Start();
 
 app.Run();

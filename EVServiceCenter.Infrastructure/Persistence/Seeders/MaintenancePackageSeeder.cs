@@ -73,12 +73,12 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                 new MaintenancePackage
                 {
                     PackageCode = "PKG-BASIC-2025",
-                    PackageName = "G�i B?o D??ng C? B?n",
-                    Description = "G�i b?o d??ng ??nh k? d�nh cho xe ?i?n, bao g?m c�c d?ch v? c? b?n: ki?m tra pin, phanh, l?p xe. Ph� h?p cho vi?c b?o d??ng th??ng xuy�n.",
-                    ValidityPeriod = 365,        // 1 n?m
+                    PackageName = "Gói Bảo Dưỡng Cơ Bản",
+                    Description = "Gói bảo dưỡng định kỳ dành cho xe điện, bao gồm các dịch vụ cơ bản: kiểm tra pin, phanh, lốp xe. Phù hợp cho việc bảo dưỡng thường xuyên.",
+                    ValidityPeriod = 365,        // 1 năm
                     ValidityMileage = 10000,     // 10,000 km
-                    TotalPrice = 2000000,        // 2 tri?u VND
-                    DiscountPercent = 20,        // Gi?m 20%
+                    TotalPrice = 2000000,        // 2 triệu VND
+                    DiscountPercent = 20,        // Giảm 20%
                     ImageUrl = "/images/packages/basic-package.jpg",
                     IsPopular = false,
                     IsActive = true,
@@ -89,12 +89,12 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                 new MaintenancePackage
                 {
                     PackageCode = "PKG-PREMIUM-2025",
-                    PackageName = "G�i B?o D??ng Cao C?p",
-                    Description = "G�i b?o d??ng to�n di?n v?i c�c d?ch v? chuy�n s�u: ki?m tra h? th?ng ?i?n, pin, phanh, l?p, ?i?u h�a. Bao g?m 2 l?n r?a xe mi?n ph�.",
-                    ValidityPeriod = 365,        // 1 n?m
+                    PackageName = "Gói Bảo Dưỡng Cao Cấp",
+                    Description = "Gói bảo dưỡng toàn diện với các dịch vụ chuyên sâu: kiểm tra hệ thống điện, pin, phanh, lốp, điều hòa. Bao gồm 2 lần rửa xe miễn phí.",
+                    ValidityPeriod = 365,        // 1 năm
                     ValidityMileage = 15000,     // 15,000 km
-                    TotalPrice = 4500000,        // 4.5 tri?u VND
-                    DiscountPercent = 25,        // Gi?m 25%
+                    TotalPrice = 4500000,        // 4.5 triệu VND
+                    DiscountPercent = 25,        // Giảm 25%
                     ImageUrl = "/images/packages/premium-package.jpg",
                     IsPopular = true,            // Popular
                     IsActive = true,
@@ -105,12 +105,12 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                 new MaintenancePackage
                 {
                     PackageCode = "PKG-VIP-2025",
-                    PackageName = "G�i B?o D??ng VIP",
-                    Description = "G�i b?o d??ng cao c?p nh?t, ?u ti�n ph?c v?, b?o d??ng to�n di?n m?i h? th?ng. Bao g?m r?a xe kh�ng gi?i h?n, ch?m s�c n?i th?t ??nh k?.",
-                    ValidityPeriod = 730,        // 2 n?m
+                    PackageName = "Gói Bảo Dưỡng VIP",
+                    Description = "Gói bảo dưỡng cao cấp nhất, ưu tiên phục vụ, bảo dưỡng toàn diện mọi hệ thống. Bao gồm rửa xe không giới hạn, chăm sóc nội thất định kỳ.",
+                    ValidityPeriod = 730,        // 2 năm
                     ValidityMileage = 30000,     // 30,000 km
-                    TotalPrice = 8000000,        // 8 tri?u VND
-                    DiscountPercent = 30,        // Gi?m 30%
+                    TotalPrice = 8000000,        // 8 triệu VND
+                    DiscountPercent = 30,        // Giảm 30%
                     ImageUrl = "/images/packages/vip-package.jpg",
                     IsPopular = true,            // Popular
                     IsActive = true,

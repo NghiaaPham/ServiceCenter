@@ -11,6 +11,8 @@ using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
 using EVServiceCenter.Core.Domains.ServiceCategories.Entities;
 using EVServiceCenter.Core.Domains.ServiceCenters.Entities;
 using EVServiceCenter.Core.Domains.TimeSlots.Entities;
+using EVServiceCenter.Core.Domains.Payments.Entities;
+using EVServiceCenter.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.Core.Entities;
@@ -117,6 +119,16 @@ public partial class EVDbContext : DbContext
     /// </summary>
     public virtual DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
+    /// <summary>
+    /// Payment intent là cầu nối giữa appointment và gateway
+    /// </summary>
+    public virtual DbSet<PaymentIntent> PaymentIntents { get; set; }
+
+    /// <summary>
+    /// Refund tracking cho việc hoàn tiền khi cancel appointment hoặc điều chỉnh giá
+    /// </summary>
+    public virtual DbSet<Refund> Refunds { get; set; }
+
     public virtual DbSet<Part> Parts { get; set; }
 
     public virtual DbSet<PartCategory> PartCategories { get; set; }
@@ -162,6 +174,8 @@ public partial class EVDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     public virtual DbSet<UserSession> UserSessions { get; set; }
+
+    public virtual DbSet<RevokedToken> RevokedTokens { get; set; }
 
     public virtual DbSet<VehicleCustomService> VehicleCustomServices { get; set; }
 
@@ -234,6 +248,10 @@ public partial class EVDbContext : DbContext
             entity.Property(e => e.Priority).HasDefaultValue("Normal");
             entity.Property(e => e.ReminderSent).HasDefaultValue(false);
             entity.Property(e => e.Source).HasDefaultValue("Walk-in");
+            entity.Property(e => e.PaymentStatus).HasDefaultValue(PaymentStatusEnum.Pending.ToString());
+            entity.Property(e => e.PaidAmount).HasDefaultValue(0m);
+            entity.Property(e => e.PaymentIntentCount).HasDefaultValue(0);
+            entity.Property(e => e.FinalCost).HasDefaultValue(0m);
 
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.AppointmentCreatedByNavigations).HasConstraintName("FK__Appointme__Creat__56E8E7AB");
 
@@ -264,6 +282,11 @@ public partial class EVDbContext : DbContext
             entity.HasOne(d => d.Vehicle).WithMany(p => p.Appointments)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Appointme__Vehic__4F47C5E3");
+
+            entity.HasOne(d => d.LatestPaymentIntent)
+                .WithMany()
+                .HasForeignKey(d => d.LatestPaymentIntentId)
+                .HasConstraintName("FK_Appointments_LatestPaymentIntent");
         });
 
         modelBuilder.Entity<AppointmentStatus>(entity =>
@@ -465,13 +488,13 @@ public partial class EVDbContext : DbContext
              .WithOne(u => u.Customer)
              .HasForeignKey<Customer>(d => d.UserId)
              .IsRequired(false)  // UserId nullable
-             .OnDelete(DeleteBehavior.Restrict)  
+             .OnDelete(DeleteBehavior.Restrict)
              .HasConstraintName("FK_Customers_Users");
 
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("IX_Customers_UserID")
                 .IsUnique()
-                .HasFilter("[UserID] IS NOT NULL"); 
+                .HasFilter("[UserID] IS NOT NULL");
         });
 
         modelBuilder.Entity<CustomerCommunicationPreference>(entity =>
@@ -895,6 +918,54 @@ public partial class EVDbContext : DbContext
             entity.HasOne(d => d.ProcessedByNavigation).WithMany(p => p.Payments).HasConstraintName("FK__Payments__Proces__7DCDAAA2");
         });
 
+        modelBuilder.Entity<PaymentIntent>(entity =>
+        {
+            entity.HasKey(e => e.PaymentIntentId).HasName("PK__PaymentI__0C0CEB8B55202AB4");
+
+            entity.HasIndex(e => e.IntentCode).IsUnique();
+
+            entity.Property(e => e.Currency).HasDefaultValue("VND");
+            entity.Property(e => e.Status).HasDefaultValue(PaymentIntentStatusEnum.Pending.ToString());
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+
+            entity.HasOne(d => d.Appointment)
+                .WithMany(p => p.PaymentIntents)
+                .HasForeignKey(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__PaymentIn__Appoi__7CA47C3F");
+        });
+
+        modelBuilder.Entity<PaymentTransaction>(entity =>
+        {
+            entity.HasOne(d => d.PaymentIntent)
+                .WithMany(p => p.PaymentTransactions)
+                .HasForeignKey(d => d.PaymentIntentId)
+                .HasConstraintName("FK__PaymentTr__Payme__7D987078");
+        });
+
+        modelBuilder.Entity<Refund>(entity =>
+        {
+            entity.HasKey(e => e.RefundId).HasName("PK__Refunds__RefundID");
+
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Status).HasDefaultValue("Pending");
+
+            // Restrict cascade to avoid multiple cascade paths
+            // Appointment → Refund (cascade)
+            // PaymentIntent → Refund (restrict to prevent cycle)
+            entity.HasOne(d => d.PaymentIntent)
+                .WithMany()
+                .HasForeignKey(d => d.PaymentIntentId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_Refunds_PaymentIntents_PaymentIntentID");
+
+            entity.HasOne(d => d.Appointment)
+                .WithMany()
+                .HasForeignKey(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Refunds_Appointments_AppointmentID");
+        });
+
         modelBuilder.Entity<PaymentMethod>(entity =>
         {
             entity.HasKey(e => e.MethodId).HasName("PK__PaymentM__FC681FB15BC7676A");
@@ -1181,6 +1252,43 @@ public partial class EVDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.UserSessions)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__UserSessi__UserI__5AEE82B9");
+        });
+
+        modelBuilder.Entity<RevokedToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__RevokedTokens");
+
+            entity.HasIndex(e => e.Token)
+                .IsUnique()
+                .HasDatabaseName("UX_RevokedTokens_Token");
+
+            entity.HasIndex(e => e.ExpiresAt)
+                .HasDatabaseName("IX_RevokedTokens_ExpiresAt");
+
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("IX_RevokedTokens_UserId");
+
+            entity.Property(e => e.RevokedAt)
+                .HasDefaultValueSql("(getdate())");
+
+            entity.Property(e => e.Token)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.RevokeReason)
+                .HasMaxLength(200);
+
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(50);
+
+            entity.Property(e => e.UserAgent)
+                .HasMaxLength(500);
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK__RevokedTokens__Users");
         });
 
         modelBuilder.Entity<VehicleCustomService>(entity =>

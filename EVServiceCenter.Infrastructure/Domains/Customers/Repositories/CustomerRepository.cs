@@ -442,20 +442,27 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
                 entity.IsActive = request.IsActive;
                 entity.UpdatedDate = DateTime.UtcNow;
 
-                // Handle identity number update if provided
-                if (!string.IsNullOrWhiteSpace(request.IdentityNumber))
+                // ✅ FIX: Handle identity number update ONLY if provided
+                // Nếu request.IdentityNumber = null → KHÔNG XỬ LÝ GÌ (giữ nguyên giá trị cũ)
+                // Chỉ có Staff/Admin mới được phép xóa CCCD bằng cách gửi empty string ""
+                if (request.IdentityNumber != null) // Kiểm tra != null, không phải IsNullOrWhiteSpace
                 {
-                    if (await IdentityNumberExistsAsync(request.IdentityNumber, request.CustomerId, cancellationToken))
+                    if (!string.IsNullOrWhiteSpace(request.IdentityNumber))
                     {
-                        throw new InvalidOperationException("Số CMND/CCCD đã được sử dụng bởi khách hàng khác");
+                        // Có giá trị mới → Check duplicate và update
+                        if (await IdentityNumberExistsAsync(request.IdentityNumber, request.CustomerId, cancellationToken))
+                        {
+                            throw new InvalidOperationException("Số CMND/CCCD đã được sử dụng bởi khách hàng khác");
+                        }
+                        entity.IdentityNumber = EncryptIdentityNumber(request.IdentityNumber);
                     }
-                    entity.IdentityNumber = EncryptIdentityNumber(request.IdentityNumber);
+                    else
+                    {
+                        // Empty string "" → Xóa CCCD (chỉ Staff/Admin mới gửi được)
+                        entity.IdentityNumber = null;
+                    }
                 }
-                else
-                {
-                    // ✅ FIX: Nếu IdentityNumber là null hoặc empty, set = null thay vì giữ giá trị cũ
-                    entity.IdentityNumber = null;
-                }
+                // Nếu request.IdentityNumber = null → Giữ nguyên entity.IdentityNumber (không thay đổi)
 
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
@@ -591,25 +598,45 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
 
         public async Task<bool> IdentityNumberExistsAsync(string identityNumber, int? excludeCustomerId = null, CancellationToken cancellationToken = default)
         {
-            // ✅ FIX: Check empty trước khi encrypt
+            // ✅ FIX: Check empty trước
             if (string.IsNullOrWhiteSpace(identityNumber))
             {
                 return false; // Empty identity number không cần check duplicate
             }
 
-            // Note: This is a simplified check - in production, you'd need to decrypt and compare
-            // For now, we'll do a basic existence check on encrypted data
-            var encryptedId = EncryptIdentityNumber(identityNumber);
-            var query = _context.Customers.Where(c => c.IdentityNumber != null);
+            // ⚠️ LIMITATION: Encryption-based comparison
+            // Vì IdentityNumber được encrypt, không thể so sánh trực tiếp trong database
+            // Cần decrypt từng record để compare - KHÔNG HIỆU QUẢ với dataset lớn
+            
+            // Solution 1 (Current): Encrypt input và so sánh bytes - KHÔNG CHÍNH XÁC vì encryption mỗi lần khác nhau
+            // Solution 2 (Recommended): Lưu hash thay vì encrypt, hoặc dùng searchable encryption
+            
+            // ✅ WORKAROUND: Lấy tất cả customers có IdentityNumber, decrypt và compare
+            var customersWithIdentity = await _context.Customers
+                .Where(c => c.IdentityNumber != null)
+                .Where(c => !excludeCustomerId.HasValue || c.CustomerId != excludeCustomerId.Value)
+                .Select(c => new { c.CustomerId, c.IdentityNumber })
+                .ToListAsync(cancellationToken);
 
-            if (excludeCustomerId.HasValue)
+            // Decrypt and compare
+            foreach (var customer in customersWithIdentity)
             {
-                query = query.Where(c => c.CustomerId != excludeCustomerId.Value);
+                try
+                {
+                    var decrypted = DecryptIdentityNumber(customer.IdentityNumber!);
+                    if (decrypted == identityNumber)
+                    {
+                        return true; // Found duplicate
+                    }
+                }
+                catch
+                {
+                    // Skip if decryption fails
+                    continue;
+                }
             }
 
-            // In real implementation, you'd decrypt each identity number and compare
-            // This is a simplified version that assumes direct comparison
-            return await query.AnyAsync(cancellationToken);
+            return false; // No duplicate found
         }
 
         public async Task<bool> HasVehiclesAsync(int customerId, CancellationToken cancellationToken = default)

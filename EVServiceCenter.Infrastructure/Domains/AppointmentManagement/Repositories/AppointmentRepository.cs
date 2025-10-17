@@ -43,6 +43,9 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
                 .Include(a => a.CreatedByNavigation) // ✅ ADDED: Load CreatedBy User
                 .Include(a => a.UpdatedByNavigation) // ✅ ADDED: Load UpdatedBy User
                 .Include(a => a.WorkOrders) // ✅ ADDED: Load WorkOrders
+                    .ThenInclude(wo => wo.Status) // ✅ FIX: Load WorkOrder Status
+                .Include(a => a.PaymentIntents)
+                    .ThenInclude(pi => pi.PaymentTransactions)
                 .AsSplitQuery() // ✅ PERFORMANCE: Prevent cartesian explosion
                 .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId, cancellationToken);
         }
