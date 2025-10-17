@@ -35,5 +35,9 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
         Task<int> GetCountByStatusAsync(
             int statusId,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<PaymentIntentResponseDto>> GetPaymentIntentsAsync(
+            int appointmentId,
+            CancellationToken cancellationToken = default);
     }
 }

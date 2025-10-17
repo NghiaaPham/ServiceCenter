@@ -11,7 +11,15 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Validators
                 .GreaterThan(0).WithMessage("Số trang phải lớn hơn 0");
 
             RuleFor(x => x.PageSize)
-                .InclusiveBetween(1, 100).WithMessage("Kích thước trang phải từ 1 đến 100");
+                .InclusiveBetween(1, 100).WithMessage("Kích thước trang phải từ 1 đến 100")
+                .LessThanOrEqualTo(50)
+                .WithMessage("Để tối ưu performance, kích thước trang không nên vượt quá 50. Sử dụng phân trang để load thêm dữ liệu.");
+
+            // ✅ Performance warning for large page sizes
+            RuleFor(x => x.PageSize)
+                .Must((dto, pageSize) => pageSize <= 20 || !string.IsNullOrEmpty(dto.SearchTerm))
+                .WithMessage("Với query không có filter, khuyến nghị page size <= 20 để tối ưu performance")
+                .When(x => !x.CustomerId.HasValue && !x.ServiceCenterId.HasValue && !x.StatusId.HasValue);
 
             When(x => x.CustomerId.HasValue, () =>
             {

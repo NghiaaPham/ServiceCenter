@@ -31,6 +31,25 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
             int currentUserId,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Check-in khách hàng khi đến trung tâm (Confirmed → InProgress)
+        /// Tạo WorkOrder để tracking công việc
+        /// </summary>
+        Task<AppointmentResponseDto> CheckInAsync(
+            int appointmentId,
+            int currentUserId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Thêm dịch vụ phát sinh khi đang InProgress
+        /// Tạo PaymentIntent mới cho các dịch vụ bổ sung
+        /// </summary>
+        Task<AppointmentResponseDto> AddServicesAsync(
+            int appointmentId,
+            List<int> additionalServiceIds,
+            int currentUserId,
+            CancellationToken cancellationToken = default);
+
         Task<bool> MarkAsNoShowAsync(
             int appointmentId,
             int currentUserId,
@@ -38,6 +57,16 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
 
         Task<bool> DeleteAsync(
             int appointmentId,
+            int currentUserId,
+            CancellationToken cancellationToken = default);
+
+        Task<AppointmentResponseDto> RecordPaymentResultAsync(
+            RecordPaymentResultRequestDto request,
+            int currentUserId,
+            CancellationToken cancellationToken = default);
+
+        Task<PaymentIntentResponseDto> CreatePaymentIntentAsync(
+            CreatePaymentIntentRequestDto request,
             int currentUserId,
             CancellationToken cancellationToken = default);
 
