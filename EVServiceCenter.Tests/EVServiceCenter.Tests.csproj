@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EVServiceCenter.Core\EVServiceCenter.Core.csproj" />
     <ProjectReference Include="..\EVServiceCenter.Infrastructure\EVServiceCenter.Infrastructure.csproj" />
+    <ProjectReference Include="..\EVServiceCenter.API\EVServiceCenter.API.csproj" />
   </ItemGroup>
 
 </Project>
