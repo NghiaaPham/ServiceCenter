@@ -82,10 +82,12 @@ public partial class User
     [StringLength(500)]
     public string? AvatarUrl { get; set; }
 
-    [StringLength(500)]
-    public string? RefreshToken { get; set; }
+    // Deprecated: Replaced by RefreshTokens collection
+    // public string? RefreshToken { get; set; }
+    // public DateTime? RefreshTokenExpiry { get; set; }
 
-    public DateTime? RefreshTokenExpiry { get; set; }
+    [InverseProperty("User")]
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     // Computed property
     public bool IsExternalLogin => !string.IsNullOrEmpty(ExternalProvider);

@@ -31,24 +31,25 @@
         Completed = 5,
 
         /// <summary>
-        /// Hoàn thành nhưng còn khoản thanh toán chưa hoàn tất
-        /// (Dùng khi có service bị degrade và thanh toán bổ sung thất bại)
-        /// </summary>
-        CompletedWithUnpaidBalance = 6,
-
-        /// <summary>
         /// Đã hủy bỏ
         /// </summary>
-        Cancelled = 7,
+        Cancelled = 6,
 
         /// <summary>
         /// Đã được dời lịch sang appointment khác
         /// </summary>
-        Rescheduled = 8,
+        Rescheduled = 7,
 
         /// <summary>
         /// Khách không đến (No-show)
         /// </summary>
-        NoShow = 9
+        NoShow = 8,
+
+        /// <summary>
+        /// Hoàn thành nhưng còn công nợ chưa thanh toán
+        /// (Xảy ra khi subscription services bị degrade thành Extra do hết lượt)
+        /// </summary>
+        CompletedWithUnpaidBalance = 9
     }
+
 }

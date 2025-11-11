@@ -14,6 +14,8 @@ using EVServiceCenter.Core.Domains.TimeSlots.Entities;
 using EVServiceCenter.Core.Domains.Payments.Entities;
 using EVServiceCenter.Core.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Linq;
 
 namespace EVServiceCenter.Core.Entities;
 
@@ -149,6 +151,8 @@ public partial class EVDbContext : DbContext
 
     public virtual DbSet<Report> Reports { get; set; }
 
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
     public virtual DbSet<SecurityEvent> SecurityEvents { get; set; }
 
     public virtual DbSet<ServiceCategory> ServiceCategories { get; set; }
@@ -196,11 +200,65 @@ public partial class EVDbContext : DbContext
     public virtual DbSet<WorkOrderTimeline> WorkOrderTimelines { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Data Source=LAPTOP-774TME8F;Initial Catalog=EVServiceCenterV2;Persist Security Info=True;User ID=sa;Password=12345;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=true");
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?linkid=723263.
+    {
+        // Respect DI configuration if already provided via AddDbContext
+        if (optionsBuilder.IsConfigured)
+            return;
+
+        // Fallback for standalone tools/tests: read from environment variable. Do not keep credentials in source control.
+        var fallbackConn = Environment.GetEnvironmentVariable("DEFAULT_CONNECTION");
+        if (!string.IsNullOrWhiteSpace(fallbackConn))
+        {
+            optionsBuilder.UseSqlServer(fallbackConn, sqlOptions => sqlOptions.CommandTimeout(120));
+        }
+        // If no fallback, leave unconfigured so DI must supply options.
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Register converters for DateOnly / TimeOnly globally to avoid provider conversion issues
+        var dateOnlyConverter = new ValueConverter<DateOnly, DateTime>(
+            d => d.ToDateTime(TimeOnly.MinValue),
+            d => DateOnly.FromDateTime(d));
+
+        var nullableDateOnlyConverter = new ValueConverter<DateOnly?, DateTime?>(
+            d => d.HasValue ? d.Value.ToDateTime(TimeOnly.MinValue) : null,
+            d => d.HasValue ? DateOnly.FromDateTime(d.Value) : (DateOnly?)null);
+
+        var timeOnlyConverter = new ValueConverter<TimeOnly, TimeSpan>(
+            t => t.ToTimeSpan(),
+            ts => TimeOnly.FromTimeSpan(ts));
+
+        var nullableTimeOnlyConverter = new ValueConverter<TimeOnly?, TimeSpan?>(
+            t => t.HasValue ? t.Value.ToTimeSpan() : null,
+            ts => ts.HasValue ? TimeOnly.FromTimeSpan(ts.Value) : (TimeOnly?)null);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes().Where(et => et.ClrType != null))
+        {
+            var clrType = entityType.ClrType!;
+
+            foreach (var prop in clrType.GetProperties())
+            {
+                if (prop.PropertyType == typeof(DateOnly))
+                {
+                    modelBuilder.Entity(clrType).Property(prop.Name).HasConversion(dateOnlyConverter);
+                }
+                else if (prop.PropertyType == typeof(DateOnly?))
+                {
+                    modelBuilder.Entity(clrType).Property(prop.Name).HasConversion(nullableDateOnlyConverter);
+                }
+                else if (prop.PropertyType == typeof(TimeOnly))
+                {
+                    modelBuilder.Entity(clrType).Property(prop.Name).HasConversion(timeOnlyConverter);
+                }
+                else if (prop.PropertyType == typeof(TimeOnly?))
+                {
+                    modelBuilder.Entity(clrType).Property(prop.Name).HasConversion(nullableTimeOnlyConverter);
+                }
+            }
+        }
+
         modelBuilder.Entity<ActivityLog>(entity =>
         {
             entity.HasKey(e => e.LogId).HasName("PK__Activity__5E5499A89BA8FBB4");
@@ -241,6 +299,11 @@ public partial class EVDbContext : DbContext
         modelBuilder.Entity<Appointment>(entity =>
         {
             entity.HasKey(e => e.AppointmentId).HasName("PK__Appointm__8ECDFCA2E3758D0D");
+
+            entity.HasIndex(e => e.StatusId).HasDatabaseName("IX_Appointments_StatusID");
+            entity.HasIndex(e => e.PaymentStatus).HasDatabaseName("IX_Appointments_PaymentStatus");
+            entity.HasIndex(e => new { e.StatusId, e.CreatedDate, e.PaymentStatus })
+                .HasDatabaseName("IX_Appointments_Status_CreatedDate_PaymentStatus");
 
             entity.Property(e => e.ConfirmationStatus).HasDefaultValue("Pending");
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
@@ -538,6 +601,11 @@ public partial class EVDbContext : DbContext
             entity.HasOne(d => d.PaymentMethod).WithMany(p => p.CustomerPackageSubscriptions).HasConstraintName("FK__CustomerP__Payme__689D8392");
 
             entity.HasOne(d => d.Vehicle).WithMany(p => p.CustomerPackageSubscriptions).HasConstraintName("FK__CustomerP__Vehic__67A95F59");
+
+            entity.HasOne(d => d.Invoice).WithMany()
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_CustomerPackageSubscriptions_Invoices");
         });
 
         modelBuilder.Entity<CustomerType>(entity =>
@@ -817,6 +885,10 @@ public partial class EVDbContext : DbContext
 
             entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.PaymentStatus).HasDefaultValue("Pending");
+            entity.HasIndex(e => new { e.GatewayName, e.GatewayTransactionId })
+                .HasDatabaseName("UX_OnlinePayment_Gateway_Transaction")
+                .HasFilter("[GatewayTransactionId] IS NOT NULL")
+                .IsUnique();
 
             entity.HasOne(d => d.Payment).WithMany(p => p.OnlinePayments)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -923,6 +995,8 @@ public partial class EVDbContext : DbContext
             entity.HasKey(e => e.PaymentIntentId).HasName("PK__PaymentI__0C0CEB8B55202AB4");
 
             entity.HasIndex(e => e.IntentCode).IsUnique();
+
+            entity.HasIndex(e => new { e.AppointmentId, e.Status }).HasDatabaseName("IX_PaymentIntents_AppointmentId_Status");
 
             entity.Property(e => e.Currency).HasDefaultValue("VND");
             entity.Property(e => e.Status).HasDefaultValue(PaymentIntentStatusEnum.Pending.ToString());
@@ -1226,6 +1300,12 @@ public partial class EVDbContext : DbContext
             entity.Property(e => e.FailedLoginAttempts).HasDefaultValue(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
 
+            entity.HasIndex(e => e.Username)
+                .HasDatabaseName("IX_Users_Username_Login");
+
+            entity.HasIndex(e => e.Email)
+                .HasDatabaseName("IX_Users_Email_Login");
+
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.InverseCreatedByNavigation).HasConstraintName("FK__Users__CreatedBy__5441852A");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
@@ -1289,6 +1369,26 @@ public partial class EVDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("FK__RevokedTokens__Users");
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasIndex(e => e.Selector).IsUnique();
+
+            entity.Property(e => e.Created).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Expires).IsRequired();
+            entity.Property(e => e.TokenHash).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.CreatedByIp).HasMaxLength(100);
+            entity.Property(e => e.RevokedByIp).HasMaxLength(100);
+            entity.Property(e => e.ReplacedByTokenHash).HasMaxLength(500);
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.RefreshTokens)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_RefreshTokens_Users");
         });
 
         modelBuilder.Entity<VehicleCustomService>(entity =>

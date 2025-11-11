@@ -7,6 +7,13 @@ namespace EVServiceCenter.Core.Enums
     public enum SubscriptionStatusEnum
     {
         /// <summary>
+        /// Chờ thanh toán - subscription vừa tạo
+        /// Chưa thanh toán hoặc chưa xác nhận thanh toán
+        /// Chưa thể sử dụng services
+        /// </summary>
+        PendingPayment = 0,
+
+        /// <summary>
         /// Đang hoạt động - khách có thể sử dụng
         /// Subscription còn hạn, còn số lần sử dụng
         /// </summary>

@@ -43,6 +43,12 @@ public partial class WorkOrder
     [StringLength(20)]
     public string? Priority { get; set; }
 
+    /// <summary>
+    /// Nguồn gốc tạo WorkOrder: Scheduled (từ appointment) hoặc WalkIn (trực tiếp)
+    /// </summary>
+    [StringLength(20)]
+    public string? SourceType { get; set; }
+
     [Column("TechnicianID")]
     public int? TechnicianId { get; set; }
 

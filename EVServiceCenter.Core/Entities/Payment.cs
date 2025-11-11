@@ -12,7 +12,7 @@ public partial class Payment
     [Column("PaymentID")]
     public int PaymentId { get; set; }
 
-    [StringLength(20)]
+    [StringLength(30)]
     public string PaymentCode { get; set; } = null!;
 
     [Column("InvoiceID")]

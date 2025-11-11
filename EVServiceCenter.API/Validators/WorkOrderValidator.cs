@@ -37,10 +37,10 @@ public sealed class WorkOrderValidator : AbstractValidator<WorkOrder>
         RuleFor(x => x.InternalNotes).MaximumLength(1000).WithMessage(ValidationRules.Messages.MaxLength);
         RuleFor(x => x.TechnicianNotes).MaximumLength(1000).WithMessage(ValidationRules.Messages.MaxLength);
         RuleFor(x => x.StartDate)
-            .LessThanOrEqualTo(x => x.EstimatedCompletionDate.Value)
+            .LessThanOrEqualTo(x => x.EstimatedCompletionDate!.Value)
             .When(x => x.StartDate.HasValue && x.EstimatedCompletionDate.HasValue);
         RuleFor(x => x.EstimatedCompletionDate)
-            .LessThanOrEqualTo(x => x.CompletedDate.Value)
+            .LessThanOrEqualTo(x => x.CompletedDate!.Value)
             .When(x => x.EstimatedCompletionDate.HasValue && x.CompletedDate.HasValue);
     }
 }

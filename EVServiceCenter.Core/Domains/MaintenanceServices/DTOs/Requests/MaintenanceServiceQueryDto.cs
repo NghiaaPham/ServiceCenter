@@ -6,6 +6,7 @@
         public int PageSize { get; set; } = 10;
         public string? SearchTerm { get; set; }
         public int? CategoryId { get; set; }
+        public int? ModelId { get; set; } // Filter services by vehicle model
         public bool? IsActive { get; set; }
         public bool? IsWarrantyService { get; set; }
         public decimal? MinPrice { get; set; }

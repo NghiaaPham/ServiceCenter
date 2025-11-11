@@ -48,6 +48,7 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                     .Include(s => s.Vehicle)
                         .ThenInclude(v => v.Model)
                     .Include(s => s.PackageServiceUsages)
+                    .Include(s => s.Invoice)
                     .OrderByDescending(s => s.StartDate)
                     .ToListAsync(cancellationToken);
 
@@ -77,6 +78,7 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                         .ThenInclude(v => v.Model)
                     .Include(s => s.PackageServiceUsages)
                         .ThenInclude(u => u.Service)
+                    .Include(s => s.Invoice)
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
                 if (subscription == null)
@@ -311,6 +313,7 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                 PurchaseDate = subscription.PurchaseDate ?? subscription.StartDate.ToDateTime(TimeOnly.MinValue),
                 ExpiryDate = expiryDate,
                 PricePaid = subscription.PaymentAmount ?? 0,
+                InvoiceId = subscription.InvoiceId,
                 Status = Enum.TryParse<SubscriptionStatusEnum>(subscription.Status, out var status)
                     ? status
                     : SubscriptionStatusEnum.Active,
@@ -366,6 +369,8 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositori
                 ValidityMileage = subscription.Package?.ValidityMileage,
                 InitialVehicleMileage = subscription.InitialVehicleMileage,
                 PricePaid = subscription.PaymentAmount ?? 0,
+                InvoiceId = subscription.InvoiceId,
+                InvoiceCode = subscription.Invoice?.InvoiceCode,
                 Status = Enum.TryParse<SubscriptionStatusEnum>(subscription.Status, out var status)
                     ? status
                     : SubscriptionStatusEnum.Active,

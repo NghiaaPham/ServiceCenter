@@ -9,7 +9,6 @@ namespace EVServiceCenter.API.Controllers.TimeSlots
 {
     [ApiController]
     [Route("api/time-slots")]
-    [AllowAnonymous]
     [ApiExplorerSettings(GroupName = "Staff - Time Slots")]
     public class TimeSlotQueryController : BaseController
     {

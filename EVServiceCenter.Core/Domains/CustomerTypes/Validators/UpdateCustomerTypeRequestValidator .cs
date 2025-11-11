@@ -22,7 +22,7 @@ public class UpdateCustomerTypeRequestValidator : AbstractValidator<UpdateCustom
             .WithMessage("Phần trăm giảm giá phải lớn hơn hoặc bằng 0")
             .LessThanOrEqualTo(100)
             .WithMessage("Phần trăm giảm giá phải nhỏ hơn hoặc bằng 100")
-            .ScalePrecision(2, 5)
+            .PrecisionScale(5, 2, ignoreTrailingZeros: false)
             .WithMessage("Phần trăm giảm giá chỉ được có tối đa 2 chữ số thập phân");
 
         RuleFor(x => x.Description)

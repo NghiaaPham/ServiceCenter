@@ -35,7 +35,7 @@ namespace EVServiceCenter.Core.Domains.Customers.Validators
                 .When(x => x.TypeId.HasValue);
 
             RuleFor(x => x.Gender)
-                .Must(gender => IsValidGender(gender))
+                .Must(gender => string.IsNullOrEmpty(gender) || IsValidGender(gender))
                 .WithMessage("Giới tính chỉ được là: Nam, Nữ, Khác")
                 .When(x => !string.IsNullOrEmpty(x.Gender));
 

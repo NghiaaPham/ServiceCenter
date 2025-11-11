@@ -112,5 +112,15 @@ namespace EVServiceCenter.Core.Domains.MaintenancePackages.Interfaces.Repositori
         Task<bool> PackageExistsAsync(
             int packageId,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Lấy các gói khuyến nghị dựa trên modelId của xe.
+        /// Hiện sử dụng heuristic: packages chứa dịch vụ có giá tùy chỉnh cho model này
+        /// hoặc packages đánh dấu "IsPopular". Trả về tối đa topCount.
+        /// </summary>
+        Task<List<MaintenancePackageSummaryDto>> GetRecommendedPackagesAsync(
+            int modelId,
+            int topCount = 5,
+            CancellationToken cancellationToken = default);
     }
 }

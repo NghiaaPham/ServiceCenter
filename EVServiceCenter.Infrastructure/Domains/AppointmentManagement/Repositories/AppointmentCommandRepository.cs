@@ -5,6 +5,7 @@ using EVServiceCenter.Core.Domains.Payments.Entities;
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositories
 {
@@ -23,42 +24,52 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             PaymentIntent? initialPaymentIntent = null,
             CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                await _context.Appointments.AddAsync(appointment, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                if (initialPaymentIntent != null)
+                var (transaction, ownsTransaction) = await BeginTransactionIfNeededAsync(cancellationToken);
+                try
                 {
-                    initialPaymentIntent.AppointmentId = appointment.AppointmentId;
-                    initialPaymentIntent.CustomerId = appointment.CustomerId;
-
-                    await _context.PaymentIntents.AddAsync(initialPaymentIntent, cancellationToken);
+                    await _context.Appointments.AddAsync(appointment, cancellationToken);
                     await _context.SaveChangesAsync(cancellationToken);
 
-                    appointment.LatestPaymentIntentId = initialPaymentIntent.PaymentIntentId;
-                    appointment.PaymentIntentCount = Math.Max(appointment.PaymentIntentCount, 1);
+                    if (initialPaymentIntent != null)
+                    {
+                        initialPaymentIntent.AppointmentId = appointment.AppointmentId;
+                        initialPaymentIntent.CustomerId = appointment.CustomerId;
+
+                        await _context.PaymentIntents.AddAsync(initialPaymentIntent, cancellationToken);
+                        await _context.SaveChangesAsync(cancellationToken);
+
+                        appointment.LatestPaymentIntentId = initialPaymentIntent.PaymentIntentId;
+                        appointment.PaymentIntentCount = Math.Max(appointment.PaymentIntentCount, 1);
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+
+                    foreach (var service in appointmentServices)
+                    {
+                        service.AppointmentId = appointment.AppointmentId;
+                        service.CreatedDate = DateTime.UtcNow;
+                    }
+
+                    await _context.AppointmentServices.AddRangeAsync(appointmentServices, cancellationToken);
                     await _context.SaveChangesAsync(cancellationToken);
-                }
 
-                foreach (var service in appointmentServices)
+                    if (ownsTransaction && transaction != null)
+                    {
+                        await transaction.CommitAsync(cancellationToken);
+                    }
+                    return appointment;
+                }
+                catch
                 {
-                    service.AppointmentId = appointment.AppointmentId;
-                    service.CreatedDate = DateTime.UtcNow;
+                    if (ownsTransaction && transaction != null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                    }
+                    throw;
                 }
-
-                await _context.AppointmentServices.AddRangeAsync(appointmentServices, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                await transaction.CommitAsync(cancellationToken);
-                return appointment;
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
+            });
         }
 
         public async Task UpdateServicesAsync(
@@ -66,31 +77,41 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             List<AppointmentService> newServices,
             CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                var oldServices = await _context.AppointmentServices
-                    .Where(aps => aps.AppointmentId == appointmentId)
-                    .ToListAsync(cancellationToken);
-
-                _context.AppointmentServices.RemoveRange(oldServices);
-
-                foreach (var service in newServices)
+                var (transaction, ownsTransaction) = await BeginTransactionIfNeededAsync(cancellationToken);
+                try
                 {
-                    service.AppointmentId = appointmentId;
-                    service.CreatedDate = DateTime.UtcNow;
+                    var oldServices = await _context.AppointmentServices
+                        .Where(aps => aps.AppointmentId == appointmentId)
+                        .ToListAsync(cancellationToken);
+
+                    _context.AppointmentServices.RemoveRange(oldServices);
+
+                    foreach (var service in newServices)
+                    {
+                        service.AppointmentId = appointmentId;
+                        service.CreatedDate = DateTime.UtcNow;
+                    }
+
+                    await _context.AppointmentServices.AddRangeAsync(newServices, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    if (ownsTransaction && transaction != null)
+                    {
+                        await transaction.CommitAsync(cancellationToken);
+                    }
                 }
-
-                await _context.AppointmentServices.AddRangeAsync(newServices, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
+                catch
+                {
+                    if (ownsTransaction && transaction != null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                    }
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> UpdateStatusAsync(
@@ -134,39 +155,49 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             List<AppointmentService> newServices,
             CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                var rescheduledStatusId = (int)AppointmentStatusEnum.Rescheduled;
-                await _context.Appointments
-                    .Where(a => a.AppointmentId == oldAppointmentId)
-                    .ExecuteUpdateAsync(
-                        setters => setters
-                            .SetProperty(a => a.StatusId, rescheduledStatusId)
-                            .SetProperty(a => a.UpdatedDate, DateTime.UtcNow),
-                        cancellationToken);
-
-                newAppointment.RescheduledFromId = oldAppointmentId;
-                await _context.Appointments.AddAsync(newAppointment, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                foreach (var service in newServices)
+                var (transaction, ownsTransaction) = await BeginTransactionIfNeededAsync(cancellationToken);
+                try
                 {
-                    service.AppointmentId = newAppointment.AppointmentId;
-                    service.CreatedDate = DateTime.UtcNow;
+                    var rescheduledStatusId = (int)AppointmentStatusEnum.Rescheduled;
+                    await _context.Appointments
+                        .Where(a => a.AppointmentId == oldAppointmentId)
+                        .ExecuteUpdateAsync(
+                            setters => setters
+                                .SetProperty(a => a.StatusId, rescheduledStatusId)
+                                .SetProperty(a => a.UpdatedDate, DateTime.UtcNow),
+                            cancellationToken);
+
+                    newAppointment.RescheduledFromId = oldAppointmentId;
+                    await _context.Appointments.AddAsync(newAppointment, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    foreach (var service in newServices)
+                    {
+                        service.AppointmentId = newAppointment.AppointmentId;
+                        service.CreatedDate = DateTime.UtcNow;
+                    }
+
+                    await _context.AppointmentServices.AddRangeAsync(newServices, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    if (ownsTransaction && transaction != null)
+                    {
+                        await transaction.CommitAsync(cancellationToken);
+                    }
+                    return newAppointment;
                 }
-
-                await _context.AppointmentServices.AddRangeAsync(newServices, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                await transaction.CommitAsync(cancellationToken);
-                return newAppointment;
-            }
-            catch
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                throw;
-            }
+                catch
+                {
+                    if (ownsTransaction && transaction != null)
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                    }
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> ConfirmAsync(
@@ -233,6 +264,18 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             _context.Appointments.Update(appointment);
             var rows = await _context.SaveChangesAsync(cancellationToken);
             return rows > 0;
+        }
+
+        private async Task<(IDbContextTransaction? Transaction, bool OwnsTransaction)> BeginTransactionIfNeededAsync(
+            CancellationToken cancellationToken)
+        {
+            if (_context.Database.CurrentTransaction != null)
+            {
+                return (null, false);
+            }
+
+            var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            return (transaction, true);
         }
     }
 }

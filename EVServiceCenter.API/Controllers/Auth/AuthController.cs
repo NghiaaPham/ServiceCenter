@@ -9,6 +9,8 @@ using EVServiceCenter.Core.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
+using EVServiceCenter.Core.Domains.Identity.DTOs;
 
 namespace EVServiceCenter.API.Controllers.Auth
 {
@@ -46,7 +48,7 @@ namespace EVServiceCenter.API.Controllers.Auth
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Dữ liệu đăng ký không hợp lệ.",
+                    Message = "D? li?u dang k� kh�ng h?p l?.",
                     ErrorCode = "VALIDATION_ERROR"
                 });
             }
@@ -59,7 +61,7 @@ namespace EVServiceCenter.API.Controllers.Auth
                     return BadRequest(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Chỉ có thể tạo tài khoản nội bộ (Admin, Staff, Technician).",
+                        Message = "Ch? c� th? t?o t�i kho?n n?i b? (Admin, Staff, Technician).",
                         ErrorCode = "ROLE_NOT_ALLOWED"
                     });
                 }
@@ -83,13 +85,13 @@ namespace EVServiceCenter.API.Controllers.Auth
                     new ApiResponse<object>
                     {
                         Success = true,
-                        Message = "Tạo tài khoản nhân viên thành công! Email chào mừng đã được gửi.",
+                        Message = "T?o t�i kho?n nh�n vi�n th�nh c�ng! Email ch�o m?ng d� du?c g?i.",
                         Data = new
                         {
                             User = createdUser,
                             UserType = "Internal",
                             CreatedBy = GetCurrentUserName(),
-                            NextStep = "Nhân viên có thể đăng nhập ngay bằng username/password đã tạo",
+                            NextStep = "Nh�n vi�n c� th? dang nh?p ngay b?ng username/password d� t?o",
                             LoginUrl = "/login"
                         }
                     });
@@ -117,17 +119,22 @@ namespace EVServiceCenter.API.Controllers.Auth
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Tên đăng nhập và mật khẩu không được để trống",
+                    Message = "T�n dang nh?p v� m?t kh?u kh�ng du?c d? tr?ng",
                     ErrorCode = ErrorCodes.VALIDATION_ERROR
                 });
             }
 
             try
             {
+                // Measure login stages for performance debugging
+                var sw = Stopwatch.StartNew();
                 var loginResult = await _userService.LoginAsync(loginRequest.Username, loginRequest.Password);
+                sw.Stop();
+                _logger.LogInformation("LoginAsync completed in {ElapsedMs} ms for username={Username}", sw.ElapsedMilliseconds, loginRequest.Username);
+
                 var (user, errorCode, errorMessage) = loginResult;
 
-                // Nếu có lỗi
+                // N?u c� l?i
                 if (user == null)
                 {
                     if (errorCode == ErrorCodes.EMAIL_NOT_VERIFIED)
@@ -145,10 +152,10 @@ namespace EVServiceCenter.API.Controllers.Auth
                                 CheckStatusUrl = "/api/verification/email-status",
                                 Instructions = new[]
                                 {
-                            "Kiểm tra hộp thư email của bạn",
-                            "Tìm email từ EV Service Center (kiểm tra cả thư mục spam)",
-                            "Click vào link xác thực trong email",
-                            "Quay lại trang này để đăng nhập"
+                            "Ki?m tra h?p thu email c?a b?n",
+                            "T�m email t? EV Service Center (ki?m tra c? thu m?c spam)",
+                            "Click v�o link x�c th?c trong email",
+                            "Quay l?i trang n�y d? dang nh?p"
                         }
                             }
                         });
@@ -162,16 +169,30 @@ namespace EVServiceCenter.API.Controllers.Auth
                     });
                 }
 
-                // ✅ Nếu là Customer role → load Customer data
+                // ? N?u l� Customer role ? load Customer data
                 object? customerData = null;
+                TokenCustomerInfo? customerInfo = null;
                 int? customerId = null;
 
                 if (user.RoleId == (int)UserRoles.Customer)
                 {
-                    // Load Customer từ database
+                    sw.Restart();
                     var customer = await _context.Customers
-                        .Include(c => c.Type)
-                        .FirstOrDefaultAsync(c => c.UserId == user.UserId);
+                        .AsNoTracking()
+                        .Where(c => c.UserId == user.UserId)
+                        .Select(c => new
+                        {
+                            c.CustomerId,
+                            c.CustomerCode,
+                            c.LoyaltyPoints,
+                            c.TotalSpent,
+                            c.TypeId,
+                            CustomerTypeName = c.Type != null ? c.Type.TypeName : null,
+                            CustomerTypeDiscount = c.Type != null ? c.Type.DiscountPercent : (decimal?)null
+                        })
+                        .FirstOrDefaultAsync();
+                    sw.Stop();
+                    _logger.LogInformation("Customer lookup completed in {ElapsedMs} ms for userId={UserId}", sw.ElapsedMilliseconds, user.UserId);
 
                     if (customer != null)
                     {
@@ -182,12 +203,19 @@ namespace EVServiceCenter.API.Controllers.Auth
                             customer.CustomerCode,
                             customer.LoyaltyPoints,
                             customer.TotalSpent,
-                            CustomerTypeName = customer.Type?.TypeName,
-                            CustomerTypeDiscount = customer.Type?.DiscountPercent ?? 0
+                            customer.CustomerTypeName,
+                            CustomerTypeDiscount = customer.CustomerTypeDiscount ?? 0
+                        };
+
+                        customerInfo = new TokenCustomerInfo
+                        {
+                            CustomerId = customer.CustomerId,
+                            CustomerCode = customer.CustomerCode,
+                            CustomerTypeId = customer.TypeId,
+                            LoyaltyPoints = customer.LoyaltyPoints ?? 0
                         };
                     }
                 }
-
                 var tokenUser = new User
                 {
                     UserId = user.UserId,
@@ -197,7 +225,15 @@ namespace EVServiceCenter.API.Controllers.Auth
                     FullName = user.FullName
                 };
 
-                var token = _tokenService.GenerateToken(tokenUser, customerId);
+                sw.Restart();
+                var accessToken = _tokenService.GenerateToken(tokenUser, customerInfo);
+                sw.Stop();
+                _logger.LogInformation("GenerateToken completed in {ElapsedMs} ms for userId={UserId}", sw.ElapsedMilliseconds, user.UserId);
+
+                sw.Restart();
+                var refreshToken = await _userService.RotateRefreshTokenAsync(user.UserId, Request.Headers.UserAgent.FirstOrDefault(), HttpContext.Connection.RemoteIpAddress?.ToString());
+                sw.Stop();
+                _logger.LogInformation("RotateRefreshTokenAsync completed in {ElapsedMs} ms for userId={UserId}", sw.ElapsedMilliseconds, user.UserId);
 
                 return Ok(new ApiResponse<object>
                 {
@@ -206,8 +242,9 @@ namespace EVServiceCenter.API.Controllers.Auth
                     Data = new
                     {
                         User = user,
-                        Customer = customerData,  
-                        Token = token
+                        Customer = customerData,
+                        AccessToken = accessToken,
+                        RefreshToken = refreshToken
                     }
                 });
             }
@@ -217,49 +254,99 @@ namespace EVServiceCenter.API.Controllers.Auth
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Có lỗi xảy ra trong quá trình đăng nhập",
+                    Message = "C� l?i x?y ra trong qu� tr�nh dang nh?p",
                     ErrorCode = ErrorCodes.INTERNAL_ERROR
                 });
             }
         }
 
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequestDto request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Invalid token", ErrorCode = "INVALID_TOKEN" });
+            }
+
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = Request.Headers.UserAgent.FirstOrDefault();
+
+            var user = await _userService.ValidateRefreshTokenAsync(request.RefreshToken, userAgent, ipAddress);
+
+            if (user == null)
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Invalid or expired refresh token", ErrorCode = "INVALID_REFRESH_TOKEN" });
+            }
+
+            // Load customer info (nếu là customer) để nhúng vào token mới
+            TokenCustomerInfo? customerInfo = null;
+            if (user.RoleId == (int)UserRoles.Customer)
+            {
+                customerInfo = await _context.Customers
+                    .AsNoTracking()
+                    .Where(c => c.UserId == user.UserId)
+                    .Select(c => new TokenCustomerInfo
+                    {
+                        CustomerId = c.CustomerId,
+                        CustomerCode = c.CustomerCode,
+                        CustomerTypeId = c.TypeId,
+                        LoyaltyPoints = c.LoyaltyPoints ?? 0
+                    })
+                    .FirstOrDefaultAsync();
+            }
+            var newAccessToken = _tokenService.GenerateToken(user, customerInfo);
+            var newRefreshToken = await _userService.RotateRefreshTokenAsync(user.UserId, userAgent, ipAddress);
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Token refreshed successfully",
+                Data = new
+                {
+                    AccessToken = newAccessToken,
+                    RefreshToken = newRefreshToken
+                }
+            });
+        }
+
         /// <summary>
-        /// [Đăng xuất] Logout và revoke JWT token
+        /// [�ang xu?t] Logout v� revoke JWT token
         /// </summary>
         /// <remarks>
-        /// Logout user và thêm JWT token vào blacklist.
+        /// Logout user v� th�m JWT token v�o blacklist.
         ///
-        /// **🔒 SECURITY FEATURES:**
-        /// - Revoke JWT token (thêm vào blacklist)
-        /// - Token không thể sử dụng được nữa
-        /// - Log logout activity với IP và User Agent
+        /// **?? SECURITY FEATURES:**
+        /// - Revoke JWT token (th�m v�o blacklist)
+        /// - Token kh�ng th? s? d?ng du?c n?a
+        /// - Log logout activity v?i IP v� User Agent
         /// - Invalidate user session
         ///
         /// **Process Flow:**
-        /// 1. Extract JWT token từ Authorization header
-        /// 2. Get userId từ claims
-        /// 3. Revoke token (thêm vào RevokedTokens table)
-        /// 4. Invalidate UserSession (nếu có)
+        /// 1. Extract JWT token t? Authorization header
+        /// 2. Get userId t? claims
+        /// 3. Revoke token (th�m v�o RevokedTokens table)
+        /// 4. Invalidate UserSession (n?u c�)
         /// 5. Return success
         ///
         /// **Use Cases:**
         /// - User click "Logout" button
         /// - Force logout all sessions (security)
-        /// - Logout sau khi đổi password
+        /// - Logout sau khi d?i password
         ///
         /// **Security:**
-        /// - Token blacklist với expiry time
+        /// - Token blacklist v?i expiry time
         /// - Background job cleanup expired tokens
-        /// - IP và User Agent tracking
+        /// - IP v� User Agent tracking
         ///
         /// **Response:**
-        /// - 200 OK: Logout thành công
-        /// - 401 Unauthorized: Token không hợp lệ
+        /// - 200 OK: Logout th�nh c�ng
+        /// - 401 Unauthorized: Token kh�ng h?p l?
         /// - 500 Internal Error: Server error
         /// </remarks>
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> Logout([FromBody] LogoutRequestDto request)
         {
             try
             {
@@ -272,7 +359,7 @@ namespace EVServiceCenter.API.Controllers.Auth
                     return Unauthorized(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Không thể xác định người dùng",
+                        Message = "Kh�ng th? x�c d?nh ngu?i d�ng",
                         ErrorCode = "UNAUTHORIZED"
                     });
                 }
@@ -286,7 +373,7 @@ namespace EVServiceCenter.API.Controllers.Auth
                     return BadRequest(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Token không hợp lệ",
+                        Message = "Token kh�ng h?p l?",
                         ErrorCode = "INVALID_TOKEN"
                     });
                 }
@@ -311,6 +398,12 @@ namespace EVServiceCenter.API.Controllers.Auth
                     _logger.LogWarning("Failed to revoke token for user {UserId}", userId);
                 }
 
+                // Revoke the refresh token
+                if (!string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    await _userService.RevokeRefreshTokenAsync(request.RefreshToken, ipAddress);
+                }
+
                 // 5. Invalidate UserSession (optional - for tracking)
                 var activeSession = await _context.UserSessions
                     .Where(s => s.UserId == userId && s.IsActive == true)
@@ -332,12 +425,12 @@ namespace EVServiceCenter.API.Controllers.Auth
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Đăng xuất thành công",
+                    Message = "�ang xu?t th�nh c�ng",
                     Data = new
                     {
                         UserId = userId,
                         LogoutTime = DateTime.UtcNow,
-                        Message = "Token đã được thu hồi. Vui lòng đăng nhập lại để tiếp tục."
+                        Message = "Token d� du?c thu h?i. Vui l�ng dang nh?p l?i d? ti?p t?c."
                     }
                 });
             }
@@ -347,7 +440,7 @@ namespace EVServiceCenter.API.Controllers.Auth
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "Có lỗi xảy ra khi đăng xuất",
+                    Message = "C� l?i x?y ra khi dang xu?t",
                     ErrorCode = "INTERNAL_ERROR"
                 });
             }
@@ -453,3 +546,4 @@ namespace EVServiceCenter.API.Controllers.Auth
         }
     }
 }
+

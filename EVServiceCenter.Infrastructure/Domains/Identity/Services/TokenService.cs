@@ -1,9 +1,9 @@
 ﻿// EVServiceCenter.Infrastructure/Domains/Identity/Services/TokenService.cs
 using EVServiceCenter.Core.Domains.Identity.Entities;
 using EVServiceCenter.Core.Domains.Identity.Interfaces;
+using EVServiceCenter.Core.Domains.Identity.DTOs;
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -15,15 +15,13 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _config;
-        private readonly EVDbContext _context; 
 
-        public TokenService(IConfiguration config, EVDbContext context)
+        public TokenService(IConfiguration config)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public string GenerateToken(User user, int? customerId = null)
+        public string GenerateToken(User user, TokenCustomerInfo? customerInfo = null)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -31,46 +29,22 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim("UserId", user.UserId.ToString()), // Add explicit UserId claim
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email ?? ""),
                 new Claim(ClaimTypes.Role, ((UserRoles)user.RoleId).ToString()),
                 new Claim("RoleId", user.RoleId.ToString()),
-                new Claim("FullName", user.FullName)
+                new Claim("FullName", user.FullName ?? "")
             };
 
-            // ✅ FIX: Nếu là Customer role → Load Customer data và thêm vào claims
-            if (user.RoleId == (int)UserRoles.Customer)
+            if (user.RoleId == (int)UserRoles.Customer && customerInfo != null)
             {
-                // Option 1: Customer ID được truyền vào (từ Login)
-                if (customerId.HasValue)
-                {
-                    var customer = _context.Customers
-                        .Include(c => c.Type)
-                        .FirstOrDefault(c => c.CustomerId == customerId.Value);
-
-                    if (customer != null)
-                    {
-                        claims.Add(new Claim("CustomerId", customer.CustomerId.ToString()));
-                        claims.Add(new Claim("CustomerCode", customer.CustomerCode));
-                        claims.Add(new Claim("CustomerType", customer.TypeId?.ToString() ?? "1"));
-                        claims.Add(new Claim("LoyaltyPoints", customer.LoyaltyPoints?.ToString() ?? "0"));
-                    }
-                }
-                // Option 2: Customer ID KHÔNG được truyền vào → Tìm Customer theo UserId
-                else
-                {
-                    var customer = _context.Customers
-                        .Include(c => c.Type)
-                        .FirstOrDefault(c => c.UserId == user.UserId);
-
-                    if (customer != null)
-                    {
-                        claims.Add(new Claim("CustomerId", customer.CustomerId.ToString()));
-                        claims.Add(new Claim("CustomerCode", customer.CustomerCode));
-                        claims.Add(new Claim("CustomerType", customer.TypeId?.ToString() ?? "1"));
-                        claims.Add(new Claim("LoyaltyPoints", customer.LoyaltyPoints?.ToString() ?? "0"));
-                    }
-                }
+                claims.Add(new Claim("CustomerId", customerInfo.CustomerId.ToString()));
+                if (!string.IsNullOrEmpty(customerInfo.CustomerCode))
+                    claims.Add(new Claim("CustomerCode", customerInfo.CustomerCode));
+                if (customerInfo.CustomerTypeId.HasValue)
+                    claims.Add(new Claim("CustomerType", customerInfo.CustomerTypeId.Value.ToString()));
+                claims.Add(new Claim("LoyaltyPoints", customerInfo.LoyaltyPoints.ToString()));
             }
 
             var token = new JwtSecurityToken(

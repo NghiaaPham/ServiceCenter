@@ -28,5 +28,12 @@ namespace EVServiceCenter.Core.Domains.Pricing.Interfaces
         /// </summary>
         /// <param name="promotionCode">Mã khuyến mãi</param>
         Task IncrementUsageAsync(string promotionCode);
+
+        /// <summary>
+        /// Giảm usage count của promotion khi appointment bị cancel
+        /// ✅ FIX GAP #8: Decrement promotion usage on cancellation
+        /// </summary>
+        /// <param name="promotionCode">Mã khuyến mãi</param>
+        Task DecrementUsageAsync(string promotionCode);
     }
 }

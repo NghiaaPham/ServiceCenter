@@ -2,6 +2,7 @@
 {
     public class CreateCustomerRequestDto
     {
+        public string? Username { get; set; } // Username for login account
         public string FullName { get; set; } = string.Empty;
         public string PhoneNumber { get; set; } = string.Empty;
         public string? Email { get; set; }

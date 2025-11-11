@@ -110,6 +110,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
                     .Include(p => p.PackageServices)
                         .ThenInclude(ps => ps.Service)
                             .ThenInclude(s => s.Category)
+                    .AsNoTracking()
                     .Select(p => MapToSummaryDto(p))
                     .ToListAsync(cancellationToken);
 
@@ -136,6 +137,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
                     .Include(p => p.PackageServices)
                         .ThenInclude(ps => ps.Service)
                             .ThenInclude(s => s.Category)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.PackageId == packageId, cancellationToken);
 
                 if (package == null)
@@ -164,6 +166,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
                     .Include(p => p.PackageServices)
                         .ThenInclude(ps => ps.Service)
                             .ThenInclude(s => s.Category)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(p => p.PackageCode == packageCode, cancellationToken);
 
                 if (package == null)
@@ -195,6 +198,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
                     .Include(p => p.PackageServices)
                         .ThenInclude(ps => ps.Service)
                             .ThenInclude(s => s.Category)
+                    .AsNoTracking()
                     .ToListAsync(cancellationToken);
 
                 return packages.Select(p => MapToSummaryDto(p)).ToList();
@@ -219,6 +223,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
                 return await _context.PackageServices
                     .Where(ps => ps.PackageId == packageId)
                     .Include(ps => ps.Service)
+                    .AsNoTracking()
                     .Select(ps => ps.Service)
                     .ToListAsync(cancellationToken);
             }
@@ -307,6 +312,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
             try
             {
                 return await _context.MaintenancePackages
+                    .AsNoTracking()
                     .AnyAsync(p => p.PackageId == packageId, cancellationToken);
             }
             catch (Exception ex)
@@ -421,6 +427,123 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Repositorie
                 TotalServicesCount = serviceDetails.Count,
                 TotalServiceQuantity = totalQuantity
             };
+        }
+
+        #endregion
+
+        #region GetRecommendedPackagesAsync
+
+        public async Task<List<MaintenancePackageSummaryDto>> GetRecommendedPackagesAsync(
+            int modelId,
+            int topCount = 5,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (modelId <= 0)
+                {
+                    return await GetPopularPackagesAsync(topCount, cancellationToken);
+                }
+
+                // Heuristic recommendation optimized:
+                // 1. Find package IDs that include services with model-specific pricing
+                // 2. Add popular package IDs
+                // 3. Add recent active package IDs
+                // 4. Merge IDs preserving priority, then load packages with minimal includes
+
+                // Step 1: service ids for model
+                var serviceIdsForModel = await _context.ModelServicePricings
+                    .Where(mp => mp.ModelId == modelId && (mp.IsActive == true || mp.IsActive == null))
+                    .Select(mp => mp.ServiceId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+
+                var candidateIds = new List<int>();
+
+                if (serviceIdsForModel.Any())
+                {
+                    var ids = await _context.PackageServices
+                        .Where(ps => serviceIdsForModel.Contains(ps.ServiceId))
+                        .Select(ps => ps.PackageId)
+                        .Distinct()
+                        .ToListAsync(cancellationToken);
+
+                    // Order these packages by popularity then created date
+                    var orderedIds = await _context.MaintenancePackages
+                        .Where(p => ids.Contains(p.PackageId) && p.IsActive == true)
+                        .OrderByDescending(p => p.IsPopular == true)
+                        .ThenByDescending(p => p.CreatedDate)
+                        .Select(p => p.PackageId)
+                        .ToListAsync(cancellationToken);
+
+                    candidateIds.AddRange(orderedIds);
+                }
+
+                // Step 2: popular package ids
+                if (candidateIds.Count < topCount)
+                {
+                    var popularIds = await _context.MaintenancePackages
+                        .Where(p => p.IsActive == true && p.IsPopular == true)
+                        .OrderByDescending(p => p.CreatedDate)
+                        .Select(p => p.PackageId)
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var id in popularIds)
+                    {
+                        if (!candidateIds.Contains(id))
+                            candidateIds.Add(id);
+                        if (candidateIds.Count >= topCount) break;
+                    }
+                }
+
+                // Step 3: recent active packages
+                if (candidateIds.Count < topCount)
+                {
+                    var recentIds = await _context.MaintenancePackages
+                        .Where(p => p.IsActive == true && !candidateIds.Contains(p.PackageId))
+                        .OrderByDescending(p => p.CreatedDate)
+                        .Select(p => p.PackageId)
+                        .Take(topCount - candidateIds.Count)
+                        .ToListAsync(cancellationToken);
+
+                    candidateIds.AddRange(recentIds);
+                }
+
+                if (!candidateIds.Any())
+                {
+                    return new List<MaintenancePackageSummaryDto>();
+                }
+
+                // Step 4: Load packages by ids with includes and preserve order
+                var packages = await _context.MaintenancePackages
+                    .AsNoTracking()
+                    .Where(p => candidateIds.Contains(p.PackageId))
+                    .Include(p => p.PackageServices)
+                        .ThenInclude(ps => ps.Service)
+                            .ThenInclude(s => s.Category)
+                    .AsSplitQuery()
+                    .ToListAsync(cancellationToken);
+
+                // Preserve candidate order
+                var orderedPackages = candidateIds
+                    .Select(id => packages.FirstOrDefault(p => p.PackageId == id))
+                    .Where(p => p != null)
+                    .Cast<MaintenancePackage>()
+                    .ToList();
+
+                // Map to DTOs and take topCount
+                var dtos = orderedPackages
+                    .Select(p => MapToSummaryDto(p))
+                    .Take(topCount)
+                    .ToList();
+
+                return dtos;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting recommended packages for model {ModelId}", modelId);
+                throw;
+            }
         }
 
         #endregion

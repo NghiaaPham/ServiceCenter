@@ -7,5 +7,11 @@
         public string Name { get; set; } = string.Empty;
         public string? Picture { get; set; }
         public string Provider { get; set; } = string.Empty;
+
+        // Additional fields from external providers
+        public string? PhoneNumber { get; set; }
+        public DateOnly? Birthday { get; set; }
+        public string? Gender { get; set; }
+        public string? Location { get; set; }
     }
 }

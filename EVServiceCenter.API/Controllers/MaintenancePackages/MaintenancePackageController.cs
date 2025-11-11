@@ -325,5 +325,30 @@ namespace EVServiceCenter.API.Controllers.MaintenancePackages
                     "Có lỗi xảy ra", "INTERNAL_ERROR", 500));
             }
         }
+
+        /// <summary>
+        /// Lấy danh sách gói đề xuất cho một model (FE sử dụng cho Zone 2A)
+        /// Public endpoint - AllowAnonymous
+        /// </summary>
+        [HttpGet("recommended")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetRecommended([FromQuery] int modelId, [FromQuery] int topCount = 5, CancellationToken ct = default)
+        {
+            try
+            {
+                if (topCount <= 0 || topCount > 20)
+                {
+                    return BadRequest(ApiResponse<List<MaintenancePackageSummaryDto>>.WithError("TopCount phải từ 1-20", "INVALID_PARAMETER"));
+                }
+
+                var result = await _service.GetRecommendedPackagesAsync(modelId, topCount, ct);
+                return Ok(ApiResponse<List<MaintenancePackageSummaryDto>>.WithSuccess(result, $"Tìm thấy {result.Count} gói khuyến nghị"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting recommended packages for model {ModelId}", modelId);
+                return StatusCode(500, ApiResponse<List<MaintenancePackageSummaryDto>>.WithError("Có lỗi xảy ra khi lấy gói khuyến nghị", "INTERNAL_ERROR", 500));
+            }
+        }
     }
 }

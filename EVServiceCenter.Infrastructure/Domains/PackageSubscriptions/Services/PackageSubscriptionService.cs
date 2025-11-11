@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using EVServiceCenter.Core.Domains.MaintenancePackages.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.PackageSubscriptions.DTOs.Requests;
 using EVServiceCenter.Core.Domains.PackageSubscriptions.DTOs.Responses;
@@ -5,6 +7,7 @@ using EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Services;
 using EVServiceCenter.Core.Enums;
 using Microsoft.Extensions.Logging;
+using EVServiceCenter.Core.Domains.Invoices.Interfaces;
 
 namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
 {
@@ -18,17 +21,20 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
         private readonly IPackageSubscriptionCommandRepository _commandRepository;
         private readonly IMaintenancePackageQueryRepository _packageQueryRepository;
         private readonly ILogger<PackageSubscriptionService> _logger;
+        private readonly IInvoiceService _invoiceService;
 
         public PackageSubscriptionService(
             IPackageSubscriptionQueryRepository queryRepository,
             IPackageSubscriptionCommandRepository commandRepository,
             IMaintenancePackageQueryRepository packageQueryRepository,
-            ILogger<PackageSubscriptionService> logger)
+            ILogger<PackageSubscriptionService> logger,
+            IInvoiceService invoiceService)
         {
             _queryRepository = queryRepository ?? throw new ArgumentNullException(nameof(queryRepository));
             _commandRepository = commandRepository ?? throw new ArgumentNullException(nameof(commandRepository));
             _packageQueryRepository = packageQueryRepository ?? throw new ArgumentNullException(nameof(packageQueryRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _invoiceService = invoiceService ?? throw new ArgumentNullException(nameof(invoiceService));
         }
 
         #region Query Methods
@@ -123,6 +129,79 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
             }
         }
 
+        public async Task<List<ApplicableServiceDto>> GetApplicableServicesForVehicleAsync(
+            int vehicleId,
+            int customerId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var activeSubscriptions = await _queryRepository.GetActiveSubscriptionsByCustomerAndVehicleAsync(
+                    customerId,
+                    vehicleId,
+                    cancellationToken);
+
+                if (activeSubscriptions.Count == 0)
+                {
+                    _logger.LogDebug(
+                        "No active subscriptions with remaining usage found for Customer {CustomerId}, Vehicle {VehicleId}",
+                        customerId, vehicleId);
+                    return new List<ApplicableServiceDto>();
+                }
+
+                var flattened = activeSubscriptions
+                    .SelectMany(subscription => subscription.PackageServiceUsages
+                        .Where(usage => usage.RemainingQuantity > 0)
+                        .Select(usage => new ApplicableServiceDto
+                        {
+                            ServiceId = usage.ServiceId,
+                            ServiceName = usage.Service?.ServiceName ?? $"Service #{usage.ServiceId}",
+                            RemainingQuantity = usage.RemainingQuantity,
+                            TotalQuantity = usage.TotalAllowedQuantity,
+                            SubscriptionId = subscription.SubscriptionId,
+                            SubscriptionCode = subscription.SubscriptionCode,
+                            PackageId = subscription.PackageId,
+                            PackageName = subscription.Package?.PackageName ?? string.Empty,
+                            VehicleId = subscription.VehicleId ?? vehicleId,
+                            ExpirationDate = subscription.ExpirationDate?.ToDateTime(TimeOnly.MinValue)
+                        }))
+                    .ToList();
+
+                if (flattened.Count == 0)
+                {
+                    _logger.LogDebug(
+                        "Active subscriptions exist but no remaining usages left (Customer {CustomerId}, Vehicle {VehicleId})",
+                        customerId, vehicleId);
+                    return flattened;
+                }
+
+                // UI only needs one record per serviceId – choose the subscription that expires soonest
+                var bestPerService = flattened
+                    .GroupBy(dto => dto.ServiceId)
+                    .Select(group => group
+                        .OrderBy(dto => dto.ExpirationDate ?? DateTime.MaxValue)
+                        .ThenByDescending(dto => dto.RemainingQuantity)
+                        .First())
+                    .ToList();
+
+                _logger.LogInformation(
+                    "Found {Count} applicable services for Customer {CustomerId}, Vehicle {VehicleId}",
+                    bestPerService.Count,
+                    customerId,
+                    vehicleId);
+
+                return bestPerService;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error getting applicable services for Customer {CustomerId}, Vehicle {VehicleId}",
+                    customerId,
+                    vehicleId);
+                throw;
+            }
+        }
+
         #endregion
 
         #region Command Methods
@@ -130,6 +209,7 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
         public async Task<PackageSubscriptionResponseDto> PurchasePackageAsync(
             PurchasePackageRequestDto request,
             int customerId,
+            int? createdByUserId,
             CancellationToken cancellationToken = default)
         {
             try
@@ -152,6 +232,42 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
 
                 _logger.LogInformation("Service: Successfully purchased subscription {SubscriptionId}",
                     result.SubscriptionId);
+
+                try
+                {
+                    var invoice = await _invoiceService.CreatePackageSubscriptionInvoiceAsync(
+                        result.SubscriptionId,
+                        result.CustomerId,
+                        result.PackageName,
+                        result.PricePaid,
+                        createdByUserId,
+                        cancellationToken);
+
+                    var linked = await _commandRepository.UpdateInvoiceReferenceAsync(
+                        result.SubscriptionId,
+                        invoice.InvoiceId,
+                        cancellationToken);
+
+                    if (!linked)
+                    {
+                        _logger.LogWarning(
+                            "Failed to link invoice {InvoiceId} to subscription {SubscriptionId}",
+                            invoice.InvoiceId,
+                            result.SubscriptionId);
+                    }
+                    else
+                    {
+                        result.InvoiceId = invoice.InvoiceId;
+                        result.InvoiceCode = invoice.InvoiceCode;
+                    }
+                }
+                catch (Exception invoiceEx)
+                {
+                    _logger.LogError(invoiceEx,
+                        "Error creating invoice for subscription {SubscriptionId}",
+                        result.SubscriptionId);
+                    throw;
+                }
 
                 return result;
             }
@@ -292,6 +408,88 @@ namespace EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Service: Error reactivating subscription {SubscriptionId}", subscriptionId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 💰 [STAFF ONLY] Xác nhận thanh toán Cash/BankTransfer
+        /// Chuyển subscription từ PendingPayment → Active
+        /// </summary>
+        public async Task<bool> ConfirmPaymentAsync(
+            ConfirmPaymentRequestDto request,
+            int staffUserId,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation(
+                    "💰 Staff {StaffId} confirming payment for subscription {SubscriptionId} via {PaymentMethod}",
+                    staffUserId, request.SubscriptionId, request.PaymentMethod);
+
+                // ========== BUSINESS VALIDATION ==========
+                var subscription = await _queryRepository.GetSubscriptionByIdAsync(
+                    request.SubscriptionId, cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new InvalidOperationException($"Không tìm thấy subscription {request.SubscriptionId}");
+                }
+
+                // Validate status
+                if (subscription.Status != SubscriptionStatusEnum.PendingPayment)
+                {
+                    throw new InvalidOperationException(
+                        $"Chỉ có thể confirm payment cho subscription đang PendingPayment. " +
+                        $"Trạng thái hiện tại: {subscription.StatusDisplayName}");
+                }
+
+                // Validate payment amount
+                var expectedAmount = subscription.PricePaid;
+                if (request.PaidAmount < expectedAmount)
+                {
+                    throw new InvalidOperationException(
+                        $"Số tiền thanh toán ({request.PaidAmount:N0}đ) không đủ. Cần {expectedAmount:N0}đ");
+                }
+
+                // Validate payment method
+                if (request.PaymentMethod != "Cash" && request.PaymentMethod != "BankTransfer")
+                {
+                    throw new InvalidOperationException(
+                        "PaymentMethod phải là 'Cash' hoặc 'BankTransfer'");
+                }
+
+                // Validate BankTransfer fields
+                if (request.PaymentMethod == "BankTransfer")
+                {
+                    if (string.IsNullOrWhiteSpace(request.BankTransactionId))
+                    {
+                        throw new InvalidOperationException(
+                            "Mã giao dịch ngân hàng là bắt buộc khi thanh toán qua BankTransfer");
+                    }
+
+                    if (!request.TransferDate.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Ngày chuyển khoản là bắt buộc khi thanh toán qua BankTransfer");
+                    }
+                }
+
+                // ========== DELEGATE TO COMMAND REPOSITORY ==========
+                var result = await _commandRepository.ConfirmPaymentAsync(
+                    request, staffUserId, cancellationToken);
+
+                _logger.LogInformation(
+                    "✅ Payment confirmed for subscription {SubscriptionId}: {Amount}đ via {Method}",
+                    request.SubscriptionId, request.PaidAmount, request.PaymentMethod);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "❌ Error confirming payment for subscription {SubscriptionId}",
+                    request.SubscriptionId);
                 throw;
             }
         }

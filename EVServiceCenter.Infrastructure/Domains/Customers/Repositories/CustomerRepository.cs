@@ -407,109 +407,116 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
 
         public async Task<CustomerResponseDto> UpdateAsync(UpdateCustomerRequestDto request, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            // ✅ FIX: Use ExecutionStrategy to handle transaction with retry logic
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                var entity = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.CustomerId == request.CustomerId, cancellationToken);
-
-                if (entity == null)
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
                 {
-                    throw new InvalidOperationException($"Không tìm thấy khách hàng với ID {request.CustomerId}");
-                }
+                    var entity = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.CustomerId == request.CustomerId, cancellationToken);
 
-                // Business validation
-                if (await ExistsAsync(request.PhoneNumber, request.CustomerId, cancellationToken))
-                {
-                    throw new InvalidOperationException($"Số điện thoại '{request.PhoneNumber}' đã được sử dụng bởi khách hàng khác");
-                }
-
-                if (!string.IsNullOrWhiteSpace(request.Email) && await EmailExistsAsync(request.Email, request.CustomerId, cancellationToken))
-                {
-                    throw new InvalidOperationException($"Email '{request.Email}' đã được sử dụng bởi khách hàng khác");
-                }
-
-                entity.FullName = request.FullName.Trim();
-                entity.PhoneNumber = request.PhoneNumber.Trim();
-                entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
-                entity.Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
-                entity.DateOfBirth = request.DateOfBirth;
-                entity.Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim();
-                entity.TypeId = request.TypeId ?? entity.TypeId;
-                entity.PreferredLanguage = request.PreferredLanguage;
-                entity.MarketingOptIn = request.MarketingOptIn;
-                entity.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
-                entity.IsActive = request.IsActive;
-                entity.UpdatedDate = DateTime.UtcNow;
-
-                // ✅ FIX: Handle identity number update ONLY if provided
-                // Nếu request.IdentityNumber = null → KHÔNG XỬ LÝ GÌ (giữ nguyên giá trị cũ)
-                // Chỉ có Staff/Admin mới được phép xóa CCCD bằng cách gửi empty string ""
-                if (request.IdentityNumber != null) // Kiểm tra != null, không phải IsNullOrWhiteSpace
-                {
-                    if (!string.IsNullOrWhiteSpace(request.IdentityNumber))
+                    if (entity == null)
                     {
-                        // Có giá trị mới → Check duplicate và update
-                        if (await IdentityNumberExistsAsync(request.IdentityNumber, request.CustomerId, cancellationToken))
+                        throw new InvalidOperationException($"Không tìm thấy khách hàng với ID {request.CustomerId}");
+                    }
+
+                    // Business validation
+                    if (await ExistsAsync(request.PhoneNumber, request.CustomerId, cancellationToken))
+                    {
+                        throw new InvalidOperationException($"Số điện thoại '{request.PhoneNumber}' đã được sử dụng bởi khách hàng khác");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(request.Email) && await EmailExistsAsync(request.Email, request.CustomerId, cancellationToken))
+                    {
+                        throw new InvalidOperationException($"Email '{request.Email}' đã được sử dụng bởi khách hàng khác");
+                    }
+
+                    entity.FullName = request.FullName.Trim();
+                    entity.PhoneNumber = request.PhoneNumber.Trim();
+                    entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+                    entity.Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
+                    entity.DateOfBirth = request.DateOfBirth;
+                    entity.Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim();
+                    entity.TypeId = request.TypeId ?? entity.TypeId;
+                    entity.PreferredLanguage = request.PreferredLanguage;
+                    entity.MarketingOptIn = request.MarketingOptIn;
+                    entity.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
+                    entity.IsActive = request.IsActive;
+                    entity.UpdatedDate = DateTime.UtcNow;
+
+                    // ✅ FIX: Handle identity number update ONLY if provided
+                    if (request.IdentityNumber != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(request.IdentityNumber))
                         {
-                            throw new InvalidOperationException("Số CMND/CCCD đã được sử dụng bởi khách hàng khác");
+                            if (await IdentityNumberExistsAsync(request.IdentityNumber, request.CustomerId, cancellationToken))
+                            {
+                                throw new InvalidOperationException("Số CMND/CCCD đã được sử dụng bởi khách hàng khác");
+                            }
+                            entity.IdentityNumber = EncryptIdentityNumber(request.IdentityNumber);
                         }
-                        entity.IdentityNumber = EncryptIdentityNumber(request.IdentityNumber);
+                        else
+                        {
+                            entity.IdentityNumber = null;
+                        }
                     }
-                    else
-                    {
-                        // Empty string "" → Xóa CCCD (chỉ Staff/Admin mới gửi được)
-                        entity.IdentityNumber = null;
-                    }
+
+                    await _context.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+
+                    _logger.LogInformation("Updated customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
+
+                    return await GetByIdAsync(entity.CustomerId, false, cancellationToken)
+                        ?? throw new InvalidOperationException("Failed to retrieve updated customer");
                 }
-                // Nếu request.IdentityNumber = null → Giữ nguyên entity.IdentityNumber (không thay đổi)
-
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-
-                _logger.LogInformation("Updated customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
-
-                return await GetByIdAsync(entity.CustomerId, false, cancellationToken)
-                    ?? throw new InvalidOperationException("Failed to retrieve updated customer");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Error updating customer: {CustomerId}", request.CustomerId);
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    _logger.LogError(ex, "Error updating customer: {CustomerId}", request.CustomerId);
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> DeleteAsync(int customerId, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            // ✅ FIX: Use ExecutionStrategy
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                var entity = await _context.Customers
-                    .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
-
-                if (entity == null) return false;
-
-                // Check if customer has vehicles
-                if (await HasVehiclesAsync(customerId, cancellationToken))
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
                 {
-                    throw new InvalidOperationException("Không thể xóa khách hàng đang có xe trong hệ thống");
+                    var entity = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.CustomerId == customerId, cancellationToken);
+
+                    if (entity == null) return false;
+
+                    // Check if customer has vehicles
+                    if (await HasVehiclesAsync(customerId, cancellationToken))
+                    {
+                        throw new InvalidOperationException("Không thể xóa khách hàng đang có xe trong hệ thống");
+                    }
+
+                    _context.Customers.Remove(entity);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+
+                    _logger.LogInformation("Deleted customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
+
+                    return true;
                 }
-
-                _context.Customers.Remove(entity);
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-
-                _logger.LogInformation("Deleted customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Error deleting customer: {CustomerId}", customerId);
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    _logger.LogError(ex, "Error deleting customer: {CustomerId}", customerId);
+                    throw;
+                }
+            });
         }
         public async Task<string> GenerateCustomerCodeAsync(CancellationToken cancellationToken = default)
         {
@@ -769,59 +776,65 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Repositories
 
         public async Task<CustomerResponseDto> CreateAsync(CreateCustomerRequestDto request, int? userId = null, CancellationToken cancellationToken = default)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            // ✅ FIX: Use ExecutionStrategy
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                // Business validation
-                if (await ExistsAsync(request.PhoneNumber, cancellationToken: cancellationToken))
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
                 {
-                    throw new InvalidOperationException($"Số điện thoại '{request.PhoneNumber}' đã được sử dụng");
+                    // Business validation
+                    if (await ExistsAsync(request.PhoneNumber, cancellationToken: cancellationToken))
+                    {
+                        throw new InvalidOperationException($"Số điện thoại '{request.PhoneNumber}' đã được sử dụng");
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(request.Email) && await EmailExistsAsync(request.Email, cancellationToken: cancellationToken))
+                    {
+                        throw new InvalidOperationException($"Email '{request.Email}' đã được sử dụng");
+                    }
+
+                    // Generate customer code
+                    var customerCode = await GenerateCustomerCodeAsync(cancellationToken);
+
+                    var entity = new Customer
+                    {
+                        UserId = userId,
+                        CustomerCode = customerCode,
+                        FullName = request.FullName.Trim(),
+                        PhoneNumber = request.PhoneNumber.Trim(),
+                        Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+                        Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
+                        DateOfBirth = request.DateOfBirth,
+                        Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
+                        IdentityNumber = string.IsNullOrWhiteSpace(request.IdentityNumber) ? null : EncryptIdentityNumber(request.IdentityNumber),
+                        TypeId = request.TypeId ?? 1,
+                        PreferredLanguage = request.PreferredLanguage,
+                        MarketingOptIn = request.MarketingOptIn,
+                        LoyaltyPoints = 0,
+                        TotalSpent = 0,
+                        Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+                        IsActive = request.IsActive,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    _context.Customers.Add(entity);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+
+                    _logger.LogInformation("Created customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
+
+                    return await GetByIdAsync(entity.CustomerId, false, cancellationToken)
+                        ?? throw new InvalidOperationException("Failed to retrieve created customer");
                 }
-
-                if (!string.IsNullOrWhiteSpace(request.Email) && await EmailExistsAsync(request.Email, cancellationToken: cancellationToken))
+                catch (Exception ex)
                 {
-                    throw new InvalidOperationException($"Email '{request.Email}' đã được sử dụng");
+                    await transaction.RollbackAsync(cancellationToken);
+                    _logger.LogError(ex, "Error creating customer: {FullName}", request.FullName);
+                    throw;
                 }
-
-                // Generate customer code
-                var customerCode = await GenerateCustomerCodeAsync(cancellationToken);
-
-                var entity = new Customer
-                {
-                    UserId = userId, // Link to User if provided
-                    CustomerCode = customerCode,
-                    FullName = request.FullName.Trim(),
-                    PhoneNumber = request.PhoneNumber.Trim(),
-                    Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
-                    Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
-                    DateOfBirth = request.DateOfBirth,
-                    Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
-                    IdentityNumber = string.IsNullOrWhiteSpace(request.IdentityNumber) ? null : EncryptIdentityNumber(request.IdentityNumber),
-                    TypeId = request.TypeId ?? 1,
-                    PreferredLanguage = request.PreferredLanguage,
-                    MarketingOptIn = request.MarketingOptIn,
-                    LoyaltyPoints = 0,
-                    TotalSpent = 0,
-                    Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
-                    IsActive = request.IsActive,
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                _context.Customers.Add(entity);
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-
-                _logger.LogInformation("Created customer: {CustomerCode} - {FullName}", entity.CustomerCode, entity.FullName);
-
-                return await GetByIdAsync(entity.CustomerId, false, cancellationToken)
-                    ?? throw new InvalidOperationException("Failed to retrieve created customer");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex, "Error creating customer: {FullName}", request.FullName);
-                throw;
-            }
+            });
         }
     }
 }

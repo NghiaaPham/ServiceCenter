@@ -18,5 +18,6 @@ namespace EVServiceCenter.Core.Domains.Identity.Interfaces
     Task<string?> GetMaxEmployeeCodeAsync(string prefix);
     Task<bool> IsEmployeeCodeExistsAsync(string code);
     Task<User?> GetUserByEmailAsync(string email);
-    }
+    Task<User?> GetByRefreshTokenAsync(string refreshToken);
+  }
 }

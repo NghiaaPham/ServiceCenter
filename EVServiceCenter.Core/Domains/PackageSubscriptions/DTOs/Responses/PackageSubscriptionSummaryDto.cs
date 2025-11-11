@@ -21,6 +21,8 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.DTOs.Responses
 
         public decimal PricePaid { get; set; }
 
+        public int? InvoiceId { get; set; }
+
         public SubscriptionStatusEnum Status { get; set; }
         public string StatusDisplayName { get; set; } = null!;
 

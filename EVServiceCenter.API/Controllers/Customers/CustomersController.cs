@@ -11,7 +11,7 @@ namespace EVServiceCenter.API.Controllers.Customers
 {
     [ApiController]
     [Route("api/customers")]
-    [Authorize(Policy = "AllInternal")] // Base policy: Admin/Staff/Technician
+    [Authorize] // Require authentication; method-level policies enforce role restrictions
     [ApiExplorerSettings(GroupName = "Staff - Customers")]
     public class CustomersController : BaseController
     {
@@ -62,6 +62,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="query">Query parameters for filtering and pagination</param>
         /// <returns>Paginated list of customers</returns>
         [HttpGet]
+        [Authorize(Policy = "AllInternal")]
         public async Task<IActionResult> GetAllCustomers([FromQuery] CustomerQueryDto query)
         {
             // Validate query parameters
@@ -151,6 +152,21 @@ namespace EVServiceCenter.API.Controllers.Customers
 
             try
             {
+                if (!IsInternal())
+                {
+                    var currentCustomerId = GetCurrentCustomerId();
+                    if (currentCustomerId == 0 || currentCustomerId != id)
+                    {
+                        return StatusCode(403, new ApiResponse<object>
+                        {
+                            Success = false,
+                            Message = "Ban chi duoc truy cap thong tin cua chinh minh",
+                            ErrorCode = "ACCESS_DENIED",
+                            Timestamp = DateTime.UtcNow
+                        });
+                    }
+                }
+
                 var result = await _customerService.GetByIdAsync(id, includeStats);
 
                 if (result == null)
@@ -203,6 +219,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="customerCode">Customer code (e.g., KH240101)</param>
         /// <returns>Customer details</returns>
         [HttpGet("by-code/{customerCode}")]
+        [Authorize(Policy = "AllInternal")]
         public async Task<IActionResult> GetCustomerByCode(string customerCode)
         {
             if (string.IsNullOrWhiteSpace(customerCode))
@@ -274,6 +291,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="phone">Phone number</param>
         /// <returns>Customer details</returns>
         [HttpGet("by-phone")]
+        [Authorize(Policy = "AllInternal")]
         public async Task<IActionResult> GetCustomerByPhone([FromQuery] string phone)
         {
             if (string.IsNullOrWhiteSpace(phone))
@@ -354,6 +372,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// - Chỉ Staff/Admin mới tạo được
         /// </remarks>
         [HttpPost]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<IActionResult> CreateCustomer([FromBody] CreateWalkInCustomerDto request) 
         {
@@ -449,6 +468,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="request">Customer update data</param>
         /// <returns>Updated customer details</returns>
         [HttpPut("{id:int}")]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<IActionResult> UpdateCustomer(int id, [FromBody] UpdateCustomerRequestDto request)
         {
@@ -553,6 +573,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="id">Customer ID</param>
         /// <returns>Success confirmation</returns>
         [HttpDelete("{id:int}")]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOnly")] // Only Admin can delete customers
         public async Task<IActionResult> DeleteCustomer(int id)
         {
@@ -638,6 +659,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// </remarks>
         /// <returns>List of active customers</returns>
         [HttpGet("active")]
+        [Authorize(Policy = "AllInternal")]
         public async Task<IActionResult> GetActiveCustomers()
         {
             try
@@ -693,6 +715,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// </remarks>
         /// <returns>List of customers with maintenance due</returns>
         [HttpGet("maintenance-due")]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<IActionResult> GetCustomersWithMaintenanceDue()
         {
@@ -749,6 +772,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="id">Customer ID</param>
         /// <returns>Delete capability status</returns>
         [HttpGet("{id:int}/can-delete")]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> CanDeleteCustomer(int id)
         {
@@ -822,6 +846,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// <param name="request">Loyalty points addition request</param>
         /// <returns>Success confirmation</returns>
         [HttpPost("{id:int}/loyalty-points")]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<IActionResult> AddLoyaltyPoints(int id, [FromBody] AddLoyaltyPointsRequestDto request)
         {
@@ -913,6 +938,7 @@ namespace EVServiceCenter.API.Controllers.Customers
         /// </remarks>
         /// <returns>Customer statistics summary</returns>
         [HttpGet("statistics")]
+        [Authorize(Policy = "AllInternal")]
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<IActionResult> GetCustomerStatistics()
         {

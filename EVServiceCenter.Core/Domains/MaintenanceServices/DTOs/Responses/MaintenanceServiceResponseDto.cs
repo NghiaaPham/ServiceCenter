@@ -24,5 +24,8 @@
         // Statistics
         public int AppointmentCount { get; set; }
         public int WorkOrderCount { get; set; }
+
+        // Indicates whether a model-specific pricing exists for the queried model (frontend friendly)
+        public bool HasModelPricing { get; set; }
     }
 }

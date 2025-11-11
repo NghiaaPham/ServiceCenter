@@ -26,6 +26,9 @@ public partial class CustomerPackageSubscription
     [Column("VehicleID")]
     public int? VehicleId { get; set; }
 
+    [Column("InvoiceID")]
+    public int? InvoiceId { get; set; }
+
     public DateOnly StartDate { get; set; }
 
     public DateOnly? ExpirationDate { get; set; }
@@ -131,4 +134,7 @@ public partial class CustomerPackageSubscription
     /// </summary>
     [InverseProperty("Subscription")]
     public virtual ICollection<EVServiceCenter.Core.Domains.AppointmentManagement.Entities.Appointment> Appointments { get; set; } = new List<EVServiceCenter.Core.Domains.AppointmentManagement.Entities.Appointment>();
+
+    [ForeignKey("InvoiceId")]
+    public virtual Invoice? Invoice { get; set; }
 }

@@ -36,7 +36,8 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
            CancellationToken cancellationToken = default)
         {
             IQueryable<MaintenanceService> servicesQuery = _repository.GetQueryable()
-                .Include(s => s.Category);
+                .Include(s => s.Category)
+                .Include(s => s.ModelServicePricings); // include pricing info for model filtering
 
             // Apply filters
             if (!string.IsNullOrWhiteSpace(query.SearchTerm))
@@ -51,6 +52,13 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
             if (query.CategoryId.HasValue)
             {
                 servicesQuery = servicesQuery.Where(s => s.CategoryId == query.CategoryId.Value);
+            }
+
+            if (query.ModelId.HasValue)
+            {
+                // Filter services that have a model-specific pricing or are applicable to the model
+                var modelId = query.ModelId.Value;
+                servicesQuery = servicesQuery.Where(s => s.ModelServicePricings.Any(mp => mp.ModelId == modelId && (mp.IsActive == true || mp.IsActive == null)));
             }
 
             if (query.IsActive.HasValue)
@@ -92,7 +100,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
                 .ToListAsync(cancellationToken);
 
             // Map to DTOs
-            var dtos = await MapToDtosWithStatsAsync(services, cancellationToken);
+            var dtos = await MapToDtosWithStatsAsync(services, query.ModelId, cancellationToken);
 
             return PagedResultFactory.Create(dtos, totalCount, query.Page, query.PageSize);
         }
@@ -260,6 +268,7 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
 
         private async Task<List<MaintenanceServiceResponseDto>> MapToDtosWithStatsAsync(
             List<MaintenanceService> services,
+            int? modelId,
             CancellationToken cancellationToken)
         {
             var dtos = new List<MaintenanceServiceResponseDto>();
@@ -276,12 +285,28 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
                 })
                 .ToListAsync(cancellationToken);
 
+            // If modelId provided, get set of serviceIds that have model-specific pricing
+            HashSet<int> modelPricingServiceIds = new HashSet<int>();
+            if (modelId.HasValue)
+            {
+                var modelServices = await _repository.GetQueryable()
+                    .Where(s => serviceIds.Contains(s.ServiceId) && s.ModelServicePricings.Any(mp => mp.ModelId == modelId.Value && (mp.IsActive == true || mp.IsActive == null)))
+                    .Select(s => s.ServiceId)
+                    .ToListAsync(cancellationToken);
+
+                modelPricingServiceIds = new HashSet<int>(modelServices);
+            }
+
             foreach (var service in services)
             {
                 var stats = appointmentStats.FirstOrDefault(a => a.ServiceId == service.ServiceId);
                 var dto = MapToDto(service);
                 dto.AppointmentCount = stats?.AppointmentCount ?? 0;
                 dto.WorkOrderCount = stats?.WorkOrderCount ?? 0;
+
+                // set HasModelPricing flag for frontend convenience
+                dto.HasModelPricing = modelId.HasValue && modelPricingServiceIds.Contains(service.ServiceId);
+
                 dtos.Add(dto);
             }
 
@@ -295,6 +320,8 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
             var dto = MapToDto(service);
             dto.AppointmentCount = service.Appointments?.Count ?? 0;
             dto.WorkOrderCount = service.WorkOrderServices?.Count ?? 0;
+            // HasModelPricing unknown for single-get (requires model context)
+            dto.HasModelPricing = false;
             return dto;
         }
 
@@ -321,7 +348,8 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenanceServices.Services
                 CreatedDate = service.CreatedDate,
                 UpdatedDate = service.UpdatedDate,
                 AppointmentCount = 0,
-                WorkOrderCount = 0
+                WorkOrderCount = 0,
+                HasModelPricing = false
             };
         }
 

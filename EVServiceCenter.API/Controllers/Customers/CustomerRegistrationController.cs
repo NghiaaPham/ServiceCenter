@@ -1,4 +1,4 @@
-﻿using EVServiceCenter.Core.Domains.Customers.DTOs.Requests;
+using EVServiceCenter.Core.Domains.Customers.DTOs.Requests;
 using EVServiceCenter.Core.Domains.Customers.Interfaces;
 using EVServiceCenter.Core.Domains.Identity.DTOs.Requests;
 using EVServiceCenter.Core.Domains.Shared.Models;
@@ -49,15 +49,17 @@ namespace EVServiceCenter.API.Controllers.Customers
 
             try
             {
-                // Convert CustomerRegistrationDto to CreateCustomerRequestDto
+                // ✅ Convert CustomerRegistrationDto to CreateCustomerRequestDto
+                // TypeId will be auto-assigned to "Standard" in service layer
                 var customerRequest = new CreateCustomerRequestDto
                 {
+                    Username = request.Username,
                     FullName = request.FullName,
                     PhoneNumber = request.PhoneNumber,
                     Email = request.Email,
                     PreferredLanguage = "vi-VN",
                     MarketingOptIn = request.MarketingOptIn,
-                    TypeId = 1, // Default customer type
+                    TypeId = null, // ✅ NULL = Auto-assign to "Standard"
                     IsActive = true,
                     Notes = "Đăng ký trực tuyến"
                 };

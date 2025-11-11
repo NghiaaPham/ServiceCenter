@@ -224,5 +224,40 @@ namespace EVServiceCenter.Infrastructure.Domains.Pricing.Services
                     promotionCode);
             }
         }
+
+        /// <summary>
+        /// ✅ FIX GAP #8: Decrement promotion usage on cancellation
+        /// </summary>
+        public async Task DecrementUsageAsync(string promotionCode)
+        {
+            var promotion = await _context.Promotions
+                .FirstOrDefaultAsync(p => p.PromotionCode == promotionCode);
+
+            if (promotion != null)
+            {
+                if (promotion.UsageCount > 0)
+                {
+                    var oldCount = promotion.UsageCount;
+                    promotion.UsageCount = oldCount - 1;
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogInformation(
+                        "✅ GAP #8 - Decremented usage count for promotion '{Code}': {Old} → {New} (/{Limit})",
+                        promotionCode, oldCount, promotion.UsageCount, promotion.UsageLimit ?? -1);
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "⚠️ Cannot decrement usage for promotion '{Code}' - already at 0",
+                        promotionCode);
+                }
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "⚠️ Attempted to decrement usage for non-existent promotion '{Code}'",
+                    promotionCode);
+            }
+        }
     }
 }

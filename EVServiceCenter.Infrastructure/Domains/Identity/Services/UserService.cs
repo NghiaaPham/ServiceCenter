@@ -8,6 +8,9 @@ using EVServiceCenter.Core.Helpers;
 using EVServiceCenter.Core.Domains.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Text;
+using EVServiceCenter.Core.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 {
@@ -18,19 +21,142 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
         private readonly ILogger<UserService> _logger;
         private readonly IEmailService _emailService;
         private readonly IHttpContextService _httpContextService;
+        private readonly EVDbContext _context;
 
         public UserService(
             IUserRepository userRepository,
             IMapper mapper,
             ILogger<UserService> logger,
             IEmailService emailService,
-            IHttpContextService httpContextService)
+            IHttpContextService httpContextService,
+            EVDbContext context)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
             _httpContextService = httpContextService ?? throw new ArgumentNullException(nameof(httpContextService));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        public async Task<User?> ValidateRefreshTokenAsync(string refreshToken, string? userAgent, string? ipAddress)
+        {
+            var parts = refreshToken.Split(':');
+            if (parts.Length != 2)
+            {
+                _logger.LogWarning("Invalid refresh token format.");
+                return null;
+            }
+
+            var selector = parts[0];
+            var validator = parts[1];
+
+            // PERFORMANCE: Use AsNoTracking for read-only operation, fetch token first
+            var storedToken = await _context.RefreshTokens
+                .AsNoTracking()
+                .FirstOrDefaultAsync(rt => rt.Selector == selector);
+
+            if (storedToken == null)
+            {
+                _logger.LogWarning("Refresh token validation failed: Selector not found.");
+                return null;
+            }
+
+            if (storedToken.IsRevoked)
+            {
+                _logger.LogWarning("Refresh token validation failed: Token has been revoked. UserID: {UserId}", storedToken.UserId);
+                return null;
+            }
+
+            if (storedToken.IsExpired)
+            {
+                _logger.LogWarning("Refresh token validation failed: Token has expired. UserID: {UserId}", storedToken.UserId);
+                return null;
+            }
+
+            // Verify the validator against the stored hash
+            if (!SecurityHelper.VerifyPassword(validator, storedToken.TokenHash))
+            {
+                _logger.LogWarning("Invalid refresh token validator for selector: {Selector}", selector);
+                return null;
+            }
+
+            // PERFORMANCE: Fetch User separately after token validation to avoid unnecessary JOIN
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == storedToken.UserId && u.IsActive == true);
+
+            if (user == null)
+            {
+                _logger.LogWarning("Refresh token validation failed: User is inactive or not found. UserID: {UserId}", storedToken.UserId);
+                return null;
+            }
+
+            return user;
+        }
+
+        public async Task<string> RotateRefreshTokenAsync(int userId, string? userAgent, string? ipAddress)
+        {
+            // Validate user exists without loading navigation properties
+            var userExists = await _context.Users.AnyAsync(u => u.UserId == userId);
+            if (!userExists)
+            {
+                _logger.LogError("Cannot rotate refresh token: User with ID {UserId} not found.", userId);
+                throw new InvalidOperationException("User not found.");
+            }
+
+            var selector = SecurityHelper.GenerateSecureToken(32);
+            var validator = SecurityHelper.GenerateSecureToken(64);
+
+            // Generate a new refresh token
+            var newRefreshToken = new RefreshToken
+            {
+                Selector = selector,
+                TokenHash = SecurityHelper.HashPassword(validator, SecurityHelper.GenerateSalt()),
+                Expires = DateTime.UtcNow.AddDays(7),
+                Created = DateTime.UtcNow,
+                CreatedByIp = ipAddress,
+                UserId = userId
+            };
+
+            // Revoke old tokens for the same user agent and IP for better security
+            // Note: use direct column check (Revoked == null) because computed properties (IsRevoked) are not translatable to SQL
+            // Use a set-based update to avoid loading many entities into memory and speed up DB work
+            var now = DateTime.UtcNow;
+            try
+            {
+                await _context.RefreshTokens
+                    .Where(rt => rt.UserId == userId && rt.CreatedByIp == ipAddress && rt.Revoked == null)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(rt => rt.Revoked, _ => now)
+                        .SetProperty(rt => rt.RevokedByIp, _ => ipAddress)
+                        .SetProperty(rt => rt.ReplacedByTokenHash, _ => newRefreshToken.TokenHash)
+                    );
+            }
+            catch (Exception ex)
+            {
+                // Log and continue — ExecuteUpdate may not be supported by older providers, fallback to client-side if necessary
+                _logger.LogWarning(ex, "ExecuteUpdateAsync failed while revoking old refresh tokens; falling back to client-side update.");
+
+                var oldTokens = await _context.RefreshTokens
+                    .Where(rt => rt.UserId == userId && rt.CreatedByIp == ipAddress && rt.Revoked == null)
+                    .ToListAsync();
+
+                foreach (var oldToken in oldTokens)
+                {
+                    oldToken.Revoked = now;
+                    oldToken.RevokedByIp = ipAddress;
+                    oldToken.ReplacedByTokenHash = newRefreshToken.TokenHash;
+                }
+            }
+
+            // Add the new refresh token and persist changes
+            await _context.RefreshTokens.AddAsync(newRefreshToken);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Refresh token rotated successfully for user {UserId}. New token issued.", userId);
+
+            return $"{selector}:{validator}";
         }
 
         public async Task<IEnumerable<UserResponseDto>> GetAllUsersAsync()
@@ -46,6 +172,20 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
         }
 
         public async Task<UserResponseDto> RegisterCustomerUserAsync(User user, string plainPassword)
+        {
+            var createdUser = await RegisterCustomerUserWithoutEmailAsync(user, plainPassword);
+
+            // Send verification email after user created
+            await SendVerificationEmailAsync(createdUser);
+
+            return createdUser;
+        }
+
+        /// <summary>
+        /// ✅ NEW: Register customer user WITHOUT sending verification email
+        /// This allows transaction to commit before sending email
+        /// </summary>
+        public async Task<UserResponseDto> RegisterCustomerUserWithoutEmailAsync(User user, string plainPassword)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
 
@@ -91,29 +231,49 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 
             var createdUser = await _userRepository.CreateAsync(user);
 
-            // Send verification email for customers
-            if (!string.IsNullOrEmpty(user.Email))
-            {
-                try
-                {
-                    await _emailService.SendCustomerEmailVerificationAsync(
-                        user.Email,
-                        user.FullName,
-                        emailVerificationToken
-                    );
-                    _logger.LogInformation("Verification email sent to customer {Email} for user {Username}", user.Email, user.Username);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to send verification email for customer {Username}", user.Username);
-                    // Don't fail registration if email fails
-                }
-            }
-
             _logger.LogInformation("Customer user registered successfully: {Username}, Email: {Email}",
                 user.Username, user.Email);
 
             return _mapper.Map<UserResponseDto>(createdUser);
+        }
+
+        /// <summary>
+        /// ✅ NEW: Send verification email to user (can be called separately after transaction commit)
+        /// </summary>
+        public async Task SendVerificationEmailAsync(UserResponseDto user)
+        {
+            if (user == null) throw new ArgumentNullException(nameof(user));
+
+            if (string.IsNullOrEmpty(user.Email))
+            {
+                _logger.LogWarning("Cannot send verification email for user {Username} - no email address", user.Username);
+                return;
+            }
+
+            // Get the email verification token from database
+            var userEntity = await _userRepository.GetByIdAsync(user.UserId);
+            if (userEntity == null || userEntity.EmailVerificationToken == null)
+            {
+                _logger.LogWarning("Cannot send verification email for user {Username} - no verification token", user.Username);
+                return;
+            }
+
+            var emailVerificationToken = Encoding.UTF8.GetString(userEntity.EmailVerificationToken);
+
+            try
+            {
+                await _emailService.SendCustomerEmailVerificationAsync(
+                    user.Email,
+                    user.FullName,
+                    emailVerificationToken
+                );
+                _logger.LogInformation("Verification email sent to customer {Email} for user {Username}", user.Email, user.Username);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send verification email for customer {Username}", user.Username);
+                throw; // Rethrow so caller can decide how to handle
+            }
         }
 
         public async Task<UserResponseDto> UpdateUserAsync(User user)
@@ -170,14 +330,15 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 }
             }
 
-            var updatedUser = await _userRepository.UpdateAsync(existingUser);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("User updated: {UserId} by system", user.UserId);
 
-            return _mapper.Map<UserResponseDto>(updatedUser);
+            return _mapper.Map<UserResponseDto>(existingUser);
         }
 
         public async Task<(UserResponseDto? User, string? ErrorCode, string? ErrorMessage)> LoginAsync(string username, string plainPassword)
         {
+            var overallSw = Stopwatch.StartNew();
             try
             {
                 // 1. Validate input
@@ -193,14 +354,22 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                     return (null, ErrorCodes.VALIDATION_ERROR, "Mật khẩu không được để trống.");
                 }
 
+                // For detailed performance investigation, measure key stages
+                var stageSw = Stopwatch.StartNew();
+
                 // 2. Get user from database
+                var fetchSw = Stopwatch.StartNew();
                 var user = await _userRepository.GetByUsernameAsync(username);
+                fetchSw.Stop();
+                _logger.LogInformation("Login stage: fetched user in {ElapsedMs} ms for username={Username}", fetchSw.ElapsedMilliseconds, username);
 
                 if (user == null)
                 {
                     _logger.LogWarning("Login failed: Username {Username} not found", username);
                     // Delay response to prevent timing attacks
                     await Task.Delay(Random.Shared.Next(100, 500));
+                    overallSw.Stop();
+                    _logger.LogInformation("Login overall time (user not found): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
                     return (null, ErrorCodes.INVALID_CREDENTIALS, ErrorMessages.INVALID_USERNAME_PASSWORD);
                 }
 
@@ -208,6 +377,8 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 if (user.IsActive == false)
                 {
                     _logger.LogWarning("Login failed: Account {Username} is inactive", username);
+                    overallSw.Stop();
+                    _logger.LogInformation("Login overall time (inactive): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
                     return (null, ErrorCodes.ACCOUNT_LOCKED, "Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.");
                 }
 
@@ -216,28 +387,30 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 {
                     if (user.AccountLockedUntil > DateTime.UtcNow)
                     {
-                        // Still locked
                         var remainingTime = (user.AccountLockedUntil.Value - DateTime.UtcNow).TotalMinutes;
                         _logger.LogWarning("Login failed: Account {Username} is locked until {LockoutEnd}",
                             username, user.AccountLockedUntil);
+                        overallSw.Stop();
+                        _logger.LogInformation("Login overall time (locked): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
 
                         return (null, ErrorCodes.ACCOUNT_LOCKED,
                             $"Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau {Math.Ceiling(remainingTime)} phút.");
                     }
                     else
                     {
-                        // Lockout period has expired, unlock the account
                         _logger.LogInformation("Auto-unlocking account {Username} after lockout expiry", username);
                         user.IsAccountLocked = false;
                         user.AccountLockedUntil = null;
                         user.FailedLoginAttempts = 0;
                         user.UnlockAttempts = 0;
                         user.LockoutReason = null;
-                        await _userRepository.UpdateAsync(user);
+                        // defer saving unlock until later to avoid extra DB roundtrips; will be saved at final SaveChanges
+                        //_ = await _context.SaveChangesAsync();
                     }
                 }
 
                 // 5. Verify password using SecurityHelper
+                var verifySw = Stopwatch.StartNew();
                 bool isPasswordValid = false;
                 try
                 {
@@ -249,8 +422,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error verifying password for user {Username}", username);
+                    overallSw.Stop();
+                    _logger.LogInformation("Login overall time (verify error): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
                     return (null, ErrorCodes.INTERNAL_ERROR, "Có lỗi xảy ra trong quá trình xác thực.");
                 }
+                verifySw.Stop();
+                _logger.LogInformation("Login stage: password verify completed in {ElapsedMs} ms for username={Username}", verifySw.ElapsedMilliseconds, username);
 
                 if (!isPasswordValid)
                 {
@@ -268,12 +445,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                         user.AccountLockedUntil = DateTime.UtcNow.AddMinutes(30);
                         user.LockoutReason = "Đăng nhập sai quá 5 lần liên tiếp";
 
-                        await _userRepository.UpdateAsync(user);
+                        await _context.SaveChangesAsync();
 
                         _logger.LogWarning("Account {Username} has been locked due to {Attempts} failed login attempts",
                             username, user.FailedLoginAttempts);
 
-                        // Send email notification about account lockout
+                        // Send email notification about account lockout (async)
                         if (!string.IsNullOrEmpty(user.Email))
                         {
                             _ = Task.Run(async () =>
@@ -295,13 +472,19 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                             });
                         }
 
+                        overallSw.Stop();
+                        _logger.LogInformation("Login overall time (locked after failures): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
+
                         return (null, ErrorCodes.ACCOUNT_LOCKED,
                             "Tài khoản đã bị khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau 30 phút.");
                     }
                     else
                     {
-                        await _userRepository.UpdateAsync(user);
+                        await _context.SaveChangesAsync();
                         var remainingAttempts = 5 - user.FailedLoginAttempts;
+
+                        overallSw.Stop();
+                        _logger.LogInformation("Login overall time (invalid password): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
 
                         return (null, ErrorCodes.INVALID_CREDENTIALS,
                             $"{ErrorMessages.INVALID_USERNAME_PASSWORD}. Bạn còn {remainingAttempts} lần thử.");
@@ -313,7 +496,6 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 {
                     _logger.LogWarning("Login blocked: Email not verified for {Username}", username);
 
-                    // Check if we need to resend verification email
                     bool shouldResendEmail = user.EmailVerificationToken == null ||
                                            user.EmailVerificationExpiry == null ||
                                            user.EmailVerificationExpiry < DateTime.UtcNow;
@@ -324,13 +506,11 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                         {
                             try
                             {
-                                // Generate new verification token
                                 var verificationToken = SecurityHelper.GenerateSecureToken();
                                 user.EmailVerificationToken = Encoding.UTF8.GetBytes(verificationToken);
                                 user.EmailVerificationExpiry = DateTime.UtcNow.AddHours(24);
-                                await _userRepository.UpdateAsync(user);
+                                await _context.SaveChangesAsync();
 
-                                // Send verification email
                                 await _emailService.SendCustomerEmailVerificationAsync(user.Email, user.FullName, verificationToken);
                                 _logger.LogInformation("New verification email sent for {Username}", username);
                             }
@@ -341,15 +521,10 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                         });
                     }
 
-                    return (null, ErrorCodes.EMAIL_NOT_VERIFIED, ErrorMessages.EMAIL_NOT_VERIFIED);
-                }
+                    overallSw.Stop();
+                    _logger.LogInformation("Login overall time (email not verified): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
 
-                // 7. Check password expiry (optional)
-                if (user.PasswordExpiryDate.HasValue && user.PasswordExpiryDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                {
-                    _logger.LogWarning("Login blocked: Password expired for {Username}", username);
-                    return (null, ErrorCodes.PASSWORD_EXPIRED,
-                        "Mật khẩu của bạn đã hết hạn. Vui lòng đặt lại mật khẩu mới.");
+                    return (null, ErrorCodes.EMAIL_NOT_VERIFIED, ErrorMessages.EMAIL_NOT_VERIFIED);
                 }
 
                 // 8. Reset failed login attempts on successful authentication
@@ -361,8 +536,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 }
 
                 // 9. Update last login time
+                var updateSw = Stopwatch.StartNew();
                 user.LastLoginDate = DateTime.UtcNow;
-                await _userRepository.UpdateAsync(user);
+                // Save changes once for the success path (includes any deferred unlock changes)
+                await _context.SaveChangesAsync();
+                updateSw.Stop();
+                _logger.LogInformation("Login stage: LastLogin update completed in {ElapsedMs} ms for username={Username}", updateSw.ElapsedMilliseconds, username);
 
                 // 10. Log successful login with IP and UserAgent
                 var clientIp = _httpContextService.GetClientIpAddress();
@@ -395,6 +574,24 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 
                 // 13. Map to response DTO
                 var userResponse = _mapper.Map<UserResponseDto>(user);
+
+                // ✅ FIX: Load Role navigation property for AutoMapper
+                // Performance note: This is a single extra query ONLY on successful login
+                if (user.Role == null && user.RoleId > 0)
+                {
+                    var loadRoleSw = Stopwatch.StartNew();
+                    user.Role = await _context.UserRoles
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(r => r.RoleId == user.RoleId);
+                    loadRoleSw.Stop();
+                    _logger.LogInformation("Login stage: Role loaded in {ElapsedMs} ms for roleId={RoleId}", loadRoleSw.ElapsedMilliseconds, user.RoleId);
+                    
+                    // Re-map with Role included
+                    userResponse = _mapper.Map<UserResponseDto>(user);
+                }
+
+                overallSw.Stop();
+                _logger.LogInformation("Login overall time (success): {ElapsedMs} ms for username={Username}", overallSw.ElapsedMilliseconds, username);
 
                 // 14. Return successful result
                 return (userResponse, null, null);
@@ -520,7 +717,7 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 user.ResetToken = Encoding.UTF8.GetBytes(resetToken);
                 user.ResetTokenExpiry = DateTime.UtcNow.AddHours(1);
 
-                await _userRepository.UpdateAsync(user);
+                await _context.SaveChangesAsync();
 
                 // Send reset email
                 await _emailService.SendPasswordResetAsync(email, user.FullName, resetToken);
@@ -624,7 +821,7 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 user.AccountLockedUntil = null;
                 user.LockoutReason = null;
 
-                await _userRepository.UpdateAsync(user);
+                await _context.SaveChangesAsync();
 
                 // Send confirmation email (non-blocking)
                 _ = Task.Run(async () =>
@@ -680,7 +877,7 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
             user.EmailVerificationToken = null;
             user.EmailVerificationExpiry = null;
 
-            await _userRepository.UpdateAsync(user);
+            await _context.SaveChangesAsync();
 
             // Send welcome email
             await _emailService.SendWelcomeEmailAsync(email, user.FullName);
@@ -709,7 +906,7 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
             user.EmailVerificationToken = Encoding.UTF8.GetBytes(verificationToken);
             user.EmailVerificationExpiry = DateTime.UtcNow.AddHours(24);
 
-            await _userRepository.UpdateAsync(user);
+            await _context.SaveChangesAsync();
 
             // Send verification email
             await _emailService.SendCustomerEmailVerificationAsync(email, user.FullName, verificationToken);
@@ -848,6 +1045,30 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 
             return _mapper.Map<UserResponseDto>(createdUser);
         }
-       
+
+        public async Task RevokeRefreshTokenAsync(string refreshToken, string? ipAddress)
+        {
+            var parts = refreshToken.Split(':');
+            if (parts.Length != 2)
+            {
+                _logger.LogWarning("Invalid refresh token format on revoke.");
+                return;
+            }
+
+            var selector = parts[0];
+            var storedToken = await _context.RefreshTokens.FirstOrDefaultAsync(rt => rt.Selector == selector);
+
+            if (storedToken == null || storedToken.IsRevoked)
+            {
+                return; // Token already revoked or doesn't exist
+            }
+
+            storedToken.Revoked = DateTime.UtcNow;
+            storedToken.RevokedByIp = ipAddress;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Refresh token with selector {Selector} for user {UserId} was revoked.", selector, storedToken.UserId);
+        }
     }
 }

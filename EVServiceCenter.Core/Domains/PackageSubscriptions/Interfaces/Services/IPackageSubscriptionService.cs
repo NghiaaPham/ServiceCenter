@@ -45,6 +45,15 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Services
             int requestingCustomerId,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Get list of services that are currently covered by customer's active subscriptions for a vehicle.
+        /// Used by frontend to mark services as free (0đ) in the booking flow.
+        /// </summary>
+        Task<List<ApplicableServiceDto>> GetApplicableServicesForVehicleAsync(
+            int vehicleId,
+            int customerId,
+            CancellationToken cancellationToken = default);
+
         // ========== COMMAND METHODS ==========
 
         /// <summary>
@@ -57,6 +66,7 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Services
         Task<PackageSubscriptionResponseDto> PurchasePackageAsync(
             PurchasePackageRequestDto request,
             int customerId,
+            int? createdByUserId,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -92,6 +102,20 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Services
         /// </summary>
         Task<bool> ReactivateSubscriptionAsync(
             int subscriptionId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 💰 [STAFF ONLY] Xác nhận thanh toán Cash/BankTransfer
+        /// Chuyển subscription từ PendingPayment → Active
+        /// Tạo Payment record trong database
+        /// </summary>
+        /// <param name="request">Thông tin xác nhận thanh toán</param>
+        /// <param name="staffUserId">ID của staff thực hiện xác nhận</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>True nếu thành công, throw exception nếu fail</returns>
+        Task<bool> ConfirmPaymentAsync(
+            ConfirmPaymentRequestDto request,
+            int staffUserId,
             CancellationToken cancellationToken = default);
 
         /// <summary>

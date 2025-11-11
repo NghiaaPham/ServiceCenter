@@ -28,9 +28,12 @@ namespace EVServiceCenter.API.Extensions
             services.AddScoped<IAppointmentCommandService, AppointmentCommandService>();
             services.AddScoped<IAppointmentQueryService, AppointmentQueryService>();
             services.AddScoped<IAppointmentReconciliationService, AppointmentReconciliationService>();
-            
+
             // ✅ ADVANCED METRICS: Analytics Service
             services.AddScoped<IAppointmentMetricsService, AppointmentMetricsService>();
+
+            // ✅ GAP #14: Email Service
+            services.AddScoped<IAppointmentEmailService, AppointmentEmailService>();
 
             // ✅ SMART SUBSCRIPTION: Audit Service (using Stub implementation)
             services.AddScoped<IServiceSourceAuditService>(provider =>

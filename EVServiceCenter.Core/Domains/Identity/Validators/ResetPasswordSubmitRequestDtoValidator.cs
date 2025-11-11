@@ -1,0 +1,29 @@
+using EVServiceCenter.Core.Domains.Identity.DTOs.Requests;
+using FluentValidation;
+
+namespace EVServiceCenter.Core.Domains.Identity.Validators
+{
+  public class ResetPasswordSubmitRequestDtoValidator : AbstractValidator<ResetPasswordSubmitRequestDto>
+  {
+    public ResetPasswordSubmitRequestDtoValidator()
+    {
+      RuleFor(x => x.Email)
+          .NotEmpty().WithMessage("Email không được để trống.")
+          .EmailAddress().WithMessage("Định dạng email không hợp lệ.");
+
+      RuleFor(x => x.Token)
+          .NotEmpty().WithMessage("Token không được để trống.");
+
+      RuleFor(x => x.NewPassword)
+          .NotEmpty().WithMessage("Mật khẩu mới không được để trống.")
+          .MinimumLength(8).WithMessage("Mật khẩu phải có ít nhất 8 ký tự.")
+          .Matches("[A-Z]").WithMessage("Mật khẩu phải chứa ít nhất 1 chữ hoa.")
+          .Matches("[a-z]").WithMessage("Mật khẩu phải chứa ít nhất 1 chữ thường.")
+          .Matches("[0-9]").WithMessage("Mật khẩu phải chứa ít nhất 1 chữ số.")
+          .Matches("[^a-zA-Z0-9]").WithMessage("Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt.");
+
+      RuleFor(x => x.ConfirmPassword)
+          .Equal(x => x.NewPassword).WithMessage("Mật khẩu xác nhận không khớp.");
+    }
+  }
+}

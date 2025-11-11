@@ -26,7 +26,8 @@ namespace EVServiceCenter.Core.Helpers
             (int)AppointmentStatusEnum.Confirmed,
             (int)AppointmentStatusEnum.CheckedIn,
             (int)AppointmentStatusEnum.InProgress,
-            (int)AppointmentStatusEnum.Completed
+            (int)AppointmentStatusEnum.Completed,
+            (int)AppointmentStatusEnum.CompletedWithUnpaidBalance  // ✅ Thêm status mới
         };
 
         /// <summary>
@@ -35,6 +36,7 @@ namespace EVServiceCenter.Core.Helpers
         public static readonly int[] FinalStatuses = new[]
         {
             (int)AppointmentStatusEnum.Completed,
+            (int)AppointmentStatusEnum.CompletedWithUnpaidBalance,  // ✅ Status mới cũng là final
             (int)AppointmentStatusEnum.Cancelled,
             (int)AppointmentStatusEnum.Rescheduled,
             (int)AppointmentStatusEnum.NoShow
@@ -103,7 +105,8 @@ namespace EVServiceCenter.Core.Helpers
                     (int)AppointmentStatusEnum.InProgress,
                     new[]
                     {
-                        (int)AppointmentStatusEnum.Completed
+                        (int)AppointmentStatusEnum.Completed,
+                        (int)AppointmentStatusEnum.CompletedWithUnpaidBalance  // ✅ Cho phép transition
                     }
                 }
             };
@@ -124,6 +127,7 @@ namespace EVServiceCenter.Core.Helpers
                 (int)AppointmentStatusEnum.CheckedIn => "Đã check-in",
                 (int)AppointmentStatusEnum.InProgress => "Đang thực hiện",
                 (int)AppointmentStatusEnum.Completed => "Hoàn thành",
+                (int)AppointmentStatusEnum.CompletedWithUnpaidBalance => "Hoàn thành (còn công nợ)",  // ✅ Label mới
                 (int)AppointmentStatusEnum.Cancelled => "Đã hủy",
                 (int)AppointmentStatusEnum.Rescheduled => "Đã dời lịch",
                 (int)AppointmentStatusEnum.NoShow => "Không đến",
@@ -164,7 +168,8 @@ namespace EVServiceCenter.Core.Helpers
                 },
                 { (int)AppointmentStatusEnum.InProgress, new[]
                     {
-                        (int)AppointmentStatusEnum.Completed
+                        (int)AppointmentStatusEnum.Completed,
+                        (int)AppointmentStatusEnum.CompletedWithUnpaidBalance  // ✅ Valid transition
                     }
                 }
             };

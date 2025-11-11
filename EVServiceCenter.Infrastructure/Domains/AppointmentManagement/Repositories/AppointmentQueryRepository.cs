@@ -1,4 +1,5 @@
 ﻿using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Query;
+using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.CarBrands.Entities;
@@ -251,39 +252,111 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             if (!appointmentIds.Any())
                 return Enumerable.Empty<Appointment>();
 
-            // STEP 2: Load full entities with essential includes
+            // OPTIMIZED STEP 2: Project only needed fields in a single query (avoid heavy Include()/AsSplitQuery materialization)
             var appointments = await _context.Appointments
                 .AsNoTracking()
                 .Where(a => appointmentIds.Contains(a.AppointmentId))
-                .Include(a => a.Customer)
-                .Include(a => a.ServiceCenter)
-                .Include(a => a.Slot)
-                .Include(a => a.Status)
-                .Include(a => a.Vehicle)
-                    .ThenInclude(v => v.Model)
-                        .ThenInclude(m => m!.Brand)
-                .AsSplitQuery()
+                .Select(a => new Appointment
+                {
+                    AppointmentId = a.AppointmentId,
+                    AppointmentCode = a.AppointmentCode,
+                    CustomerId = a.CustomerId,
+                    VehicleId = a.VehicleId,
+                    ServiceCenterId = a.ServiceCenterId,
+                    SlotId = a.SlotId,
+                    StatusId = a.StatusId,
+                    AppointmentDate = a.AppointmentDate,
+                    EstimatedDuration = a.EstimatedDuration,
+                    EstimatedCost = a.EstimatedCost,
+                    FinalCost = a.FinalCost,
+                    DiscountAmount = a.DiscountAmount,
+                    DiscountType = a.DiscountType,
+
+                    // Lightweight navigations (only required display fields)
+                    Customer = new Customer
+                    {
+                        CustomerId = a.Customer.CustomerId,
+                        FullName = a.Customer.FullName,
+                        PhoneNumber = a.Customer.PhoneNumber,
+                        Email = a.Customer.Email
+                    },
+
+                    ServiceCenter = new ServiceCenter
+                    {
+                        CenterId = a.ServiceCenter.CenterId,
+                        CenterName = a.ServiceCenter.CenterName,
+                        Address = a.ServiceCenter.Address
+                    },
+
+                    Slot = a.Slot == null ? null : new TimeSlot
+                    {
+                        SlotId = a.Slot.SlotId,
+                        SlotDate = a.Slot.SlotDate,
+                        StartTime = a.Slot.StartTime,
+                        EndTime = a.Slot.EndTime
+                    },
+
+                    Status = new AppointmentStatus
+                    {
+                        StatusId = a.Status.StatusId,
+                        StatusName = a.Status.StatusName,
+                        StatusColor = a.Status.StatusColor
+                    },
+
+                    Vehicle = a.Vehicle == null ? null : new CustomerVehicle
+                    {
+                        VehicleId = a.Vehicle.VehicleId,
+                        LicensePlate = a.Vehicle.LicensePlate,
+                        Vin = a.Vehicle.Vin,
+                        Model = a.Vehicle.Model == null ? null : new CarModel
+                        {
+                            ModelId = a.Vehicle.Model.ModelId,
+                            ModelName = a.Vehicle.Model.ModelName,
+                            Year = a.Vehicle.Model.Year,
+                            Brand = a.Vehicle.Model.Brand == null ? null : new CarBrand
+                            {
+                                BrandId = a.Vehicle.Model.Brand.BrandId,
+                                BrandName = a.Vehicle.Model.Brand.BrandName
+                            }
+                        }
+                    }
+                })
                 .ToListAsync(cancellationToken);
 
-            // STEP 3: Load services separately (reduce cartesian explosion)
+            // STEP 3: Load services separately (single query, minimal projection)
             var services = await _context.AppointmentServices
                 .AsNoTracking()
                 .Where(aps => appointmentIds.Contains(aps.AppointmentId))
-                .Include(aps => aps.Service)
+                .Select(aps => new AppointmentService
+                {
+                    AppointmentServiceId = aps.AppointmentServiceId,
+                    AppointmentId = aps.AppointmentId,
+                    ServiceId = aps.ServiceId,
+                    Price = aps.Price,
+                    EstimatedTime = aps.EstimatedTime,
+                    Service = aps.Service == null ? null : new MaintenanceService
+                    {
+                        ServiceId = aps.Service.ServiceId,
+                        ServiceName = aps.Service.ServiceName
+                    }
+                })
                 .ToListAsync(cancellationToken);
 
-            // STEP 4: Attach services to appointments
+            // STEP 4: Attach services to appointments (use lookup)
+            var servicesLookup = services.GroupBy(s => s.AppointmentId).ToDictionary(g => g.Key, g => g.ToList());
+
             foreach (var appointment in appointments)
             {
-                appointment.AppointmentServices = services
-                    .Where(s => s.AppointmentId == appointment.AppointmentId)
-                    .ToList();
+                servicesLookup.TryGetValue(appointment.AppointmentId, out var list);
+                appointment.AppointmentServices = list ?? new List<AppointmentService>();
             }
 
-            // STEP 5: Restore original order
-            return appointmentIds
+            // STEP 5: Restore original order and return
+            var ordered = appointmentIds
                 .Select(id => appointments.First(a => a.AppointmentId == id))
                 .ToList();
+
+            return ordered;
         }
 
         public async Task<int> GetCountByStatusAsync(
@@ -454,6 +527,102 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
                 .Include(a => a.Status)
                 .Where(a => a.ServiceCenterId == serviceCenterId && a.Slot!.SlotDate == date)
                 .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IEnumerable<AppointmentResponseDto>> GetUpcomingDtosByCustomerAsync(
+            int customerId,
+            int limit = 5,
+            CancellationToken cancellationToken = default)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            var dtos = await _context.Appointments
+                .AsNoTracking()
+                .Where(a => a.CustomerId == customerId && a.Slot!.SlotDate >= today)
+                .OrderBy(a => a.Slot!.SlotDate)
+                .ThenBy(a => a.Slot!.StartTime)
+                .Take(limit)
+                .Select(a => new AppointmentResponseDto
+                {
+                    AppointmentId = a.AppointmentId,
+                    AppointmentCode = a.AppointmentCode,
+
+                    CustomerId = a.CustomerId,
+                    CustomerName = a.Customer.FullName,
+                    CustomerPhone = a.Customer.PhoneNumber,
+                    CustomerEmail = a.Customer.Email,
+
+                    VehicleId = a.VehicleId,
+                    VehicleName = a.Vehicle.Model != null ? (a.Vehicle.Model.Brand.BrandName + " " + a.Vehicle.Model.ModelName + " " + a.Vehicle.Model.Year.ToString()) : "",
+                    LicensePlate = a.Vehicle.LicensePlate,
+                    VIN = a.Vehicle.Vin,
+
+                    ServiceCenterId = a.ServiceCenterId,
+                    ServiceCenterName = a.ServiceCenter.CenterName,
+                    ServiceCenterAddress = a.ServiceCenter.Address,
+
+                    SlotId = a.SlotId,
+                    SlotDate = a.Slot!.SlotDate,
+                    SlotStartTime = a.Slot.StartTime,
+                    SlotEndTime = a.Slot.EndTime,
+
+                    StatusId = a.StatusId,
+                    StatusName = a.Status.StatusName,
+                    StatusColor = a.Status.StatusColor,
+
+                    EstimatedDuration = a.EstimatedDuration,
+                    EstimatedCost = a.EstimatedCost,
+                    FinalCost = a.FinalCost,
+
+                    DiscountSummary = null, // lightweight
+
+                    PaymentStatus = a.PaymentStatus,
+                    PaidAmount = a.PaidAmount,
+                    PaymentIntentCount = a.PaymentIntentCount,
+                    LatestPaymentIntentId = a.LatestPaymentIntentId,
+                    OutstandingAmount = ((a.FinalCost ?? a.EstimatedCost) ?? 0m) - (a.PaidAmount ?? 0m),
+
+                    CustomerNotes = a.CustomerNotes,
+                    Priority = a.Priority ?? "Normal",
+                    Source = a.Source ?? "",
+
+                    CreatedDate = a.CreatedDate ?? DateTime.UtcNow,
+                    UpdatedDate = a.UpdatedDate,
+                    ConfirmationDate = a.ConfirmationDate,
+
+                    CancellationReason = a.CancellationReason,
+                    RescheduledFromId = a.RescheduledFromId
+                })
+                .ToListAsync(cancellationToken);
+
+            // Load services separately and map to DTOs
+            var appointmentIds = dtos.Select(d => d.AppointmentId).ToList();
+            if (appointmentIds.Any())
+            {
+                var services = await _context.AppointmentServices
+                    .AsNoTracking()
+                    .Where(s => appointmentIds.Contains(s.AppointmentId))
+                    .Select(s => new { s.AppointmentId, s.ServiceId, ServiceName = s.Service!.ServiceName, s.Price, s.EstimatedTime, s.ServiceSource })
+                    .ToListAsync(cancellationToken);
+
+                var servicesLookup = services.GroupBy(s => s.AppointmentId).ToDictionary(g => g.Key, g => g.Select(x => new AppointmentServiceDto
+                {
+                    AppointmentServiceId = 0,
+                    ServiceId = x.ServiceId,
+                    ServiceName = x.ServiceName,
+                    Price = x.Price,
+                    EstimatedTime = x.EstimatedTime,
+                    ServiceSource = x.ServiceSource ?? ""
+                }).ToList());
+
+                foreach (var dto in dtos)
+                {
+                    servicesLookup.TryGetValue(dto.AppointmentId, out var list);
+                    dto.Services = list ?? new List<AppointmentServiceDto>();
+                }
+            }
+
+            return dtos;
         }
     }
 }

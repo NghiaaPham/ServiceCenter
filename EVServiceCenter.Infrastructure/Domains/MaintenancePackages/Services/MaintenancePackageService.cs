@@ -4,6 +4,7 @@ using EVServiceCenter.Core.Domains.MaintenancePackages.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.MaintenancePackages.Interfaces.Services;
 using EVServiceCenter.Core.Domains.Shared.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Services
 {
@@ -17,15 +18,18 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Services
         private readonly IMaintenancePackageQueryRepository _queryRepository;
         private readonly IMaintenancePackageCommandRepository _commandRepository;
         private readonly ILogger<MaintenancePackageService> _logger;
+        private readonly IMemoryCache _cache;
 
         public MaintenancePackageService(
             IMaintenancePackageQueryRepository queryRepository,
             IMaintenancePackageCommandRepository commandRepository,
-            ILogger<MaintenancePackageService> logger)
+            ILogger<MaintenancePackageService> logger,
+            IMemoryCache cache)
         {
             _queryRepository = queryRepository ?? throw new ArgumentNullException(nameof(queryRepository));
             _commandRepository = commandRepository ?? throw new ArgumentNullException(nameof(commandRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
 
         #region Query Methods - Delegate to QueryRepository
@@ -90,6 +94,45 @@ namespace EVServiceCenter.Infrastructure.Domains.MaintenancePackages.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Service: Error getting popular packages");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Lấy các gói khuyến nghị cho modelId - delegate to query repository
+        /// Caching applied to reduce DB pressure for repeated FE calls
+        /// </summary>
+        public async Task<List<MaintenancePackageSummaryDto>> GetRecommendedPackagesAsync(
+            int modelId,
+            int topCount = 5,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Service: Getting recommended packages for model {ModelId} top {TopCount}", modelId, topCount);
+
+                var cacheKey = $"recommended_packages_{modelId}_{topCount}";
+
+                if (_cache.TryGetValue<List<MaintenancePackageSummaryDto>>(cacheKey, out var cached))
+                {
+                    return cached;
+                }
+
+                var result = await _queryRepository.GetRecommendedPackagesAsync(modelId, topCount, cancellationToken);
+
+                // Cache for short time (5 minutes)
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                };
+
+                _cache.Set(cacheKey, result, cacheOptions);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Service: Error getting recommended packages for model {ModelId}", modelId);
                 throw;
             }
         }

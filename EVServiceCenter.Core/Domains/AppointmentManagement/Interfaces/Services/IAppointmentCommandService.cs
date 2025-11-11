@@ -71,6 +71,18 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Tạo pre-payment cho appointment - cho phép khách hàng thanh toán trước khi check-in
+        /// Tạo Invoice tạm và trả về payment URL từ VNPay/MoMo
+        /// </summary>
+        Task<PrePaymentResponseDto> CreatePrePaymentAsync(
+            int appointmentId,
+            string paymentMethod,
+            string returnUrl,
+            string? ipAddress,
+            int userId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Complete appointment và update subscription usage (nếu có)
         /// </summary>
         Task<bool> CompleteAppointmentAsync(

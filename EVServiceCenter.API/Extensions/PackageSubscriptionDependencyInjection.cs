@@ -4,6 +4,7 @@ using EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Services;
 using EVServiceCenter.Core.Domains.PackageSubscriptions.Validators;
 using EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Repositories;
 using EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Services;
+using EVServiceCenter.Infrastructure.Domains.PackageSubscriptions.Validators;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,8 +21,11 @@ namespace EVServiceCenter.API.Extensions
             // Service - Single service sử dụng cả Query và Command repositories
             services.AddScoped<IPackageSubscriptionService, PackageSubscriptionService>();
 
-            // Validators
-            services.AddScoped<IValidator<PurchasePackageRequestDto>, PurchasePackageRequestValidator>();
+            // ========== VALIDATORS ==========
+            services.AddScoped<IValidator<PurchasePackageRequestDto>, PurchasePackageValidator>();
+            services.AddScoped<IValidator<PurchaseWithPaymentRequestDto>, PurchaseWithPaymentValidator>();
+            services.AddScoped<IValidator<SuspendSubscriptionRequestDto>, SuspendSubscriptionValidator>();
+            services.AddScoped<IValidator<ConfirmPaymentRequestDto>, ConfirmPaymentValidator>();
 
             return services;
         }

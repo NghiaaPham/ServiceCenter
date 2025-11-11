@@ -9,6 +9,8 @@ namespace EVServiceCenter.Core.Domains.Identity.Interfaces
     Task<UserResponseDto?> GetUserByIdAsync(int id);
     Task<UserResponseDto> RegisterInternalUserAsync(User user, string plainPassword);
     Task<UserResponseDto> RegisterCustomerUserAsync(User user, string plainPassword);
+    Task<UserResponseDto> RegisterCustomerUserWithoutEmailAsync(User user, string plainPassword);
+    Task SendVerificationEmailAsync(UserResponseDto user);
     Task<UserResponseDto> UpdateUserAsync(User user);
     Task<bool> DeleteUserAsync(int id);
     Task<(UserResponseDto? User, string? ErrorCode, string? ErrorMessage)> LoginAsync(string username, string plainPassword);
@@ -23,5 +25,12 @@ namespace EVServiceCenter.Core.Domains.Identity.Interfaces
     Task<bool> IsEmailVerifiedAsync(string email);
     Task<UserResponseDto?> GetUserByEmailAsync(string email);
     Task<bool> ValidateResetTokenAsync(string email, string token);
+    
+    /// <summary>Validate refresh token và trả về User nếu hợp lệ</summary>
+    Task<User?> ValidateRefreshTokenAsync(string refreshToken, string? userAgent, string? ipAddress);
+    
+    /// <summary>Phát hành refresh token mới và thu hồi cũ</summary>
+    Task<string> RotateRefreshTokenAsync(int userId, string? userAgent, string? ipAddress);
+    Task RevokeRefreshTokenAsync(string refreshToken, string? ipAddress);
   }
 }

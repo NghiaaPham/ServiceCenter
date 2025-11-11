@@ -4,6 +4,7 @@ using EVServiceCenter.Core.Domains.Identity.Interfaces;
 using EVServiceCenter.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 {
@@ -11,13 +12,19 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
     {
         private readonly EVDbContext _context;
         private readonly ILogger<TokenBlacklistService> _logger;
+        private readonly IMemoryCache _cache;
+
+        // Cache key prefix
+        private const string CachePrefix = "revoked_token_";
 
         public TokenBlacklistService(
             EVDbContext context,
-            ILogger<TokenBlacklistService> logger)
+            ILogger<TokenBlacklistService> logger,
+            IMemoryCache cache)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         }
 
         public async Task<bool> RevokeTokenAsync(
@@ -64,6 +71,9 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 _context.RevokedTokens.Add(revokedToken);
                 await _context.SaveChangesAsync(cancellationToken);
 
+                // Remove any cached value for this token so subsequent checks hit DB (or will be repopulated)
+                _cache.Remove(CachePrefix + token);
+
                 _logger.LogInformation(
                     "Token revoked for user {UserId}. Reason: {Reason}, IP: {IP}",
                     userId, reason, ipAddress);
@@ -86,9 +96,24 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                     return false;
                 }
 
+                var cacheKey = CachePrefix + token;
+
+                if (_cache.TryGetValue(cacheKey, out bool cachedRevoked))
+                {
+                    return cachedRevoked;
+                }
+
                 // Check in blacklist
                 var isRevoked = await _context.RevokedTokens
                     .AnyAsync(rt => rt.Token == token, cancellationToken);
+
+                // Cache result for short time to reduce DB pressure
+                var cacheOptions = new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
+                };
+
+                _cache.Set(cacheKey, isRevoked, cacheOptions);
 
                 return isRevoked;
             }
@@ -128,6 +153,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 {
                     session.IsActive = false;
                     session.LogoutTime = DateTime.UtcNow;
+
+                    // Also remove from cache if we cached token
+                    if (!string.IsNullOrWhiteSpace(session.SessionToken))
+                    {
+                        _cache.Remove(CachePrefix + session.SessionToken);
+                    }
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
@@ -158,6 +189,12 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 
                 if (expiredTokens.Any())
                 {
+                    // Remove their cache entries as well
+                    foreach (var t in expiredTokens)
+                    {
+                        _cache.Remove(CachePrefix + t.Token);
+                    }
+
                     _context.RevokedTokens.RemoveRange(expiredTokens);
                     await _context.SaveChangesAsync(cancellationToken);
 

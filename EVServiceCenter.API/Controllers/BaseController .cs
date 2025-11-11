@@ -9,11 +9,30 @@ namespace EVServiceCenter.API.Controllers
     [Route("api/[controller]")]
     public abstract class BaseController : ControllerBase
     {
-        // User Context Helper Methods
+        // =========================
+        // USER CONTEXT HELPERS
+        // =========================
+
+        /// <summary>
+        /// Get current user ID from JWT token claims
+        /// Checks multiple claim types for compatibility
+        /// </summary>
+        /// <returns>User ID</returns>
+        /// <exception cref="UnauthorizedAccessException">Thrown when user ID not found in token</exception>
         protected int GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out var userId) ? userId : 0;
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)
+                       ?? User.FindFirst("UserId")
+                       ?? User.FindFirst("sub");
+
+            if (claim != null && int.TryParse(claim.Value, out var userId))
+            {
+                return userId;
+            }
+
+            // Quan điểm: đã vào được controller có [Authorize] mà vẫn không có UserId trong token
+            // => coi như request không hợp lệ / chưa auth đúng
+            throw new UnauthorizedAccessException("User ID not found in token");
         }
 
         protected string GetCurrentUserName()
@@ -26,7 +45,10 @@ namespace EVServiceCenter.API.Controllers
             return User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
         }
 
-        // Role Check Helper Methods
+        // =========================
+        // ROLE CHECK HELPERS
+        // =========================
+
         protected bool IsAdmin()
         {
             return GetCurrentRole() == UserRoles.Admin.ToString();
@@ -50,12 +72,15 @@ namespace EVServiceCenter.API.Controllers
         protected bool IsInternal()
         {
             var role = GetCurrentRole();
-            return role == UserRoles.Admin.ToString() ||
-                   role == UserRoles.Staff.ToString() ||
-                   role == UserRoles.Technician.ToString();
+            return role == UserRoles.Admin.ToString()
+                   || role == UserRoles.Staff.ToString()
+                   || role == UserRoles.Technician.ToString();
         }
 
-        // Authorization Helper Methods
+        // =========================
+        // AUTHZ HELPERS
+        // =========================
+
         protected bool CanAccessUser(int targetUserId)
         {
             if (IsInternal()) return true;
@@ -68,7 +93,10 @@ namespace EVServiceCenter.API.Controllers
             return GetCurrentUserId() == targetUserId;
         }
 
-        // Standard API Response Methods
+        // =========================
+        // STANDARD API RESPONSES
+        // =========================
+
         protected IActionResult Success<T>(T data, string message = "Success")
         {
             return Ok(new
@@ -101,7 +129,7 @@ namespace EVServiceCenter.API.Controllers
             });
         }
 
-        protected IActionResult ValidationError(string message = null)
+        protected IActionResult ValidationError(string? message = null)
         {
             return BadRequest(new
             {
@@ -111,7 +139,7 @@ namespace EVServiceCenter.API.Controllers
             });
         }
 
-        protected IActionResult NotFoundError(string message = null)
+        protected IActionResult NotFoundError(string? message = null)
         {
             return NotFound(new
             {
@@ -121,7 +149,7 @@ namespace EVServiceCenter.API.Controllers
             });
         }
 
-        protected IActionResult UnauthorizedError(string message = null)
+        protected IActionResult UnauthorizedError(string? message = null)
         {
             return Unauthorized(new
             {
@@ -131,7 +159,7 @@ namespace EVServiceCenter.API.Controllers
             });
         }
 
-        protected IActionResult ForbiddenError(string message = null)
+        protected IActionResult ForbiddenError(string? message = null)
         {
             return StatusCode(403, new
             {
@@ -141,7 +169,7 @@ namespace EVServiceCenter.API.Controllers
             });
         }
 
-        protected IActionResult ServerError(string message = null)
+        protected IActionResult ServerError(string? message = null)
         {
             return StatusCode(500, new
             {
@@ -151,20 +179,31 @@ namespace EVServiceCenter.API.Controllers
             });
         }
 
-        // Exception handling helper
+
         protected IActionResult HandleException(Exception ex)
         {
-            // Log exception here if needed
-            return ServerError(ex.Message);
+            return ex switch
+            {
+                UnauthorizedAccessException uaEx => UnauthorizedError(uaEx.Message),
+                InvalidOperationException ioEx => ValidationError(ioEx.Message),
+                KeyNotFoundException knfEx => NotFoundError(knfEx.Message),
+                _ => ServerError(ex.Message)
+            };
         }
 
-        // Validation helper
+        // =========================
+        // VALIDATION HELPER
+        // =========================
+
         protected bool IsValidRequest<T>(T request) where T : class
         {
             return request != null && ModelState.IsValid;
         }
 
-        // Customer-specific helper methods
+        // =========================
+        // CUSTOMER HELPERS
+        // =========================
+
         protected int GetCurrentCustomerId()
         {
             var customerIdClaim = User.FindFirst("CustomerId")?.Value;

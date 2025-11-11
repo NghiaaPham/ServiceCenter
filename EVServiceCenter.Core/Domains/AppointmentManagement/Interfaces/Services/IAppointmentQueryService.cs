@@ -27,6 +27,11 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services
             int limit = 5,
             CancellationToken cancellationToken = default);
 
+        Task<IEnumerable<AppointmentResponseDto>> GetUpcomingByCustomerDtosAsync(
+            int customerId,
+            int limit = 5,
+            CancellationToken cancellationToken = default);
+
         Task<IEnumerable<AppointmentResponseDto>> GetByServiceCenterAndDateAsync(
             int serviceCenterId,
             DateOnly date,

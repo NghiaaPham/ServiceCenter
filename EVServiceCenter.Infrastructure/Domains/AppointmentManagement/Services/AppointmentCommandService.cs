@@ -7,6 +7,7 @@ using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using EVServiceCenter.Core.Domains.CustomerVehicles.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
 using EVServiceCenter.Core.Domains.MaintenanceServices.Interfaces.Repositories;
+using EVServiceCenter.Core.Domains.Invoices.Interfaces;
 using EVServiceCenter.Core.Domains.ModelServicePricings.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.TimeSlots.Interfaces.Repositories;
@@ -15,13 +16,17 @@ using EVServiceCenter.Core.Enums;
 using EVServiceCenter.Core.Helpers;
 using EVServiceCenter.Core.Interfaces.Services;
 using EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers;
+using EVServiceCenter.Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using EVServiceCenter.Core.Domains.Pricing.Interfaces;
-using EVServiceCenter.Core.Domains.Pricing.Models;
 using EVServiceCenter.Core.Domains.Customers.Interfaces;
+using EVServiceCenter.Core.Domains.Payments.Constants;
+using EVServiceCenter.Core.Domains.Pricing.Models;
+using EVServiceCenter.Core.Domains.Payments.DTOs.Requests;
+using EVServiceCenter.Core.Domains.Payments.Interfaces;
 using EVServiceCenter.Core.Domains.Payments.Interfaces.Services;
 using EVServiceCenter.Core.Domains.Payments.Entities;
 using EVServiceCenter.Core.Domains.Payments.Interfaces.Repositories;
@@ -45,7 +50,9 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
         private readonly IPromotionService _promotionService;
         private readonly ICustomerRepository _customerRepository;
         private readonly IPaymentIntentService _paymentIntentService;
+        private readonly IPaymentService _paymentService;
         private readonly IRefundRepository _refundRepository;
+        private readonly IInvoiceService _invoiceService;
         private readonly EVDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AppointmentCommandService> _logger;
@@ -65,10 +72,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             IPromotionService promotionService,
             ICustomerRepository customerRepository,
             IPaymentIntentService paymentIntentService,
+            IPaymentService paymentService,
             IRefundRepository refundRepository,
             EVDbContext context,
             IConfiguration configuration,
-            ILogger<AppointmentCommandService> logger)
+            ILogger<AppointmentCommandService> logger,
+            IInvoiceService invoiceService)
         {
             _repository = repository;
             _commandRepository = commandRepository;
@@ -84,10 +93,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             _promotionService = promotionService ?? throw new ArgumentNullException(nameof(promotionService));
             _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
             _paymentIntentService = paymentIntentService ?? throw new ArgumentNullException(nameof(paymentIntentService));
+            _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
             _refundRepository = refundRepository ?? throw new ArgumentNullException(nameof(refundRepository));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _configuration = configuration;
             _logger = logger;
+            _invoiceService = invoiceService ?? throw new ArgumentNullException(nameof(invoiceService));
         }
 
         public async Task<AppointmentResponseDto> CreateAsync(
@@ -115,6 +126,17 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             var vehicle = await _vehicleRepository.GetByIdAsync(request.VehicleId, cancellationToken);
             if (vehicle == null)
                 throw new InvalidOperationException("Xe không tồn tại");
+
+            if (vehicle.CustomerId != request.CustomerId)
+            {
+                _logger.LogWarning(
+                    "Customer {CustomerId} attempted to book appointment for vehicle {VehicleId} owned by {VehicleCustomerId}",
+                    request.CustomerId,
+                    request.VehicleId,
+                    vehicle.CustomerId);
+
+                throw new InvalidOperationException("Xe không thuộc sở hữu của khách hàng hiện tại");
+            }
 
             // ═══════════════════════════════════════════════════════════
             // ⚡ SMART SUBSCRIPTION DEDUPLICATION - PERFORMANCE OPTIMIZED
@@ -603,6 +625,160 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             }
         }
 
+        public async Task<PrePaymentResponseDto> CreatePrePaymentAsync(
+            int appointmentId,
+            string paymentMethod,
+            string returnUrl,
+            string? ipAddress,
+            int userId,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(paymentMethod))
+            {
+                throw new ArgumentException("Payment method is required", nameof(paymentMethod));
+            }
+
+            if (string.IsNullOrWhiteSpace(returnUrl))
+            {
+                throw new ArgumentException("ReturnUrl is required", nameof(returnUrl));
+            }
+
+            var supportedMethods = new[] { PaymentMethodType.VNPay, PaymentMethodType.MoMo };
+            var canonicalMethod = supportedMethods
+                .FirstOrDefault(m => m.Equals(paymentMethod, StringComparison.OrdinalIgnoreCase));
+
+            if (canonicalMethod == null)
+            {
+                throw new InvalidOperationException("Ch? h? tr? thanh to�n tru?c b??ng VNPay ho?c MoMo.");
+                throw new InvalidOperationException("Chỉ hỗ trợ thanh toán trước bằng VNPay hoặc MoMo.");
+            }
+
+            _logger.LogInformation(
+                "Creating appointment pre-payment. AppointmentId={AppointmentId}, Method={Method}, UserId={UserId}",
+                appointmentId,
+                canonicalMethod,
+                userId);
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Customer)
+                .Include(a => a.PaymentIntents)
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId, cancellationToken);
+
+            if (appointment == null)
+            {
+                throw new InvalidOperationException("Appointment kh�ng t?n t?i.");
+                throw new InvalidOperationException("Appointment không tồn tại.");
+            }
+
+            if (appointment.StatusId != (int)AppointmentStatusEnum.Pending &&
+                appointment.StatusId != (int)AppointmentStatusEnum.Confirmed)
+            {
+                throw new InvalidOperationException("Ch? c� th? thanh to�n tru?c cho l?ch Pending ho?c Confirmed.");
+                throw new InvalidOperationException("Chỉ có thể thanh toán trước cho lịch Pending hoặc Confirmed.");
+            }
+
+            var targetAmount = appointment.FinalCost ?? appointment.EstimatedCost ?? 0m;
+            if (targetAmount <= 0)
+            {
+                throw new InvalidOperationException("L?ch h?n kh�ng c� chi ph� c?n thanh to�n.");
+                throw new InvalidOperationException("Lịch hẹn không có chi phí cần thanh toán.");
+            }
+
+            var paidAmount = appointment.PaidAmount ?? 0m;
+            var outstanding = Math.Max(targetAmount - paidAmount, 0m);
+            if (outstanding <= 0)
+            {
+                throw new InvalidOperationException("L?ch h?n da thanh to�n d?.");
+                throw new InvalidOperationException("Lịch hẹn đã thanh toán đủ.");
+            }
+
+            var pendingIntent = appointment.PaymentIntents?
+                .Where(pi => string.Equals(pi.Status, PaymentIntentStatusEnum.Pending.ToString(), StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(pi => pi.CreatedDate)
+                .FirstOrDefault(pi => Math.Abs(pi.Amount - outstanding) < 0.01m);
+
+            if (pendingIntent == null)
+            {
+                var expiryHours = _configuration.GetValue<int?>("Payments:IntentExpiryHours") ?? 24;
+                if (expiryHours <= 0)
+                {
+                    expiryHours = 24;
+                }
+
+                var expiresAt = DateTime.UtcNow.AddHours(expiryHours);
+                var newIntent = _paymentIntentService.BuildPendingIntent(
+                    appointment.CustomerId,
+                    outstanding,
+                    userId,
+                    "VND",
+                    expiresAt,
+                    canonicalMethod,
+                    $"APT-{appointmentId}-PREPAY-{DateTime.UtcNow.Ticks}");
+
+                newIntent.AppointmentId = appointment.AppointmentId;
+                newIntent.CustomerId = appointment.CustomerId;
+                newIntent.PaymentMethod = canonicalMethod;
+                newIntent.Notes = $"Pre-payment for appointment #{appointment.AppointmentCode ?? appointment.AppointmentId.ToString()}";
+
+                pendingIntent = await _paymentIntentService.AppendNewIntentAsync(newIntent, cancellationToken);
+
+                appointment.PaymentIntentCount = appointment.PaymentIntentCount + 1;
+                appointment.LatestPaymentIntentId = pendingIntent.PaymentIntentId;
+                if (!string.Equals(appointment.PaymentStatus, PaymentStatusEnum.Completed.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    appointment.PaymentStatus = PaymentStatusEnum.Pending.ToString();
+                }
+
+                appointment.UpdatedBy = userId;
+                appointment.UpdatedDate = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            var invoice = await _invoiceService.CreatePrePaymentInvoiceAsync(
+                appointmentId,
+                pendingIntent.PaymentIntentId,
+                userId,
+                cancellationToken);
+
+            var paymentRequest = new CreatePaymentRequestDto
+            {
+                InvoiceId = invoice.InvoiceId,
+                Amount = pendingIntent.Amount,
+                PaymentMethod = canonicalMethod,
+                ReturnUrl = returnUrl,
+                CustomerName = appointment.Customer?.FullName ?? "Customer",
+                CustomerEmail = appointment.Customer?.Email,
+                CustomerPhone = appointment.Customer?.PhoneNumber
+            };
+
+            var gatewayResponse = await _paymentService.CreatePaymentAsync(
+                paymentRequest,
+                userId,
+                string.IsNullOrWhiteSpace(ipAddress) ? "127.0.0.1" : ipAddress!,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Pre-payment created successfully. AppointmentId={AppointmentId}, Invoice={InvoiceCode}, Amount={Amount}",
+                appointmentId,
+                invoice.InvoiceCode,
+                pendingIntent.Amount);
+
+            return new PrePaymentResponseDto
+            {
+                PaymentIntentId = pendingIntent.PaymentIntentId,
+                InvoiceId = invoice.InvoiceId,
+                InvoiceCode = invoice.InvoiceCode,
+                Amount = pendingIntent.Amount,
+                PaymentUrl = gatewayResponse.PaymentUrl,
+                PaymentCode = gatewayResponse.PaymentCode,
+                Gateway = gatewayResponse.Gateway,
+                QrCodeUrl = gatewayResponse.QrCodeUrl,
+                DeepLink = gatewayResponse.DeepLink,
+                ExpiresAt = gatewayResponse.ExpiryTime ?? pendingIntent.ExpiresAt
+            };
+        }
+
         public async Task<AppointmentResponseDto> UpdateAsync(
             UpdateAppointmentRequestDto request,
             int currentUserId,
@@ -626,6 +802,18 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 var vehicle = await _vehicleRepository.GetByIdAsync(request.VehicleId.Value, cancellationToken);
                 if (vehicle == null)
                     throw new InvalidOperationException("Xe không tồn tại");
+
+                if (vehicle.CustomerId != appointment.CustomerId)
+                {
+                    _logger.LogWarning(
+                        "User {UserId} attempted to reassign appointment {AppointmentId} to vehicle {VehicleId} owned by {VehicleCustomerId}",
+                        currentUserId,
+                        appointment.AppointmentId,
+                        request.VehicleId.Value,
+                        vehicle.CustomerId);
+
+                    throw new InvalidOperationException("Xe không thuộc sở hữu của khách hàng hiện tại");
+                }
 
                 appointment.VehicleId = request.VehicleId.Value;
             }
@@ -1347,6 +1535,53 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
         /// 1. IDEMPOTENCY: Dùng RowVersion để detect double-complete (retry/network glitch)
         /// 2. TRANSACTION: Serializable isolation để tránh race conditions
         /// 3. SERVICE SOURCE AWARE: Chỉ trừ lượt cho services có ServiceSource = "Subscription"
+        private async Task RecordAppointmentCustomerSpendAsync(
+            Appointment appointment,
+            CancellationToken cancellationToken)
+        {
+            if (appointment == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var payableAmount = await _context.AppointmentServices
+                    .Where(aps => aps.AppointmentId == appointment.AppointmentId &&
+                                  !string.Equals(aps.ServiceSource, "Subscription", StringComparison.OrdinalIgnoreCase))
+                    .SumAsync(aps => aps.Price, cancellationToken);
+
+                if (payableAmount <= 0)
+                {
+                    _logger.LogInformation(
+                        "[CompleteAppointmentAsync] Appointment {AppointmentId} has no payable services outside subscription. Skip spend recognition.",
+                        appointment.AppointmentId);
+                    return;
+                }
+
+                await CustomerSpendHelper.TryIncrementTotalSpentAsync(
+                    _context,
+                    _logger,
+                    appointment.CustomerId,
+                    payableAmount,
+                    $"Appointment#{appointment.AppointmentId}",
+                    cancellationToken);
+
+                _logger.LogInformation(
+                    "[CompleteAppointmentAsync] Recorded {Amount:N0} spend for customer {CustomerId} from appointment {AppointmentId}",
+                    payableAmount,
+                    appointment.CustomerId,
+                    appointment.AppointmentId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "[CompleteAppointmentAsync] Failed to record customer spend for appointment {AppointmentId}",
+                    appointment?.AppointmentId);
+            }
+        }
+
         /// 4. GRACEFUL DEGRADATION: Nếu hết lượt (race), auto convert to "Extra" + log audit
         /// 5. AUDIT TRAIL: Log mọi thay đổi ServiceSource
         /// 6. PAYMENT TRACKING: Track payment cho degraded services
@@ -1537,6 +1772,8 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                         .SetProperty(a => a.UpdatedBy, currentUserId)
                         .SetProperty(a => a.UpdatedDate, completedDate),
                         cancellationToken);
+
+                await RecordAppointmentCustomerSpendAsync(appointment, cancellationToken);
 
                 _logger.LogInformation(
                     "✅ CompleteAppointment SUCCESS: AppointmentId={AppointmentId}, " +

@@ -16,6 +16,9 @@ public partial class ChecklistTemplate
     [StringLength(100)]
     public string TemplateName { get; set; } = null!;
 
+    [StringLength(500)]
+    public string? Description { get; set; }
+
     [Column("ServiceID")]
     public int? ServiceId { get; set; }
 

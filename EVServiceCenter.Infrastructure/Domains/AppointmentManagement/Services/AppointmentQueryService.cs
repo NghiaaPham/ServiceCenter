@@ -122,5 +122,14 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 .Select(AppointmentMapper.ToPaymentIntentResponseDto)
                 .ToList();
         }
+
+        public async Task<IEnumerable<AppointmentResponseDto>> GetUpcomingByCustomerDtosAsync(
+            int customerId,
+            int limit = 5,
+            CancellationToken cancellationToken = default)
+        {
+            var dtos = await _queryRepository.GetUpcomingDtosByCustomerAsync(customerId, limit, cancellationToken);
+            return dtos;
+        }
     }
 }

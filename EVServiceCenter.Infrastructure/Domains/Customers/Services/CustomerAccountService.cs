@@ -37,108 +37,187 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
     CreateCustomerRequestDto customerRequest,
     string password)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // ✅ FIX: Use ExecutionStrategy to wrap transaction (prevent retry strategy conflict)
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
 
-            try
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                // Validate unique constraints first
-                if (!string.IsNullOrEmpty(customerRequest.Email))
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+
+                try
                 {
-                    var existingUserByEmail = await _context.Users.AnyAsync(u => u.Email == customerRequest.Email);
-                    if (existingUserByEmail)
+                    // Validate unique constraints first
+                    if (!string.IsNullOrEmpty(customerRequest.Email))
                     {
-                        throw new InvalidOperationException($"Email '{customerRequest.Email}' đã được sử dụng.");
+                        var existingUserByEmail = await _context.Users.AnyAsync(u => u.Email == customerRequest.Email);
+                        if (existingUserByEmail)
+                        {
+                            throw new InvalidOperationException($"Email '{customerRequest.Email}' đã được sử dụng.");
+                        }
+
+                        var existingCustomerByEmail = await _context.Customers.AnyAsync(c => c.Email == customerRequest.Email);
+                        if (existingCustomerByEmail)
+                        {
+                            throw new InvalidOperationException($"Email '{customerRequest.Email}' đã được sử dụng bởi khách hàng khác.");
+                        }
                     }
 
-                    var existingCustomerByEmail = await _context.Customers.AnyAsync(c => c.Email == customerRequest.Email);
-                    if (existingCustomerByEmail)
+                    var existingCustomerByPhone = await _context.Customers.AnyAsync(c => c.PhoneNumber == customerRequest.PhoneNumber);
+                    if (existingCustomerByPhone)
                     {
-                        throw new InvalidOperationException($"Email '{customerRequest.Email}' đã được sử dụng bởi khách hàng khác.");
+                        throw new InvalidOperationException($"Số điện thoại '{customerRequest.PhoneNumber}' đã được sử dụng.");
                     }
+
+                    // ✅ FIX: Get and VALIDATE CustomerType ID
+                    int defaultTypeId;
+                    
+                    if (customerRequest.TypeId.HasValue)
+                    {
+                        // ✅ VALIDATE: Check if TypeId exists in database
+                        var requestedType = await _context.CustomerTypes
+                            .Where(ct => ct.TypeId == customerRequest.TypeId.Value && ct.IsActive == true)
+                            .FirstOrDefaultAsync();
+
+                        if (requestedType == null)
+                        {
+                            throw new InvalidOperationException(
+                                $"Loại khách hàng với ID {customerRequest.TypeId.Value} không tồn tại hoặc không còn hoạt động. " +
+                                "Vui lòng kiểm tra lại hoặc không chỉ định TypeId để sử dụng loại mặc định.");
+                        }
+
+                        defaultTypeId = requestedType.TypeId;
+                        
+                        _logger.LogInformation(
+                            "Using requested CustomerType: {TypeId} - {TypeName}",
+                            requestedType.TypeId, requestedType.TypeName);
+                    }
+                    else
+                    {
+                        // Get "Standard" CustomerType ID from database
+                        var standardType = await _context.CustomerTypes
+                            .Where(ct => ct.TypeName == "Standard" && ct.IsActive == true)
+                            .FirstOrDefaultAsync();
+
+                        if (standardType == null)
+                        {
+                            // ✅ FALLBACK: If "Standard" not found, use ANY active type
+                            var anyActiveType = await _context.CustomerTypes
+                                .Where(ct => ct.IsActive == true)
+                                .OrderBy(ct => ct.TypeId)
+                                .FirstOrDefaultAsync();
+
+                            if (anyActiveType == null)
+                            {
+                                throw new InvalidOperationException(
+                                    "Không tìm thấy bất kỳ loại khách hàng nào đang hoạt động trong hệ thống. " +
+                                    "Vui lòng liên hệ quản trị viên để kiểm tra dữ liệu CustomerTypes.");
+                            }
+
+                            defaultTypeId = anyActiveType.TypeId;
+                            
+                            _logger.LogWarning(
+                                "CustomerType 'Standard' not found. Using fallback type: {TypeId} - {TypeName}",
+                                anyActiveType.TypeId, anyActiveType.TypeName);
+                        }
+                        else
+                        {
+                            defaultTypeId = standardType.TypeId;
+                            
+                            _logger.LogInformation(
+                                "Using default CustomerType: {TypeId} - Standard",
+                                standardType.TypeId);
+                        }
+                    }
+
+                    // Create User với role Customer (WITHOUT sending email yet)
+                    var user = new User
+                    {
+                        Username = customerRequest.Username ?? customerRequest.Email ?? customerRequest.PhoneNumber,
+                        FullName = customerRequest.FullName,
+                        Email = customerRequest.Email,
+                        PhoneNumber = customerRequest.PhoneNumber,
+                        RoleId = (int)UserRoles.Customer,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    // ✅ FIX: Create user without sending email first
+                    var createdUser = await _userService.RegisterCustomerUserWithoutEmailAsync(user, password);
+
+                    // Generate customer code
+                    var customerCode = await GenerateCustomerCodeAsync();
+
+                    // Create Customer record with all registration info
+                    var customer = new Customer
+                    {
+                        UserId = createdUser.UserId,
+                        CustomerCode = customerCode,
+                        FullName = customerRequest.FullName,
+                        PhoneNumber = customerRequest.PhoneNumber,
+                        Email = customerRequest.Email,
+                        Address = customerRequest.Address,
+                        DateOfBirth = customerRequest.DateOfBirth,
+                        Gender = customerRequest.Gender,
+                        IdentityNumber = !string.IsNullOrEmpty(customerRequest.IdentityNumber)
+                            ? EncryptIdentityNumber(customerRequest.IdentityNumber)
+                            : null,
+                        TypeId = defaultTypeId,
+                        PreferredLanguage = customerRequest.PreferredLanguage,
+                        MarketingOptIn = customerRequest.MarketingOptIn,
+                        LoyaltyPoints = 0,
+                        TotalSpent = 0,
+                        Notes = customerRequest.Notes,
+                        IsActive = customerRequest.IsActive,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    _context.Customers.Add(customer);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // ✅ FIX: Send email AFTER transaction commit successfully
+                    try
+                    {
+                        await _userService.SendVerificationEmailAsync(createdUser);
+                        _logger.LogInformation("Verification email sent to {Email}", customerRequest.Email);
+                    }
+                    catch (Exception emailEx)
+                    {
+                        _logger.LogWarning(emailEx, "Customer created successfully but failed to send verification email to {Email}", customerRequest.Email);
+                        // Don't throw - customer already created, just log the warning
+                    }
+
+                    _logger.LogInformation("Created customer with account: {CustomerCode} - {FullName} - UserID: {UserId} - TypeId: {TypeId}",
+                        customer.CustomerCode, customer.FullName, createdUser.UserId, defaultTypeId);
+
+                    // Return full customer info
+                    return new CustomerResponseDto
+                    {
+                        CustomerId = customer.CustomerId,
+                        CustomerCode = customer.CustomerCode,
+                        FullName = customer.FullName,
+                        PhoneNumber = customer.PhoneNumber,
+                        Email = customer.Email,
+                        Address = customer.Address,
+                        DateOfBirth = customer.DateOfBirth,
+                        Gender = customer.Gender,
+                        PreferredLanguage = customer.PreferredLanguage,
+                        MarketingOptIn = customer.MarketingOptIn,
+                        LoyaltyPoints = customer.LoyaltyPoints,
+                        TotalSpent = customer.TotalSpent,
+                        Notes = customer.Notes,
+                        IsActive = customer.IsActive,
+                        CreatedDate = customer.CreatedDate,
+                        DisplayName = customer.CustomerCode + " - " + customer.FullName,
+                        ContactInfo = !string.IsNullOrEmpty(customer.Email) ? customer.PhoneNumber + " / " + customer.Email : customer.PhoneNumber
+                    };
                 }
-
-                var existingCustomerByPhone = await _context.Customers.AnyAsync(c => c.PhoneNumber == customerRequest.PhoneNumber);
-                if (existingCustomerByPhone)
+                catch (Exception ex)
                 {
-                    throw new InvalidOperationException($"Số điện thoại '{customerRequest.PhoneNumber}' đã được sử dụng.");
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error creating customer with account: {FullName}", customerRequest.FullName);
+                    throw;
                 }
-
-                // Create User với role Customer (will need email verification)
-                var user = new User
-                {
-                    Username = customerRequest.Email ?? customerRequest.PhoneNumber, // Use email as username, fallback to phone
-                    FullName = customerRequest.FullName,
-                    Email = customerRequest.Email,
-                    PhoneNumber = customerRequest.PhoneNumber,
-                    RoleId = (int)UserRoles.Customer,
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                // Use the new RegisterCustomerUserAsync method (we'll create this)
-                var createdUser = await _userService.RegisterCustomerUserAsync(user, password);
-
-                // Generate customer code
-                var customerCode = await GenerateCustomerCodeAsync();
-
-                // Create Customer record with all registration info
-                var customer = new Customer
-                {
-                    UserId = createdUser.UserId,
-                    CustomerCode = customerCode,
-                    FullName = customerRequest.FullName,
-                    PhoneNumber = customerRequest.PhoneNumber,
-                    Email = customerRequest.Email,
-                    Address = customerRequest.Address,
-                    DateOfBirth = customerRequest.DateOfBirth,
-                    Gender = customerRequest.Gender,
-                    IdentityNumber = !string.IsNullOrEmpty(customerRequest.IdentityNumber)
-                        ? EncryptIdentityNumber(customerRequest.IdentityNumber)
-                        : null,
-                    TypeId = customerRequest.TypeId ?? 1, // Default customer type
-                    PreferredLanguage = customerRequest.PreferredLanguage,
-                    MarketingOptIn = customerRequest.MarketingOptIn,
-                    LoyaltyPoints = 0,
-                    TotalSpent = 0,
-                    Notes = customerRequest.Notes,
-                    IsActive = customerRequest.IsActive,
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                _context.Customers.Add(customer);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                _logger.LogInformation("Created customer with account: {CustomerCode} - {FullName} - UserID: {UserId}",
-                    customer.CustomerCode, customer.FullName, createdUser.UserId);
-
-                // Return full customer info
-                return new CustomerResponseDto
-                {
-                    CustomerId = customer.CustomerId,
-                    CustomerCode = customer.CustomerCode,
-                    FullName = customer.FullName,
-                    PhoneNumber = customer.PhoneNumber,
-                    Email = customer.Email,
-                    Address = customer.Address,
-                    DateOfBirth = customer.DateOfBirth,
-                    Gender = customer.Gender,
-                    PreferredLanguage = customer.PreferredLanguage,
-                    MarketingOptIn = customer.MarketingOptIn,
-                    LoyaltyPoints = customer.LoyaltyPoints,
-                    TotalSpent = customer.TotalSpent,
-                    Notes = customer.Notes,
-                    IsActive = customer.IsActive,
-                    CreatedDate = customer.CreatedDate,
-                    DisplayName = customer.CustomerCode + " - " + customer.FullName,
-                    ContactInfo = !string.IsNullOrEmpty(customer.Email) ? customer.PhoneNumber + " / " + customer.Email : customer.PhoneNumber
-                };
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error creating customer with account: {FullName}", customerRequest.FullName);
-                throw;
-            }
+            });
         }
 
 
@@ -146,29 +225,35 @@ namespace EVServiceCenter.Infrastructure.Domains.Customers.Services
     int userId,
     CreateCustomerRequestDto customerRequest)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            // ✅ FIX: Use ExecutionStrategy to wrap transaction
+            var executionStrategy = _context.Database.CreateExecutionStrategy();
+
+            return await executionStrategy.ExecuteAsync(async () =>
             {
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null || user.RoleId != (int)UserRoles.Customer)
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    throw new InvalidOperationException("User không tồn tại hoặc không phải role Customer");
+                    var user = await _context.Users.FindAsync(userId);
+                    if (user == null || user.RoleId != (int)UserRoles.Customer)
+                    {
+                        throw new InvalidOperationException("User không tồn tại hoặc không phải role Customer");
+                    }
+                    var customer = await _customerRepository.CreateAsync(customerRequest, userId);
+
+                    await transaction.CommitAsync();
+
+                    _logger.LogInformation("Created customer profile for user {UserId}, CustomerCode: {CustomerCode}",
+                        userId, customer.CustomerCode);
+
+                    return customer;
                 }
-                var customer = await _customerRepository.CreateAsync(customerRequest,userId);
-
-                await transaction.CommitAsync();
-
-                _logger.LogInformation("Created customer profile for user {UserId}, CustomerCode: {CustomerCode}",
-                    userId, customer.CustomerCode);
-
-                return customer;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error creating customer profile for user {UserId}", userId);
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error creating customer profile for user {UserId}", userId);
+                    throw;
+                }
+            });
         }
 
         public async Task<CustomerResponseDto?> GetCustomerByUserIdAsync(int userId)

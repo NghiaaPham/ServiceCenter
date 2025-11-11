@@ -3,6 +3,8 @@ using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Net.Sockets;
 
 namespace EVServiceCenter.API.Controllers.Appointments
 {
@@ -201,7 +203,8 @@ namespace EVServiceCenter.API.Controllers.Appointments
             try
             {
                 var customerId = GetCurrentCustomerId();
-                var result = await _queryService.GetUpcomingByCustomerAsync(customerId, limit);
+                // Use optimized DTO projection to improve performance
+                var result = await _queryService.GetUpcomingByCustomerDtosAsync(customerId, limit);
 
                 return Success(result, $"Tìm thấy {result.Count()} lịch hẹn sắp tới");
             }
@@ -485,6 +488,94 @@ namespace EVServiceCenter.API.Controllers.Appointments
         }
 
         /// <summary>
+        /// [Thanh toán trước] Thanh toán cho lịch hẹn trước khi check-in
+        /// </summary>
+        /// <remarks>
+        /// Tạo URL thanh toán cho lịch hẹn, cho phép khách hàng thanh toán trước khi đến trung tâm.
+        ///
+        /// **Quy trình:**
+        /// 1. Kiểm tra lịch hẹn tồn tại và ở trạng thái Pending/Confirmed
+        /// 2. Kiểm tra EstimatedCost > 0 (không thanh toán nếu miễn phí)
+        /// 3. Kiểm tra chưa thanh toán
+        /// 4. Tạo hoặc lấy PaymentIntent
+        /// 5. Tạo Invoice tạm (pre-payment)
+        /// 6. Tạo URL thanh toán từ VNPay/MoMo
+        /// 7. Trả về URL để redirect khách hàng
+        ///
+        /// **Điều kiện:**
+        /// - Lịch hẹn phải ở trạng thái Pending hoặc Confirmed
+        /// - EstimatedCost > 0
+        /// - PaymentStatus != "Completed"
+        ///
+        /// **Lợi ích:**
+        /// - Khách hàng thanh toán trước, không cần chờ khi check-in
+        /// - Giảm thời gian xử lý tại quầy
+        /// - Đảm bảo thanh toán trước khi nhận dịch vụ
+        /// </remarks>
+        /// <param name="id">ID lịch hẹn</param>
+        /// <param name="request">Thông tin thanh toán (ReturnUrl, PaymentMethod)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Payment URL và thông tin thanh toán</returns>
+        [HttpPost("{id:int}/pay")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> PayAppointment(
+            int id,
+            [FromBody] PayAppointmentRequestDto request,
+            CancellationToken cancellationToken)
+        {
+            if (!IsValidRequest(request))
+            {
+                return ValidationError("Dữ liệu thanh toán không hợp lệ");
+            }
+
+            try
+            {
+                // Kiểm tra quyền
+                var existing = await _queryService.GetByIdAsync(id);
+                if (existing == null)
+                {
+                    return NotFoundError($"Không tìm thấy lịch hẹn với ID {id}");
+                }
+
+                var currentCustomerId = GetCurrentCustomerId();
+                if (existing.CustomerId != currentCustomerId)
+                {
+                    return ForbiddenError("Bạn không có quyền thanh toán cho lịch hẹn này");
+                }
+
+                var clientIp = GetClientIpAddress();
+
+                var result = await _commandService.CreatePrePaymentAsync(
+                    id,
+                    request.PaymentMethod,
+                    request.ReturnUrl,
+                    clientIp,
+                    GetCurrentUserId(),
+                    cancellationToken);
+
+                _logger.LogInformation(
+                    "Customer {CustomerId} initiated pre-payment for appointment {AppointmentId}. Invoice: {InvoiceCode}, Amount: {Amount}",
+                    currentCustomerId,
+                    id,
+                    result.InvoiceCode,
+                    result.Amount);
+
+                return Success(result, "Tạo URL thanh toán thành công. Vui lòng chuyển đến cổng thanh toán.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Invalid pre-payment attempt for appointment {AppointmentId}", id);
+                return ValidationError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating pre-payment for appointment {AppointmentId}", id);
+                return ServerError("Có lỗi xảy ra khi tạo thanh toán");
+            }
+        }
+
+        /// <summary>
         /// [Xóa] Xóa lịch hẹn (chỉ khi Pending)
         /// </summary>
         /// <remarks>
@@ -543,5 +634,66 @@ namespace EVServiceCenter.API.Controllers.Appointments
                 return ServerError("Có lỗi xảy ra khi xóa lịch hẹn");
             }
         }
+
+        private string GetClientIpAddress()
+        {
+            if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedValues))
+            {
+                var forwardedFor = forwardedValues.ToString();
+                if (!string.IsNullOrWhiteSpace(forwardedFor))
+                {
+                    var firstCandidate = forwardedFor.Split(",")[0].Trim();
+                    if (IPAddress.TryParse(firstCandidate, out var forwardedIp))
+                    {
+                        var normalizedForwarded = NormalizeIpAddress(forwardedIp);
+                        // ✅ FIX: Don't fallback to 1.1.1.1, use valid Vietnam IP
+                        if (!string.Equals(normalizedForwarded, "118.69.182.149", StringComparison.Ordinal))
+                        {
+                            return normalizedForwarded;
+                        }
+                    }
+                    else if (!string.IsNullOrWhiteSpace(firstCandidate))
+                    {
+                        return firstCandidate;
+                    }
+                }
+            }
+
+            var remoteIp = HttpContext.Connection.RemoteIpAddress;
+            return remoteIp != null
+                ? NormalizeIpAddress(remoteIp)
+                : "118.69.182.149"; // ✅ FIX: Use valid Vietnam IP instead of 1.1.1.1
+        }
+
+                private static string NormalizeIpAddress(IPAddress ipAddress)
+        {
+            if (ipAddress.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                ipAddress = ipAddress.IsIPv4MappedToIPv6
+                    ? ipAddress.MapToIPv4()
+                    : null;
+            }
+
+            if (ipAddress == null || IPAddress.IsLoopback(ipAddress))
+            {
+                return "118.69.182.149";
+            }
+
+            return ipAddress.ToString();
+        }
+
+                private static string NormalizeIpAddress(string? ipAddress)
+        {
+            if (string.IsNullOrWhiteSpace(ipAddress))
+            {
+                return "118.69.182.149";
+            }
+
+            return IPAddress.TryParse(ipAddress, out var parsed)
+                ? NormalizeIpAddress(parsed)
+                : ipAddress;
+        }
     }
 }
+
+

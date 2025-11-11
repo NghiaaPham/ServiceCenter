@@ -71,6 +71,16 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.DTOs.Responses
         public decimal PricePaid { get; set; }
 
         /// <summary>
+        /// Invoice liên kết (nếu đã tạo cho gói này)
+        /// </summary>
+        public int? InvoiceId { get; set; }
+
+        /// <summary>
+        /// Mã hóa đơn để hiển thị
+        /// </summary>
+        public string? InvoiceCode { get; set; }
+
+        /// <summary>
         /// ✅ PHASE 2: Display text cho UI
         /// Hiển thị breakdown giá cho customer
         /// </summary>

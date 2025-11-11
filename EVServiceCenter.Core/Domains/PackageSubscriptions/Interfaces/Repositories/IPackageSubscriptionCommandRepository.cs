@@ -28,6 +28,14 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Repositor
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Cập nhật invoice liên kết với subscription sau khi sinh hóa đơn
+        /// </summary>
+        Task<bool> UpdateInvoiceReferenceAsync(
+            int subscriptionId,
+            int invoiceId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Hủy subscription
         /// Set Status = Cancelled
         /// </summary>
@@ -94,6 +102,19 @@ namespace EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Repositor
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Số subscriptions đã được update</returns>
         Task<int> AutoUpdateExpiredSubscriptionsAsync(
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// 💰 [STAFF ONLY] Xác nhận thanh toán Cash/BankTransfer
+        /// Chuyển subscription từ PendingPayment → Active
+        /// </summary>
+        /// <param name="request">Thông tin xác nhận thanh toán</param>
+        /// <param name="staffUserId">ID của staff thực hiện xác nhận</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>TRUE nếu thành công</returns>
+        Task<bool> ConfirmPaymentAsync(
+            ConfirmPaymentRequestDto request,
+            int staffUserId,
             CancellationToken cancellationToken = default);
     }
 }

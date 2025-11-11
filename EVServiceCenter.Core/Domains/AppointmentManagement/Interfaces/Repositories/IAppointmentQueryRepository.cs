@@ -1,6 +1,7 @@
 ﻿using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Query;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.Shared.Models;
+using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 
 
 namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Repositories
@@ -33,6 +34,14 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Reposito
         /// Lấy các appointment sắp tới của khách hàng
         /// </summary>
         Task<IEnumerable<Appointment>> GetUpcomingByCustomerAsync(
+            int customerId,
+            int limit = 5,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// NEW: Optimized projection returning response DTOs for upcoming appointments (single-query)
+        /// </summary>
+        Task<IEnumerable<AppointmentResponseDto>> GetUpcomingDtosByCustomerAsync(
             int customerId,
             int limit = 5,
             CancellationToken cancellationToken = default);

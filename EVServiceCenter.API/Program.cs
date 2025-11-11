@@ -1,20 +1,37 @@
 ﻿using EVServiceCenter.API.Extensions;
+using EVServiceCenter.API.HostedServices;
 using EVServiceCenter.API.Mappings;
 using EVServiceCenter.API.Middleware;
 using EVServiceCenter.API.Validators;
+using EVServiceCenter.API.Realtime;
 using EVServiceCenter.Core.Domains.CustomerTypes.Validators; // Added for FluentValidation integration
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
 using EVServiceCenter.Core.Interfaces.Services;
 using EVServiceCenter.Infrastructure.JsonConverters;
-using EVServiceCenter.Infrastructure.Persistence.Seeders; // Added for ServiceCenterSeeder
+using EVServiceCenter.Infrastructure.Options;
+using EVServiceCenter.Infrastructure.Persistence.Seeders; // Added for Seeders
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore; // Added for Database.Migrate()
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
 
+// ✅ CRITICAL FIX: Set Console encoding to UTF-8 to prevent encoding issues in logs
+Console.OutputEncoding = Encoding.UTF8;
+Console.InputEncoding = Encoding.UTF8;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Enable EF Core SQL + timing logs for debugging (development only)
+// This will make EF Core log executed SQL and durations to the configured logger (Serilog)
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", Microsoft.Extensions.Logging.LogLevel.Information);
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Infrastructure", Microsoft.Extensions.Logging.LogLevel.Information);
+
+// Add SignalR for real-time chat
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserConnectionManager, InMemoryUserConnectionManager>();
+builder.Services.AddSingleton<IChatRealtimeBroadcaster, SignalRChatBroadcaster>();
 
 // Add services
 builder.Services.AddControllers()
@@ -36,6 +53,43 @@ builder.Services.AddValidatorsFromAssemblyContaining<UserValidator>();
 
 // ✅ Customer Vehicle Update Validator
 builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Infrastructure.Domains.Customers.Validators.UpdateMyVehicleValidator>();
+
+// ✅ Inventory Management Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.InventoryManagement.Validators.PartInventoryQueryValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.InventoryManagement.Validators.StockAdjustmentValidator>();
+
+// ✅ Checklist Management Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Checklists.Validators.CreateChecklistTemplateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Checklists.Validators.UpdateChecklistTemplateValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Checklists.Validators.ChecklistTemplateQueryValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Checklists.Validators.UpdateChecklistItemStatusValidator>();
+
+// ✅ Invoice Management Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Invoices.Validators.GenerateInvoiceValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Invoices.Validators.InvoiceQueryValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Invoices.Validators.SendInvoiceValidator>();
+
+// ✅ Payment Management Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Payments.Validators.CreatePaymentValidator>();
+
+// ✅ Financial Reports Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.FinancialReports.Validators.RevenueReportQueryValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.FinancialReports.Validators.PaymentReportQueryValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.FinancialReports.Validators.InvoiceReportQueryValidator>();
+
+// ✅ Phase 4: Customer Experience Validators
+// Notification Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Notifications.Validators.NotificationQueryValidator>();
+
+// Service Rating Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.ServiceRatings.Validators.CreateServiceRatingValidator>();
+
+// Chat Validators
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Chat.Validators.SendMessageValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<EVServiceCenter.Core.Domains.Chat.Validators.CreateChannelValidator>();
+
+builder.Services.Configure<SubscriptionRenewalReminderOptions>(
+    builder.Configuration.GetSection("SubscriptionRenewalReminders"));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -91,14 +145,18 @@ builder.Services.AddSwaggerGen(c =>
 // Add HttpContextAccessor (CẦN THIẾT cho HttpContextService)
 builder.Services.AddHttpContextAccessor();
 
-// MemoryCache
+// ✅ SCHOOL PROJECT: Simple MemoryCache (Redis removed - not needed for small data)
 builder.Services.AddMemoryCache();
+Console.WriteLine("✅ MemoryCache configured for application (Redis removed for simplicity)");
 
-// Add Google package
+/// Add Google package
 builder.Services.AddHttpClient();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+
+// Warm-up DB & giữ connection pool nóng để giảm độ trễ đăng nhập lần đầu
+builder.Services.AddHostedService<DatabaseWarmupHostedService>();
 
 // Logging
 builder.Host.UseSerilog((context, services, configuration) =>
@@ -126,17 +184,18 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecretKey"] ?? string.Empty)),
         ClockSkew = TimeSpan.Zero
     };
-})
-.AddGoogle(options =>
-{
-    options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-})
-.AddFacebook(options =>
-{
-    options.AppId = builder.Configuration["Authentication:Facebook:AppId"]!;
-    options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"]!;
 });
+// Comment out OAuth providers - we're verifying tokens manually
+// .AddGoogle(options =>
+// {
+//     options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+//     options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+// })
+// .AddFacebook(options =>
+// {
+//     options.AppId = builder.Configuration["Authentication:Facebook:AppId"]!;
+//     options.AppSecret = builder.Configuration["Authentication:Facebook:AppSecret"]!;
+// });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -194,13 +253,24 @@ builder.Services.AddModelServicePricingModule();
 builder.Services.AddTimeSlotModule();
 builder.Services.AddAppointmentModule(); // Appointment booking & management
 builder.Services.AddPricingModule(); // ✅ Discount calculation & promotion services
+builder.Services.AddIdentityModule();
+builder.Services.AddTechnicianManagementModule(); // ✅ PHASE 2: Technician management & auto-assignment
+builder.Services.AddShiftManagementModule(); // ✅ SPRINT 1: Attendance check-in/check-out
+builder.Services.AddInventoryManagementModule(); // ✅ PHASE 1: Inventory & Parts management
+builder.Services.AddChecklistManagementModule(); // ✅ PHASE 1: Checklist management
+builder.Services.AddChecklistModule(); // ✅ NEW: Complete/Skip/Validate/BulkComplete APIs
+builder.Services.AddInvoiceManagementModule(); // ✅ PHASE 3: Invoice management
+builder.Services.AddPaymentManagementModule(builder.Configuration); // ✅ HYBRID: Mock/Sandbox/Production
+builder.Services.AddFinancialReportModule(); // ✅ PHASE 3: Financial reports & analytics
+builder.Services.AddCustomerExperienceModule(); // ✅ PHASE 4: Notifications & Ratings
 
 // 🔒 JWT Token Blacklist Service (for logout)
-builder.Services.AddScoped<EVServiceCenter.Core.Domains.Identity.Interfaces.ITokenBlacklistService, 
+builder.Services.AddScoped<EVServiceCenter.Core.Domains.Identity.Interfaces.ITokenBlacklistService,
     EVServiceCenter.Infrastructure.Domains.Identity.Services.TokenBlacklistService>();
 
-// ⚙️ BACKGROUND SERVICES (simple singleton pattern - no IHostedService needed)
+// ⚙️ BACKGROUND SERVICES
 builder.Services.AddSingleton<EVServiceCenter.Infrastructure.BackgroundServices.AppointmentReconciliationService>();
+builder.Services.AddHostedService<EVServiceCenter.Infrastructure.BackgroundServices.AutoNotificationBackgroundService>();
 
 // ✅ SMART SUBSCRIPTION: Service Source Audit Service
 // Try to load real implementation, fallback to stub if needed
@@ -232,44 +302,98 @@ var app = builder.Build();
 // Seed data only in Development environment
 if (app.Environment.IsDevelopment())
 {
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    try
+    var seedEnabled = app.Configuration.GetValue("SeedData:Enabled", false);
+    var inventorySeedDisabled = app.Configuration.GetValue("SeedInventory:Disabled", false);
+
+    if (seedEnabled)
     {
-        var context = services.GetRequiredService<EVDbContext>();
-        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<EVDbContext>();
+            var loggerFactory = services.GetRequiredService<ILoggerFactory>();
 
-        context.Database.Migrate(); // Apply any pending migrations
+            try
+            {
+                context.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
+                context.Database.Migrate();
+            }
+            catch (Exception migEx)
+            {
+                var migLogger = loggerFactory.CreateLogger("DatabaseMigration");
+                migLogger.LogWarning(migEx, "Database migration in development failed or skipped.");
+            }
 
-        // Seed master data
-        ServiceCenterSeeder.SeedData(context);
-        CarBrandSeeder.SeedCarBrands(context);
-        CarModelSeeder.SeedCarModels(context);
-        CustomerSeeder.SeedCustomers(context);
-        CustomerVehicleSeeder.SeedCustomerVehicles(context);
-        ServiceCategorySeeder.SeedServiceCategories(context);
-        MaintenanceServiceSeeder.SeedMaintenanceServices(context);
-        ModelServicePricingSeeder.SeedModelServicePricings(context);
-        AppointmentStatusSeeder.SeedAppointmentStatuses(context);
-        WorkOrderStatusSeeder.SeedWorkOrderStatuses(context); // ✅ ADDED: Seed WorkOrderStatus
-        TimeSlotSeeder.SeedTimeSlots(context);
+            ServiceCenterSeeder.SeedData(context);
+            CarBrandSeeder.SeedCarBrands(context);
+            CarModelSeeder.SeedCarModels(context);
 
-        // Seed maintenance packages
-        var packageLogger = loggerFactory.CreateLogger<MaintenancePackageSeeder>();
-        var packageSeeder = new MaintenancePackageSeeder(context, packageLogger);
-        packageSeeder.SeedAsync().Wait();
+            // ⏭️ SKIP: CustomerType already seeded in database
+            // var customerTypeLogger = loggerFactory.CreateLogger("CustomerTypeSeeder");
+            // CustomerTypeSeeder.SeedAsync(context, customerTypeLogger).Wait();
 
-        // Seed customer package subscriptions (test data for appointments)
-        var subscriptionLogger = loggerFactory.CreateLogger<CustomerPackageSubscriptionSeeder>();
-        var subscriptionSeeder = new CustomerPackageSubscriptionSeeder(context, subscriptionLogger);
-        subscriptionSeeder.SeedAsync().Wait();
+            CustomerSeeder.SeedCustomers(context);
+            CustomerVehicleSeeder.SeedCustomerVehicles(context);
+            ServiceCategorySeeder.SeedServiceCategories(context);
+            MaintenanceServiceSeeder.SeedMaintenanceServices(context);
+            ModelServicePricingSeeder.SeedModelServicePricings(context);
+            AppointmentStatusSeeder.SeedAppointmentStatuses(context);
+            WorkOrderStatusSeeder.SeedWorkOrderStatuses(context);
+            TimeSlotSeeder.SeedTimeSlots(context);
+
+            // ✅ SEED CHECKLIST TEMPLATES (sau khi seed ServiceCategories và MaintenanceServices)
+            ChecklistTemplateSeeder.SeedChecklistTemplates(context);
+
+            TechnicianSeeder.SeedTechnicians(context);
+            EmployeeSkillSeeder.SeedEmployeeSkills(context);
+            TechnicianScheduleSeeder.SeedTechnicianSchedules(context);
+
+            // ✅ SEED TEST TECHNICIANS - 10 kỹ thuật viên với data đa dạng cho test auto-assign
+            await TechnicianTestDataSeeder.SeedAsync(context);
+
+            var packageLogger = loggerFactory.CreateLogger<MaintenancePackageSeeder>();
+            var packageSeeder = new MaintenancePackageSeeder(context, packageLogger);
+            packageSeeder.SeedAsync().Wait();
+
+            var subscriptionLogger = loggerFactory.CreateLogger<CustomerPackageSubscriptionSeeder>();
+            var subscriptionSeeder = new CustomerPackageSubscriptionSeeder(context, subscriptionLogger);
+            subscriptionSeeder.SeedAsync().Wait();
+
+            var testimonialLogger = loggerFactory.CreateLogger("ServiceRatingSeeder");
+            EVServiceCenter.Infrastructure.Persistence.Seeders.ServiceRatingSeeder.SeedDemoTestimonials(context, testimonialLogger);
+
+            var mainflowLogger = loggerFactory.CreateLogger("MainflowDemoSeeder");
+            MainflowDemoSeeder.Seed(context, mainflowLogger);
+
+            if (!inventorySeedDisabled)
+            {
+                var inventoryLogger = loggerFactory.CreateLogger("InventoryDemoSeeder");
+                InventoryDemoSeeder.Seed(context, inventoryLogger);
+            }
+            else
+            {
+                var inventoryLogger = loggerFactory.CreateLogger("InventoryDemoSeeder");
+                inventoryLogger.LogInformation("SeedInventory:Disabled = true. Skipping inventory seeding.");
+            }
+
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("Development seeding completed.");
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        }
     }
-    catch (Exception ex)
+    else
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        using var scope = app.Services.CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("SeedData:Enabled = false. Skipping development seeding.");
     }
 }
+
 app.UseMiddleware<GlobalExceptionHandler>();
 
 // Middleware pipeline
@@ -302,10 +426,13 @@ app.UseAuthentication();
 app.UseMiddleware<EVServiceCenter.API.Middlewares.TokenBlacklistMiddleware>(); // 🔒 Check revoked tokens
 app.UseMiddleware<PasswordResetRateLimitMiddleware>();
 app.UseAuthorization();
+
+// Map SignalR Hub
+app.MapHub<EVServiceCenter.API.Hubs.ChatHub>("/hubs/chat");
+
 app.MapControllers();
 
 // ⚙️ Start background services
 var reconciliationService = app.Services.GetRequiredService<EVServiceCenter.Infrastructure.BackgroundServices.AppointmentReconciliationService>();
 reconciliationService.Start();
-
 app.Run();

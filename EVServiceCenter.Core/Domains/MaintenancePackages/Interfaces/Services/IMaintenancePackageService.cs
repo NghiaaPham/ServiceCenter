@@ -42,6 +42,15 @@ namespace EVServiceCenter.Core.Domains.MaintenancePackages.Interfaces.Services
             int topCount = 5,
             CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Lấy danh sách packages khuyến nghị cho một model cụ thể
+        /// Dùng cho API GET /api/maintenance-packages/recommended?modelId={modelId}
+        /// </summary>
+        Task<List<MaintenancePackageSummaryDto>> GetRecommendedPackagesAsync(
+            int modelId,
+            int topCount = 5,
+            CancellationToken cancellationToken = default);
+
         // ========== COMMAND METHODS ==========
 
         /// <summary>

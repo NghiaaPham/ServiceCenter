@@ -25,7 +25,7 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Validators
             When(x => x.ServiceIds != null && x.ServiceIds.Any(), () =>
             {
                 RuleFor(x => x.ServiceIds)
-                    .Must(ids => ids.All(id => id > 0)).WithMessage("ID dịch vụ không hợp lệ");
+                    .Must(ids => ids != null && ids.All(id => id > 0)).WithMessage("ID dịch vụ không hợp lệ");
             });
 
             When(x => !string.IsNullOrEmpty(x.CustomerNotes), () =>

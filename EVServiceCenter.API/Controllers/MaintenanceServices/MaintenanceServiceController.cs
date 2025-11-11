@@ -36,8 +36,10 @@ namespace EVServiceCenter.API.Controllers.MaintenanceServices
 
         /// <summary>
         /// Get all maintenance services with pagination and filters
+        /// Public endpoint - No authentication required for frontend display
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll(
             [FromQuery] MaintenanceServiceQueryDto query,
             CancellationToken ct)
@@ -70,8 +72,10 @@ namespace EVServiceCenter.API.Controllers.MaintenanceServices
 
         /// <summary>
         /// Get maintenance service by ID
+        /// Public endpoint - No authentication required
         /// </summary>
         [HttpGet("{id:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
             try
@@ -116,6 +120,7 @@ namespace EVServiceCenter.API.Controllers.MaintenanceServices
         /// Get services by category
         /// </summary>
         [HttpGet("by-category/{categoryId:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetByCategory(int categoryId, CancellationToken ct)
         {
             try
@@ -270,6 +275,35 @@ namespace EVServiceCenter.API.Controllers.MaintenanceServices
             {
                 _logger.LogError(ex, "Error checking can delete {Id}", id);
                 return StatusCode(500, ApiResponse<object>.WithError("Có lỗi xảy ra", "INTERNAL_ERROR", 500));
+            }
+        }
+
+        /// <summary>
+        /// Public search endpoint with modelId and searchTerm support for Smart Search (Zone 2B)
+        /// </summary>
+        [HttpGet("search")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Search([FromQuery] int? modelId, [FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+        {
+            var query = new MaintenanceServiceQueryDto
+            {
+                Page = Math.Max(1, page),
+                PageSize = Math.Min(50, Math.Max(1, pageSize)),
+                ModelId = modelId,
+                SearchTerm = searchTerm,
+                SortBy = "ServiceName",
+                SortOrder = "asc"
+            };
+
+            try
+            {
+                var result = await _service.GetAllAsync(query, ct);
+                return Ok(ApiResponse<PagedResult<MaintenanceServiceResponseDto>>.WithSuccess(result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching maintenance services");
+                return StatusCode(500, ApiResponse<PagedResult<MaintenanceServiceResponseDto>>.WithError("Có lỗi xảy ra", "INTERNAL_ERROR", 500));
             }
         }
     }

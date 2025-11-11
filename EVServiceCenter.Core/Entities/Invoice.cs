@@ -17,7 +17,7 @@ public partial class Invoice
     public string InvoiceCode { get; set; } = null!;
 
     [Column("WorkOrderID")]
-    public int WorkOrderId { get; set; }
+    public int? WorkOrderId { get; set; } // made nullable to allow pre-payment invoices before WorkOrder exists
 
     [Column("CustomerID")]
     public int CustomerId { get; set; }
@@ -112,5 +112,5 @@ public partial class Invoice
 
     [ForeignKey("WorkOrderId")]
     [InverseProperty("Invoices")]
-    public virtual WorkOrder WorkOrder { get; set; } = null!;
+    public virtual WorkOrder? WorkOrder { get; set; } // made nullable to match WorkOrderId
 }
