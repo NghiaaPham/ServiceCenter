@@ -400,6 +400,10 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseHttpsRedirection();
 app.UseResponseCaching();
 
+// ✅ FIX: CORS MUST BE CALLED BEFORE Authentication/Authorization
+// Apply CORS policy for ALL environments
+app.UseCors(app.Environment.IsDevelopment() ? "AllowNgrok" : "AllowSpecificOrigin");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -408,11 +412,6 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "EV Service Center API V1");
         c.RoutePrefix = "swagger";
     });
-    app.UseCors("AllowNgrok");
-}
-else
-{
-    app.UseCors("AllowSpecificOrigin");
 }
 
 app.Use(async (context, next) =>
