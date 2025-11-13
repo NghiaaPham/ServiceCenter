@@ -198,36 +198,54 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             DateOnly date,
             CancellationToken cancellationToken = default)
         {
-            return await _context.Appointments
+            // ⚡ PERFORMANCE OPTIMIZED: 2-step query pattern (same as other methods)
+            
+            // STEP 1: Get appointment IDs only (FAST - no joins)
+            var appointmentIds = await _context.Appointments
                 .AsNoTracking()
                 .Where(a => a.ServiceCenterId == serviceCenterId && a.Slot!.SlotDate == date)
-                .Select(a => new Appointment
-                {
-                    AppointmentId = a.AppointmentId,
-                    AppointmentCode = a.AppointmentCode,
-                    Customer = new Customer
-                    {
-                        FullName = a.Customer.FullName,
-                        PhoneNumber = a.Customer.PhoneNumber
-                    },
-                    Vehicle = new CustomerVehicle
-                    {
-                        LicensePlate = a.Vehicle.LicensePlate
-                    },
-                    Slot = new TimeSlot
-                    {
-                        StartTime = a.Slot!.StartTime,
-                        EndTime = a.Slot.EndTime
-                    },
-                    Status = new AppointmentStatus
-                    {
-                        StatusName = a.Status.StatusName,
-                        StatusColor = a.Status.StatusColor
-                    },
-                    EstimatedDuration = a.EstimatedDuration
-                })
                 .OrderBy(a => a.Slot!.StartTime)
+                .Select(a => a.AppointmentId)
                 .ToListAsync(cancellationToken);
+
+            if (!appointmentIds.Any())
+                return Enumerable.Empty<Appointment>();
+
+            // STEP 2: Load full entities with essential includes
+            var appointments = await _context.Appointments
+                .AsNoTracking()
+                .Where(a => appointmentIds.Contains(a.AppointmentId))
+                .Include(a => a.Customer)
+                .Include(a => a.ServiceCenter)
+                .Include(a => a.Slot)
+                .Include(a => a.Status)
+                .Include(a => a.Package)
+                .Include(a => a.Vehicle)
+                    .ThenInclude(v => v.Model)
+                        .ThenInclude(m => m!.Brand)
+                .Include(a => a.PreferredTechnician)
+                .AsSplitQuery()
+                .ToListAsync(cancellationToken);
+
+            // STEP 3: Load AppointmentServices separately
+            var services = await _context.AppointmentServices
+                .AsNoTracking()
+                .Where(aps => appointmentIds.Contains(aps.AppointmentId))
+                .Include(aps => aps.Service)
+                .ToListAsync(cancellationToken);
+
+            // STEP 4: Attach services to appointments
+            foreach (var appointment in appointments)
+            {
+                appointment.AppointmentServices = services
+                    .Where(s => s.AppointmentId == appointment.AppointmentId)
+                    .ToList();
+            }
+
+            // STEP 5: Restore original order (by start time)
+            return appointmentIds
+                .Select(id => appointments.First(a => a.AppointmentId == id))
+                .ToList();
         }
 
         public async Task<IEnumerable<Appointment>> GetUpcomingByCustomerAsync(
