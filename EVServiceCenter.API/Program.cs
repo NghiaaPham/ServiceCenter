@@ -404,6 +404,26 @@ app.UseResponseCaching();
 // Apply CORS policy for ALL environments
 app.UseCors(app.Environment.IsDevelopment() ? "AllowNgrok" : "AllowSpecificOrigin");
 
+// ✅ FIX: Handle OPTIONS (preflight) requests BEFORE Authentication
+// Prevents 401 errors on CORS preflight checks
+app.Use(async (context, next) =>
+{
+    if (context.Request.Method == "OPTIONS")
+    {
+        var origin = context.Request.Headers["Origin"].ToString();
+        if (!string.IsNullOrEmpty(origin))
+        {
+            context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+            context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+            context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With";
+            context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
+        }
+        context.Response.StatusCode = 200;
+        return;
+    }
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
