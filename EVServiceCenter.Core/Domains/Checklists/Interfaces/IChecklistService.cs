@@ -31,6 +31,16 @@ public interface IChecklistService
     Task<WorkOrderChecklistResponseDto> ApplyTemplateToWorkOrderAsync(
         int workOrderId, ApplyChecklistTemplateRequestDto request, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// âœ… ISSUE #4 FIX: Auto-select default template for services
+    /// Priority: Service-specific â†’ Category-based â†’ Generic
+    /// </summary>
+    /// <param name="serviceIds">List of service IDs from WorkOrder</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Best matching template ID or null if none found</returns>
+    Task<int?> GetDefaultTemplateIdForServicesAsync(
+        List<int> serviceIds, CancellationToken cancellationToken);
+
     // Checklist Item Operations
     Task<ChecklistItemDetailResponseDto> UpdateChecklistItemAsync(
         int itemId, UpdateChecklistItemStatusRequestDto request, int updatedBy,
@@ -52,7 +62,7 @@ public interface IChecklistService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Skip m?t checklist item v?i lý do (cho optional items)
+    /// Skip m?t checklist item v?i lï¿½ do (cho optional items)
     /// </summary>
     Task<ChecklistItemResponseDto> SkipChecklistItemAsync(
         SkipChecklistItemRequestDto request,
@@ -60,8 +70,8 @@ public interface IChecklistService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Validate xem WorkOrder có th? complete không
-    /// (t?t c? required items ?ã completed)
+    /// Validate xem WorkOrder cï¿½ th? complete khï¿½ng
+    /// (t?t c? required items ?ï¿½ completed)
     /// </summary>
     Task<(bool CanComplete, List<string> MissingItems)> ValidateWorkOrderCompletionAsync(
         int workOrderId,
@@ -69,7 +79,7 @@ public interface IChecklistService
 
     /// <summary>
     /// Complete T?T C? checklist items c?a WorkOrder trong m?t l?n (bulk operation)
-    /// Use case: Auto-complete toàn b? checklist khi test ho?c khi technician hoàn thành nhanh
+    /// Use case: Auto-complete toï¿½n b? checklist khi test ho?c khi technician hoï¿½n thï¿½nh nhanh
     /// </summary>
     Task<BulkCompleteChecklistResponseDto> CompleteAllItemsAsync(
         int workOrderId,

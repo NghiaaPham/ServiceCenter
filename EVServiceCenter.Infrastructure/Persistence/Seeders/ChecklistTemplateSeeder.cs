@@ -40,15 +40,35 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
             var serviceLopChange = context.MaintenanceServices.Include(s => s.Category).FirstOrDefault(s => s.ServiceCode == "LOP-CHANGE");
             var serviceACService = context.MaintenanceServices.Include(s => s.Category).FirstOrDefault(s => s.ServiceCode == "AC-SERVICE");
 
-            var templates = new List<ChecklistTemplate>
+            // ✅ Validate required services exist before creating templates
+            var missingServices = new List<string>();
+            if (serviceBD10K == null) missingServices.Add("BD-10K");
+            if (serviceBD20K == null) missingServices.Add("BD-20K");
+            if (servicePinCheck == null) missingServices.Add("PIN-CHECK");
+            if (servicePinCool == null) missingServices.Add("PIN-COOL");
+            if (servicePhanhCheck == null) missingServices.Add("PHANH-CHECK");
+            if (servicePhanhReplace == null) missingServices.Add("PHANH-REPLACE");
+            if (serviceLopRotate == null) missingServices.Add("LOP-ROTATE");
+            if (serviceLopChange == null) missingServices.Add("LOP-CHANGE");
+            if (serviceACService == null) missingServices.Add("AC-SERVICE");
+
+            if (missingServices.Any())
             {
-                // ========== SERVICE-SPECIFIC TEMPLATES (Priority 1) ==========
-                
-                // Template cho "Bảo dưỡng 10,000 km"
-                new ChecklistTemplate
+                Console.WriteLine($"⚠️ WARNING: Missing services for checklist templates: {string.Join(", ", missingServices)}");
+                Console.WriteLine("⚠️ Corresponding service-specific templates will be skipped. Please seed MaintenanceServices first.");
+            }
+
+            var templates = new List<ChecklistTemplate>();
+
+            // ========== SERVICE-SPECIFIC TEMPLATES (Priority 1) ==========
+
+            // Template cho "Bảo dưỡng 10,000 km"
+            if (serviceBD10K != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = serviceBD10K?.ServiceId,
-                    CategoryId = serviceBD10K?.CategoryId, // Auto-fill từ service
+                    ServiceId = serviceBD10K.ServiceId,
+                    CategoryId = serviceBD10K.CategoryId,
                     TemplateName = "Checklist Bảo dưỡng 10,000 km",
                     Description = "Quy trình bảo dưỡng định kỳ cơ bản cho xe điện",
                     Items = JsonSerializer.Serialize(new[]
@@ -61,13 +81,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Bảo dưỡng 20,000 km"
-                new ChecklistTemplate
+            // Template cho "Bảo dưỡng 20,000 km"
+            if (serviceBD20K != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = serviceBD20K?.ServiceId,
-                    CategoryId = serviceBD20K?.CategoryId, // Auto-fill từ service
+                    ServiceId = serviceBD20K.ServiceId,
+                    CategoryId = serviceBD20K.CategoryId,
                     TemplateName = "Checklist Bảo dưỡng 20,000 km",
                     Description = "Quy trình bảo dưỡng toàn diện",
                     Items = JsonSerializer.Serialize(new[]
@@ -82,13 +105,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Kiểm tra sức khỏe pin"
-                new ChecklistTemplate
+            // Template cho "Kiểm tra sức khỏe pin"
+            if (servicePinCheck != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = servicePinCheck?.ServiceId,
-                    CategoryId = servicePinCheck?.CategoryId, // Auto-fill từ service
+                    ServiceId = servicePinCheck.ServiceId,
+                    CategoryId = servicePinCheck.CategoryId,
                     TemplateName = "Checklist Kiểm tra Pin",
                     Description = "Chẩn đoán và kiểm tra hệ thống pin xe điện",
                     Items = JsonSerializer.Serialize(new[]
@@ -104,13 +130,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Bảo dưỡng hệ thống làm mát pin"
-                new ChecklistTemplate
+            // Template cho "Bảo dưỡng hệ thống làm mát pin"
+            if (servicePinCool != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = servicePinCool?.ServiceId,
-                    CategoryId = servicePinCool?.CategoryId, // Auto-fill từ service
+                    ServiceId = servicePinCool.ServiceId,
+                    CategoryId = servicePinCool.CategoryId,
                     TemplateName = "Checklist Làm mát Pin",
                     Description = "Bảo dưỡng hệ thống làm mát pin EV",
                     Items = JsonSerializer.Serialize(new[]
@@ -127,13 +156,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Kiểm tra hệ thống phanh"
-                new ChecklistTemplate
+            // Template cho "Kiểm tra hệ thống phanh"
+            if (servicePhanhCheck != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = servicePhanhCheck?.ServiceId,
-                    CategoryId = servicePhanhCheck?.CategoryId, // Auto-fill từ service
+                    ServiceId = servicePhanhCheck.ServiceId,
+                    CategoryId = servicePhanhCheck.CategoryId,
                     TemplateName = "Checklist Kiểm tra Phanh",
                     Description = "Kiểm tra tổng quan hệ thống phanh",
                     Items = JsonSerializer.Serialize(new[]
@@ -147,13 +179,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Thay má phanh trước"
-                new ChecklistTemplate
+            // Template cho "Thay má phanh trước"
+            if (servicePhanhReplace != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = servicePhanhReplace?.ServiceId,
-                    CategoryId = servicePhanhReplace?.CategoryId, // Auto-fill từ service
+                    ServiceId = servicePhanhReplace.ServiceId,
+                    CategoryId = servicePhanhReplace.CategoryId,
                     TemplateName = "Checklist Thay Má Phanh",
                     Description = "Quy trình thay má phanh trước",
                     Items = JsonSerializer.Serialize(new[]
@@ -170,13 +205,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Cân chỉnh và xoay lốp"
-                new ChecklistTemplate
+            // Template cho "Cân chỉnh và xoay lốp"
+            if (serviceLopRotate != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = serviceLopRotate?.ServiceId,
-                    CategoryId = serviceLopRotate?.CategoryId, // Auto-fill từ service
+                    ServiceId = serviceLopRotate.ServiceId,
+                    CategoryId = serviceLopRotate.CategoryId,
                     TemplateName = "Checklist Xoay và Cân Chỉnh Lốp",
                     Description = "Quy trình xoay vị trí và cân chỉnh lốp",
                     Items = JsonSerializer.Serialize(new[]
@@ -191,13 +229,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Thay lốp xe"
-                new ChecklistTemplate
+            // Template cho "Thay lốp xe"
+            if (serviceLopChange != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = serviceLopChange?.ServiceId,
-                    CategoryId = serviceLopChange?.CategoryId, // Auto-fill từ service
+                    ServiceId = serviceLopChange.ServiceId,
+                    CategoryId = serviceLopChange.CategoryId,
                     TemplateName = "Checklist Thay Lốp",
                     Description = "Quy trình thay lốp xe điện",
                     Items = JsonSerializer.Serialize(new[]
@@ -213,13 +254,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho "Bảo dưỡng điều hòa"
-                new ChecklistTemplate
+            // Template cho "Bảo dưỡng điều hòa"
+            if (serviceACService != null)
+            {
+                templates.Add(new ChecklistTemplate
                 {
-                    ServiceId = serviceACService?.ServiceId,
-                    CategoryId = serviceACService?.CategoryId, // Auto-fill từ service
+                    ServiceId = serviceACService.ServiceId,
+                    CategoryId = serviceACService.CategoryId,
                     TemplateName = "Checklist Bảo dưỡng Điều hòa",
                     Description = "Quy trình bảo dưỡng hệ thống điều hòa",
                     Items = JsonSerializer.Serialize(new[]
@@ -234,15 +278,18 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // ========== CATEGORY-SPECIFIC TEMPLATES (Priority 2) ==========
+            // ========== CATEGORY-SPECIFIC TEMPLATES (Priority 2) ==========
 
-                // Template cho Category "Pin và động cơ điện"
-                new ChecklistTemplate
+            // Template cho Category "Pin và động cơ điện"
+            if (categoryPin.HasValue)
+            {
+                templates.Add(new ChecklistTemplate
                 {
                     ServiceId = null,
-                    CategoryId = categoryPin,
+                    CategoryId = categoryPin.Value,
                     TemplateName = "Checklist Pin và Động cơ điện (Chung)",
                     Description = "Template chung cho các dịch vụ liên quan đến pin và động cơ",
                     Items = JsonSerializer.Serialize(new[]
@@ -254,13 +301,16 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // Template cho Category "Hệ thống phanh"
-                new ChecklistTemplate
+            // Template cho Category "Hệ thống phanh"
+            if (categoryPhanh.HasValue)
+            {
+                templates.Add(new ChecklistTemplate
                 {
                     ServiceId = null,
-                    CategoryId = categoryPhanh,
+                    CategoryId = categoryPhanh.Value,
                     TemplateName = "Checklist Hệ thống Phanh (Chung)",
                     Description = "Template chung cho các dịch vụ phanh",
                     Items = JsonSerializer.Serialize(new[]
@@ -271,11 +321,12 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                },
+                });
+            }
 
-                // ========== GENERIC TEMPLATE (Priority 3) ==========
+            // ========== GENERIC TEMPLATE (Priority 3) ==========
 
-                new ChecklistTemplate
+            templates.Add(new ChecklistTemplate
                 {
                     ServiceId = null,
                     CategoryId = null,
@@ -292,13 +343,20 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                     }, _jsonOptions),
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
-                }
-            };
+                });
 
-            context.ChecklistTemplates.AddRange(templates);
-            context.SaveChanges();
+            // ✅ Only add templates if we have any (avoid empty collection)
+            if (templates.Any())
+            {
+                context.ChecklistTemplates.AddRange(templates);
+                context.SaveChanges();
 
-            Console.WriteLine($"✓ Seeded {templates.Count} checklist templates successfully");
+                Console.WriteLine($"✅ Seeded {templates.Count} checklist templates successfully");
+            }
+            else
+            {
+                Console.WriteLine("⚠️ No checklist templates were created. Please check service and category data.");
+            }
         }
     }
 }

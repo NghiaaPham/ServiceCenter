@@ -1,4 +1,4 @@
-using EVServiceCenter.Core.Domains.Checklists.DTOs.Requests;
+Ôªøusing EVServiceCenter.Core.Domains.Checklists.DTOs.Requests;
 using EVServiceCenter.Core.Domains.Checklists.DTOs.Responses;
 using EVServiceCenter.Core.Domains.Checklists.Interfaces;
 using EVServiceCenter.Core.Domains.Shared.Models;
@@ -219,6 +219,46 @@ public class ChecklistService : IChecklistService
         }
     }
 
+    /// <summary>
+    /// Determine default template based on provided services
+    /// </summary>
+    public async Task<int?> GetDefaultTemplateIdForServicesAsync(
+        List<int> serviceIds,
+        CancellationToken cancellationToken)
+    {
+        if (serviceIds == null || serviceIds.Count == 0)
+        {
+            _logger.LogWarning("Cannot determine default checklist template because service list is empty");
+            return null;
+        }
+
+        try
+        {
+            var templateId = await _repository.FindBestTemplateIdForServicesAsync(serviceIds, cancellationToken);
+
+            if (templateId.HasValue)
+            {
+                _logger.LogInformation(
+                    "Auto-selected checklist template {TemplateId} for service ids: {ServiceIds}",
+                    templateId.Value, string.Join(", ", serviceIds));
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "No checklist template found for service ids: {ServiceIds}",
+                    string.Join(", ", serviceIds));
+            }
+
+            return templateId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Error finding default checklist template for services: {ServiceIds}",
+                string.Join(", ", serviceIds));
+            throw;
+        }
+    }
     #endregion
 
     #region Checklist Item Operations
@@ -354,7 +394,7 @@ public class ChecklistService : IChecklistService
     }
 
     /// <summary>
-    /// ?? Skip m?t checklist item v?i l˝ do (cho optional items)
+    /// ?? Skip m?t checklist item v?i l√Ω do (cho optional items)
     /// </summary>
     public async Task<ChecklistItemResponseDto> SkipChecklistItemAsync(
         SkipChecklistItemRequestDto request,
@@ -410,7 +450,7 @@ public class ChecklistService : IChecklistService
     }
 
     /// <summary>
-    /// ?? Validate xem WorkOrder cÛ th? complete khÙng
+    /// ?? Validate xem WorkOrder c√≥ th? complete kh√¥ng
     /// </summary>
     public async Task<(bool CanComplete, List<string> MissingItems)> ValidateWorkOrderCompletionAsync(
         int workOrderId,
@@ -425,7 +465,7 @@ public class ChecklistService : IChecklistService
             if (checklist == null)
                 throw new KeyNotFoundException($"Work order {workOrderId} not found");
 
-            // L?y c·c required items ch?a completed
+            // L?y c√°c required items ch?a completed
             var missingItems = checklist.Items
                 .Where(i => i.IsRequired && !i.IsCompleted)
                 .Select(i => i.ItemDescription)
@@ -475,7 +515,7 @@ public class ChecklistService : IChecklistService
 
     /// <summary>
     /// Complete T?T C? checklist items c?a WorkOrder trong m?t l?n (bulk operation)
-    /// Use case: Auto-complete to‡n b? checklist khi test ho?c khi technician ho‡n th‡nh nhanh
+    /// Use case: Auto-complete to√†n b? checklist khi test ho?c khi technician ho√†n th√†nh nhanh
     /// FIX: Load CompletedByName from User entity
     /// </summary>
     public async Task<BulkCompleteChecklistResponseDto> CompleteAllItemsAsync(
@@ -632,3 +672,4 @@ public class ChecklistService : IChecklistService
 
     #endregion
 }
+

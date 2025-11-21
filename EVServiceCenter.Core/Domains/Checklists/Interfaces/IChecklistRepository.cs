@@ -33,6 +33,13 @@ public interface IChecklistRepository
         int workOrderId, int templateId, List<ChecklistTemplateItemDto>? customItems,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Find best matching template for provided services following Service -> Category -> Generic priority
+    /// </summary>
+    Task<int?> FindBestTemplateIdForServicesAsync(
+        List<int> serviceIds,
+        CancellationToken cancellationToken);
+
     // Checklist Item Operations
     Task<ChecklistItemDetailResponseDto> UpdateChecklistItemAsync(
         int itemId, UpdateChecklistItemStatusRequestDto request, int updatedBy,

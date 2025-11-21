@@ -7,6 +7,7 @@ using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using System.Text.Json;
 
 namespace EVServiceCenter.Infrastructure.Domains.Checklists.Repositories;
@@ -420,6 +421,82 @@ public class ChecklistRepository : IChecklistRepository
                 throw;
             }
         });
+    }
+
+    /// <summary>
+    /// Find template id for provided services following Service -> Category -> Generic priority
+    /// </summary>
+    public async Task<int?> FindBestTemplateIdForServicesAsync(
+        List<int> serviceIds,
+        CancellationToken cancellationToken)
+    {
+        if (serviceIds == null || serviceIds.Count == 0)
+            return null;
+
+        var distinctServiceIds = serviceIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (!distinctServiceIds.Any())
+            return null;
+
+        // Priority 1: service-specific templates
+        var serviceTemplates = await _context.ChecklistTemplates
+            .Where(t => t.IsActive == true &&
+                        t.ServiceId.HasValue &&
+                        distinctServiceIds.Contains(t.ServiceId.Value))
+            .ToListAsync(cancellationToken);
+
+        var orderedServiceTemplate = serviceTemplates
+            .OrderBy(t => distinctServiceIds.IndexOf(t.ServiceId!.Value))
+            .FirstOrDefault();
+
+        if (orderedServiceTemplate != null)
+            return orderedServiceTemplate.TemplateId;
+
+        // Priority 2: category-specific templates
+        var serviceCategoryMap = await _context.MaintenanceServices
+            .Where(s => distinctServiceIds.Contains(s.ServiceId))
+            .Select(s => new { s.ServiceId, s.CategoryId })
+            .ToListAsync(cancellationToken);
+
+        var categoryPriority = new List<int>();
+        foreach (var serviceId in distinctServiceIds)
+        {
+            var detail = serviceCategoryMap.FirstOrDefault(d => d.ServiceId == serviceId);
+            if (detail?.CategoryId != null && !categoryPriority.Contains(detail.CategoryId))
+            {
+                categoryPriority.Add(detail.CategoryId);
+            }
+        }
+
+        if (categoryPriority.Any())
+        {
+            var categoryTemplates = await _context.ChecklistTemplates
+                .Where(t => t.IsActive == true &&
+                            t.ServiceId == null &&
+                            t.CategoryId.HasValue &&
+                            categoryPriority.Contains(t.CategoryId.Value))
+                .ToListAsync(cancellationToken);
+
+            var orderedCategoryTemplate = categoryTemplates
+                .OrderBy(t => categoryPriority.IndexOf(t.CategoryId!.Value))
+                .FirstOrDefault();
+
+            if (orderedCategoryTemplate != null)
+                return orderedCategoryTemplate.TemplateId;
+        }
+
+        // Priority 3: generic template
+        var genericTemplate = await _context.ChecklistTemplates
+            .Where(t => t.IsActive == true &&
+                        t.ServiceId == null &&
+                        t.CategoryId == null)
+            .OrderBy(t => t.TemplateId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return genericTemplate?.TemplateId;
     }
 
     #endregion
