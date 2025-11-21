@@ -35,3 +35,30 @@ Migrations/
 *.publishsettings
 *.tmp
 *.bak
+
+# 1. Bỏ qua tất cả mọi thứ
+*
+
+# 2. NGOẠI TRỪ: Giữ lại các thư mục để có thể duyệt vào trong
+!*/
+
+# 3. NGOẠI TRỪ: Giữ lại các file có đuôi .cs trong mọi thư mục con
+!**/*.cs
+
+*.txt
+
+# 4. NGOẠI TRỪ: Giữ lại các file appsettings.json và appsettings.Development.json
+!**/appsettings.json
+!**/appsettings.Development.json
+
+# 5. NGOẠI TRỪ: Giữ lại các file project và solution để duy trì cấu trúc dự án
+!*.sln
+!*.csproj
+
+# 6. NGOẠI TRỪ: Luôn giữ lại chính file .gitignore
+!.gitignore
+
+# 7. Bỏ qua các thư mục build và file log không cần thiết
+[Bb]in/
+[Oo]bj/
+logs/
