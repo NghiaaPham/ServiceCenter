@@ -120,12 +120,12 @@ public class PaymentController : ControllerBase
             "VNPay Return: TxnRef={TxnRef}, ResponseCode={ResponseCode}, Redirect={Redirect}",
             callback.vnp_TxnRef, callback.vnp_ResponseCode, redirect);
 
-        // Process payment (idempotent - safe if IPN already handled it)
+     
         var result = await _paymentService.ProcessVNPayCallbackAsync(callback, cancellationToken);
 
         var success = result.Status == PaymentCallbackStatus.Success || result.Status == PaymentCallbackStatus.AlreadyProcessed;
         
-        // Use redirect parameter from query string if provided
+      
         var redirectUrl = BuildFrontendRedirectUrl(callback.vnp_TxnRef, success, redirect);
 
         if (Uri.IsWellFormedUriString(redirectUrl, UriKind.Absolute))
@@ -134,7 +134,7 @@ public class PaymentController : ControllerBase
             return Redirect(redirectUrl);
         }
 
-        // Fallback: return simple JSON response
+      
         return Ok(new
         {
             success,
@@ -382,7 +382,7 @@ public class PaymentController : ControllerBase
     /// [Details] Get payment by code
     /// </summary>
     [HttpGet("by-code/{code}")]
-    [Authorize]
+    [AllowAnonymous] // Cho phép FE kiểm tra kết quả sau redirect từ cổng thanh toán mà không cần access token
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPaymentByCode(string code, CancellationToken cancellationToken)

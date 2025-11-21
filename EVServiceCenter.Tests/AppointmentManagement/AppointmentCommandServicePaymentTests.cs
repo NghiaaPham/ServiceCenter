@@ -77,7 +77,8 @@ namespace EVServiceCenter.Tests.AppointmentManagement
           _context,
           configuration,
           NullLogger<AppointmentCommandService>.Instance,
-          Mock.Of<IInvoiceService>()); // ✅ ADDED: Mock IChecklistService
+          Mock.Of<IInvoiceService>(),
+          Mock.Of<IChecklistService>()); // âœ… ADDED: Mock IChecklistService
     }
 
     [Fact]
@@ -150,7 +151,7 @@ namespace EVServiceCenter.Tests.AppointmentManagement
       Func<Task> act = async () => await _service.CreatePaymentIntentAsync(request, currentUserId: 1, CancellationToken.None);
 
       await act.Should().ThrowAsync<InvalidOperationException>()
-          .WithMessage("Lịch hẹn không còn khoản cần thanh toán");
+          .WithMessage("Lá»‹ch háº¹n khÃ´ng cÃ²n khoáº£n cáº§n thanh toÃ¡n");
     }
 
     [Fact]
@@ -180,7 +181,7 @@ namespace EVServiceCenter.Tests.AppointmentManagement
       Func<Task> act = async () => await _service.CreatePaymentIntentAsync(request, currentUserId: 1, CancellationToken.None);
 
       await act.Should().ThrowAsync<InvalidOperationException>()
-          .WithMessage("Số tiền yêu cầu vượt quá khoản outstanding hiện tại");
+          .WithMessage("Sá»‘ tiá»n yÃªu cáº§u vÆ°á»£t quÃ¡ khoáº£n outstanding hiá»‡n táº¡i");
     }
 
     public void Dispose()
