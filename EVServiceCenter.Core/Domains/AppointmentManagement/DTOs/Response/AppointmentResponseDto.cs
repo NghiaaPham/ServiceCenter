@@ -75,5 +75,12 @@
         // Cancellation/Reschedule
         public string? CancellationReason { get; set; }
         public int? RescheduledFromId { get; set; }
+
+        /// <summary>
+        /// ✅ ISSUE #1 FIX: Payment warning message for frontend
+        /// Displayed when check-in with outstanding payment
+        /// Example: "⚠️ Khách hàng còn công nợ 500,000đ. Vui lòng thu tiền trước khi giao xe."
+        /// </summary>
+        public string? Message { get; set; }
     }
 }

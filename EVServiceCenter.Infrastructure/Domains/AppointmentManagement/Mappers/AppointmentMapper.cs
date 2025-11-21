@@ -4,6 +4,7 @@ using System.Linq;
 using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
 using EVServiceCenter.Core.Domains.Payments.Entities;
+using EVServiceCenter.Core.Extensions;
 
 
 namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
@@ -78,7 +79,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 PaidAmount = appointment.PaidAmount,
                 PaymentIntentCount = appointment.PaymentIntentCount,
                 LatestPaymentIntentId = appointment.LatestPaymentIntentId,
-                OutstandingAmount = CalculateOutstandingAmount(appointment),
+                OutstandingAmount = appointment.GetOutstandingAmount(), // ✅ USE EXTENSION METHOD
 
                 // ✅ DISCOUNT INFO: Build DiscountSummary from stored fields
                 DiscountSummary = BuildDiscountSummary(appointment),
@@ -139,12 +140,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 StatusColor = baseDto.StatusColor,
                 EstimatedDuration = baseDto.EstimatedDuration,
                 EstimatedCost = baseDto.EstimatedCost,
-                FinalCost = baseDto.FinalCost, // ✅ FIX: Copy FinalCost
-                PaymentStatus = baseDto.PaymentStatus, // ✅ FIX: Copy PaymentStatus
-                PaidAmount = baseDto.PaidAmount, // ✅ FIX: Copy PaidAmount
-                PaymentIntentCount = baseDto.PaymentIntentCount, // ✅ FIX: Copy PaymentIntentCount
-                LatestPaymentIntentId = baseDto.LatestPaymentIntentId, // ✅ FIX: Copy LatestPaymentIntentId
-                OutstandingAmount = baseDto.OutstandingAmount, // ✅ FIX: Copy OutstandingAmount
+                FinalCost = baseDto.FinalCost,
+                PaymentStatus = baseDto.PaymentStatus,
+                PaidAmount = baseDto.PaidAmount,
+                PaymentIntentCount = baseDto.PaymentIntentCount,
+                LatestPaymentIntentId = baseDto.LatestPaymentIntentId,
+                OutstandingAmount = baseDto.OutstandingAmount, // ✅ Already using extension method
                 CustomerNotes = baseDto.CustomerNotes,
                 Priority = baseDto.Priority,
                 Source = baseDto.Source,
@@ -168,7 +169,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 UpdatedBy = appointment.UpdatedBy,
                 UpdatedByName = appointment.UpdatedByNavigation?.FullName,
 
-                // ✅ TODO: WorkOrders mapping (needs WorkOrder entity check)
+                // WorkOrders mapping
                 WorkOrders = appointment.WorkOrders?
                     .Select(wo => new WorkOrderSummaryDto
                     {
@@ -289,14 +290,6 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Mappers
                 AppliedDiscountType = appointment.DiscountType ?? "None",
                 FinalTotal = finalTotal
             };
-        }
-
-        private static decimal CalculateOutstandingAmount(Appointment appointment)
-        {
-            decimal finalCost = appointment.FinalCost ?? appointment.EstimatedCost ?? 0m;
-            decimal paidAmount = appointment.PaidAmount ?? 0m;
-            var outstanding = finalCost - paidAmount;
-            return outstanding > 0 ? outstanding : 0;
         }
     }
 }

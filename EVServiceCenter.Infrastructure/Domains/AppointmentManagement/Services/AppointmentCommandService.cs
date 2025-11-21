@@ -1,4 +1,4 @@
-﻿using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Request;
+using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Request;
 using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using AdjustServiceSourceResponseDto = EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response.AdjustServiceSourceResponseDto;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Entities;
@@ -7,6 +7,7 @@ using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using EVServiceCenter.Core.Domains.CustomerVehicles.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.MaintenanceServices.Entities;
 using EVServiceCenter.Core.Domains.MaintenanceServices.Interfaces.Repositories;
+using EVServiceCenter.Core.Domains.Checklists.Interfaces;
 using EVServiceCenter.Core.Domains.Invoices.Interfaces;
 using EVServiceCenter.Core.Domains.ModelServicePricings.Interfaces.Repositories;
 using EVServiceCenter.Core.Domains.PackageSubscriptions.Interfaces.Repositories;
@@ -53,9 +54,11 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
         private readonly IPaymentService _paymentService;
         private readonly IRefundRepository _refundRepository;
         private readonly IInvoiceService _invoiceService;
+        private readonly IChecklistService _checklistService;
         private readonly EVDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AppointmentCommandService> _logger;
+        private readonly decimal _vatRate;
 
         public AppointmentCommandService(
             IAppointmentRepository repository,
@@ -77,7 +80,8 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             EVDbContext context,
             IConfiguration configuration,
             ILogger<AppointmentCommandService> logger,
-            IInvoiceService invoiceService)
+            IInvoiceService invoiceService,
+            IChecklistService checklistService)
         {
             _repository = repository;
             _commandRepository = commandRepository;
@@ -99,6 +103,8 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             _configuration = configuration;
             _logger = logger;
             _invoiceService = invoiceService ?? throw new ArgumentNullException(nameof(invoiceService));
+            _checklistService = checklistService ?? throw new ArgumentNullException(nameof(checklistService));
+            _vatRate = _configuration.GetValue<decimal>("Tax:VATRate", 0.08m);
         }
 
         public async Task<AppointmentResponseDto> CreateAsync(
@@ -294,7 +300,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
                 initialPaymentIntent = _paymentIntentService.BuildPendingIntent(
                     request.CustomerId,
-                    finalCost,
+                    ApplyVat(finalCost),
                     currentUserId,
                     currency: "VND",
                     expiresAt: intentExpiry,
@@ -582,7 +588,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
                 var newIntent = _paymentIntentService.BuildPendingIntent(
                     appointment.CustomerId,
-                    requestedAmount,
+                    ApplyVat(requestedAmount),
                     currentUserId,
                     normalizedCurrency,
                     expiresAt,
@@ -649,7 +655,6 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
             if (canonicalMethod == null)
             {
-                throw new InvalidOperationException("Ch? h? tr? thanh to�n tru?c b??ng VNPay ho?c MoMo.");
                 throw new InvalidOperationException("Chỉ hỗ trợ thanh toán trước bằng VNPay hoặc MoMo.");
             }
 
@@ -666,21 +671,18 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
             if (appointment == null)
             {
-                throw new InvalidOperationException("Appointment kh�ng t?n t?i.");
                 throw new InvalidOperationException("Appointment không tồn tại.");
             }
 
             if (appointment.StatusId != (int)AppointmentStatusEnum.Pending &&
                 appointment.StatusId != (int)AppointmentStatusEnum.Confirmed)
             {
-                throw new InvalidOperationException("Ch? c� th? thanh to�n tru?c cho l?ch Pending ho?c Confirmed.");
                 throw new InvalidOperationException("Chỉ có thể thanh toán trước cho lịch Pending hoặc Confirmed.");
             }
 
             var targetAmount = appointment.FinalCost ?? appointment.EstimatedCost ?? 0m;
             if (targetAmount <= 0)
             {
-                throw new InvalidOperationException("L?ch h?n kh�ng c� chi ph� c?n thanh to�n.");
                 throw new InvalidOperationException("Lịch hẹn không có chi phí cần thanh toán.");
             }
 
@@ -688,7 +690,6 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             var outstanding = Math.Max(targetAmount - paidAmount, 0m);
             if (outstanding <= 0)
             {
-                throw new InvalidOperationException("L?ch h?n da thanh to�n d?.");
                 throw new InvalidOperationException("Lịch hẹn đã thanh toán đủ.");
             }
 
@@ -708,7 +709,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 var expiresAt = DateTime.UtcNow.AddHours(expiryHours);
                 var newIntent = _paymentIntentService.BuildPendingIntent(
                     appointment.CustomerId,
-                    outstanding,
+                    ApplyVat(outstanding),
                     userId,
                     "VND",
                     expiresAt,
@@ -976,7 +977,6 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                     break;
 
                 default:
-                    // ❌ LẦN 3+: Yêu cầu staff approval (block API)
                     _logger.LogWarning(
                         "Excessive reschedule attempt ({Count} times) blocked for appointment {AppointmentId}, customer {CustomerId}. " +
                         "Staff approval required.",
@@ -989,46 +989,41 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                         "Hoặc bạn có thể HỦY lịch hẹn hiện tại và TẠO LỊCH MỚI.");
             }
 
-            // ========== NEW SLOT VALIDATION ==========
-
-            // 7. Validate new slot tồn tại
             var newSlot = await _slotRepository.GetByIdAsync(request.NewSlotId, cancellationToken);
             if (newSlot == null)
                 throw new InvalidOperationException("Slot mới không tồn tại");
 
-            // 8. Kiểm tra slot không ở quá khứ
+          
             var newSlotDateTime = newSlot.SlotDate.ToDateTime(newSlot.StartTime);
             if (newSlotDateTime < DateTime.UtcNow)
                 throw new InvalidOperationException(
                     "Không thể dời lịch sang khung giờ ở trong quá khứ");
 
-            // 9. Kiểm tra không được chọn cùng slot
+           
             if (oldAppointment.SlotId == request.NewSlotId)
                 throw new InvalidOperationException(
                     "Slot mới trùng với slot hiện tại. Vui lòng chọn khung giờ khác.");
 
-            // 10. Kiểm tra slot còn chỗ không
+          
             int activeCount = await _queryRepository.GetActiveCountBySlotIdAsync(
                 request.NewSlotId, cancellationToken);
 
             if (activeCount >= newSlot.MaxBookings)
                 throw new InvalidOperationException("Slot mới đã đầy");
 
-            // 10.5. ✅ VEHICLE CONFLICT VALIDATION (với actual duration)
-            // Kiểm tra xe không bị conflict thời gian với appointment khác
+           
             int estimatedDuration = oldAppointment.EstimatedDuration ?? 60; // Default 60 phút nếu null
 
             await ValidateVehicleTimeConflict(
                 oldAppointment.VehicleId,
                 request.NewSlotId,
-                estimatedDuration, // ✅ Truyền actual duration
-                excludeAppointmentId: request.AppointmentId, // Loại trừ appointment đang reschedule
+                estimatedDuration, 
+                excludeAppointmentId: request.AppointmentId, 
                 cancellationToken);
 
-            // 10.6. ✅ TECHNICIAN CONFLICT VALIDATION (với actual duration, PER CENTER)
             await ValidateTechnicianConflict(
                 oldAppointment.PreferredTechnicianId,
-                oldAppointment.ServiceCenterId,  // ✅ PER CENTER
+                oldAppointment.ServiceCenterId,  
                 newSlot.SlotDate.ToDateTime(newSlot.StartTime),
                 estimatedDuration,
                 excludeAppointmentId: request.AppointmentId,
@@ -1454,7 +1449,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
 
                 var additionalPaymentIntent = _paymentIntentService.BuildPendingIntent(
                     appointment.CustomerId,
-                    totalAdditionalCost,
+                    ApplyVat(totalAdditionalCost),
                     currentUserId,
                     currency: "VND",
                     expiresAt: intentExpiry,
@@ -2997,6 +2992,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
         /// - Hủy >= 2h trước: 50%
         /// - Hủy < 2h: 0% (giữ toàn bộ phí)
         /// </summary>
+        private decimal ApplyVat(decimal net)
+        {
+            var vatAmount = decimal.Round(net * _vatRate, 0, MidpointRounding.AwayFromZero);
+            return net + vatAmount;
+        }
+
         private decimal CalculateRefundAmount(
             Appointment appointment,
             DateTime cancelledAt)
