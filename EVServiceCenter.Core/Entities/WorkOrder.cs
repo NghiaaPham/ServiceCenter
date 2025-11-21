@@ -22,6 +22,9 @@ public partial class WorkOrder
     [Column("AppointmentID")]
     public int? AppointmentId { get; set; }
 
+    [StringLength(20)]
+    public string? AppointmentCode { get; set; }
+
     [Column("CustomerID")]
     public int CustomerId { get; set; }
 

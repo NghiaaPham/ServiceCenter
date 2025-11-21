@@ -1,6 +1,8 @@
 using EVServiceCenter.Core.Domains.Shared.Models;
 using EVServiceCenter.Core.Domains.WorkOrders.DTOs.Requests;
 using EVServiceCenter.Core.Domains.WorkOrders.Interfaces;
+using EVServiceCenter.Core.Domains.Invoices.DTOs.Responses;
+using EVServiceCenter.Core.Domains.Invoices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,13 +19,16 @@ namespace EVServiceCenter.API.Controllers.WorkOrders;
 public class WorkOrderLifecycleController : BaseController
 {
     private readonly IWorkOrderService _workOrderService;
+    private readonly IInvoiceService _invoiceService;
     private readonly ILogger<WorkOrderLifecycleController> _logger;
 
     public WorkOrderLifecycleController(
         IWorkOrderService workOrderService,
+        IInvoiceService invoiceService,
         ILogger<WorkOrderLifecycleController> logger)
     {
         _workOrderService = workOrderService;
+        _invoiceService = invoiceService;
         _logger = logger;
     }
 
@@ -278,6 +283,150 @@ public class WorkOrderLifecycleController : BaseController
         {
             _logger.LogError(ex, "Error adding part to work order {WorkOrderId}", id);
             return ValidationError(ex.Message);
+        }
+    }
+
+    #endregion
+
+    #region Delivery Validation (ISSUE #1 FIX - Point 3)
+
+    /// <summary>
+    /// [ISSUE #1 FIX] Validate if work order can be delivered to customer
+    ///
+    /// **Business Rules:**
+    /// - WorkOrder must be Completed
+    /// - Invoice must be fully paid (OutstandingAmount = 0)
+    /// - Quality check must be completed (if required)
+    ///
+    /// **Use Case:**
+    /// Staff calls this API before allowing customer to pick up vehicle.
+    /// Frontend shows payment reminder if invoice is not fully paid.
+    ///
+    /// **Response:**
+    /// ```json
+    /// {
+    ///   "canDeliver": true/false,
+    ///   "reason": "error message if cannot deliver",
+    ///   "outstandingAmount": 0,
+    ///   "invoiceCode": "INV-...",
+    ///   "message": "success message"
+    /// }
+    /// ```
+    /// </summary>
+    /// <param name="id">Work order ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Delivery validation result</returns>
+    [HttpGet("{id:int}/validate-delivery")]
+    [Authorize(Policy = "AllInternal")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ValidateDelivery(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+
+            _logger.LogInformation(
+                "Validating delivery for WorkOrder {WorkOrderId} by user {UserId}",
+                id, userId);
+
+            var workOrder = await _workOrderService.GetWorkOrderAsync(id, cancellationToken);
+
+            if (workOrder == null)
+            {
+                return NotFoundError($"Work order {id} not found");
+            }
+
+            // ✅ Check 1: WorkOrder must be Completed
+            if (!string.Equals(workOrder.StatusName, "Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                return Success(new
+                {
+                    CanDeliver = false,
+                    Reason = $"WorkOrder chưa hoàn thành. Trạng thái hiện tại: {workOrder.StatusName ?? "Unknown"}",
+                    WorkOrderCode = workOrder.WorkOrderCode,
+                    CurrentStatus = workOrder.StatusName
+                });
+            }
+
+            // ✅ Check outstanding payment (use appointment snapshot fields)
+            var outstandingAmount = workOrder.AppointmentOutstandingAmount ?? 0m;
+
+            if (outstandingAmount > 0)
+            {
+                _logger.LogWarning(
+                    "WorkOrder {WorkOrderCode} cannot be delivered. Outstanding payment: {Outstanding}đ",
+                    workOrder.WorkOrderCode, outstandingAmount);
+
+                // ✅ Get invoice information for payment endpoints
+                InvoiceResponseDto? invoice = null;
+                try
+                {
+                    invoice = await _invoiceService.GetInvoiceByWorkOrderIdAsync(id, cancellationToken);
+                }
+                catch
+                {
+                    // service may throw if not found; silently continue
+                }
+
+                var totalAmount = workOrder.AppointmentFinalCost ?? workOrder.AppointmentEstimatedCost ?? 0m;
+
+                return Success(new
+                {
+                    CanDeliver = false,
+                    Reason = $"⚠️ Còn công nợ {outstandingAmount:N0}đ. Vui lòng thanh toán trước khi giao xe.",
+                    WorkOrderCode = workOrder.WorkOrderCode,
+                    InvoiceCode = invoice?.InvoiceCode, // ✅ For frontend display
+                    InvoiceId = invoice?.InvoiceId, // ✅ Required for /api/payments and /api/payments/manual
+                    AppointmentId = workOrder.AppointmentId, // ✅ For payment intent creation
+                    OutstandingAmount = outstandingAmount,
+                    TotalAmount = totalAmount,
+                    PaidAmount = totalAmount - outstandingAmount,
+                    CreatePaymentIntentUrl = workOrder.AppointmentId.HasValue
+                        ? $"/api/appointments/{workOrder.AppointmentId}/payments/create-intent"
+                        : null, // ✅ Shortcut for staff: "pay outstanding for this appointment"
+                    Message = "Khách hàng cần thanh toán trước khi nhận xe"
+                });
+            }
+
+            // ✅ Check 3: Quality check (if required)
+            if (workOrder.QualityCheckRequired == true && !workOrder.QualityCheckedBy.HasValue)
+            {
+                return Success(new
+                {
+                    CanDeliver = false,
+                    Reason = "Chưa qua kiểm tra chất lượng. Vui lòng thực hiện quality check trước khi giao xe.",
+                    WorkOrderCode = workOrder.WorkOrderCode,
+                    InvoiceCode = (string?)null,
+                    QualityCheckRequired = true,
+                    QualityCheckCompleted = false
+                });
+            }
+
+            // ✅ All checks passed - can deliver
+            _logger.LogInformation(
+                "✅ WorkOrder {WorkOrderCode} ready for delivery. Invoice {InvoiceCode} fully paid.",
+                workOrder.WorkOrderCode, "N/A");
+
+            return Success(new
+            {
+                CanDeliver = true,
+                Reason = (string?)null,
+                WorkOrderCode = workOrder.WorkOrderCode,
+                InvoiceCode = (string?)null,
+                PaidAmount = (workOrder.AppointmentFinalCost ?? workOrder.AppointmentEstimatedCost ?? 0m) - (workOrder.AppointmentOutstandingAmount ?? 0m),
+                OutstandingAmount = 0m,
+                QualityCheckCompleted = workOrder.QualityCheckedBy.HasValue,
+                QualityRating = workOrder.QualityRating,
+                Message = "✅ Xe đã sẵn sàng giao cho khách hàng"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating delivery for work order {WorkOrderId}", id);
+            return ServerError("Lỗi khi kiểm tra điều kiện giao xe");
         }
     }
 

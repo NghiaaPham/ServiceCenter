@@ -2,6 +2,7 @@ using EVServiceCenter.Core.Domains.Shared.Models;
 using EVServiceCenter.Core.Domains.WorkOrders.DTOs.Requests;
 using EVServiceCenter.Core.Domains.WorkOrders.DTOs.Responses;
 using EVServiceCenter.Core.Entities;
+using EVServiceCenter.Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace EVServiceCenter.Infrastructure.Domains.WorkOrders.Repositories;
@@ -162,6 +163,7 @@ public class WorkOrderQueryRepository
             .Include(w => w.Customer)
             .Include(w => w.Vehicle).ThenInclude(v => v.Model)
             .Include(w => w.ServiceCenter)
+            .Include(w => w.Appointment)
             .Include(w => w.Status)
             .Include(w => w.Technician)
             .Include(w => w.Advisor)
@@ -490,6 +492,18 @@ public class WorkOrderQueryRepository
             DiscountAmount = workOrder.DiscountAmount,
             TaxAmount = workOrder.TaxAmount,
             FinalAmount = workOrder.FinalAmount,
+
+            // Appointment-derived view-only fields
+            AppointmentEstimatedCost = workOrder.Appointment?.EstimatedCost,
+            AppointmentFinalCost = workOrder.Appointment?.FinalCost,
+            AppointmentCode = workOrder.AppointmentCode ?? workOrder.Appointment?.AppointmentCode,
+            // Compute outstanding amount deterministically from appointment values (final if present, else estimated) minus paid
+            AppointmentOutstandingAmount = workOrder.Appointment != null
+                ? Math.Max((workOrder.Appointment.FinalCost ?? workOrder.Appointment.EstimatedCost ?? 0m) - (workOrder.Appointment.PaidAmount ?? 0m), 0m)
+                : 0m,
+            HasOutstandingAppointmentPayment = workOrder.Appointment != null &&
+                (Math.Max((workOrder.Appointment.FinalCost ?? workOrder.Appointment.EstimatedCost ?? 0m) - (workOrder.Appointment.PaidAmount ?? 0m), 0m) > 0m),
+
             ProgressPercentage = workOrder.ProgressPercentage,
             ChecklistCompleted = workOrder.ChecklistCompleted,
             ChecklistTotal = workOrder.ChecklistTotal,

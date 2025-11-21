@@ -57,6 +57,12 @@ public class WorkOrderResponseDto
     public decimal? TaxAmount { get; set; }
     public decimal? FinalAmount { get; set; }
 
+    // Appointment-related view-only fields (copied from linked Appointment for FE convenience)
+    public decimal? AppointmentEstimatedCost { get; set; }
+    public decimal? AppointmentFinalCost { get; set; }
+    public decimal? AppointmentOutstandingAmount { get; set; }
+    public bool HasOutstandingAppointmentPayment { get; set; }
+
     // Progress tracking
     public decimal? ProgressPercentage { get; set; }
     public int? ChecklistCompleted { get; set; }

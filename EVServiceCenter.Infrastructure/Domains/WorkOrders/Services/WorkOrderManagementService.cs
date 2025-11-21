@@ -9,6 +9,7 @@ using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
 using EVServiceCenter.Infrastructure.Domains.WorkOrders.Repositories;
 using EVServiceCenter.Core.Domains.TechnicianManagement.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using EVServiceCenter.Core.Extensions;
@@ -34,6 +35,7 @@ public class WorkOrderManagementService : IWorkOrderService
     private readonly IInvoiceService _invoiceService;
     private readonly IShiftService _shiftService;
     private readonly ILogger<WorkOrderManagementService> _logger;
+    private readonly decimal _vatRate;
 
     public WorkOrderManagementService(
         EVDbContext context,
@@ -43,7 +45,8 @@ public class WorkOrderManagementService : IWorkOrderService
         IInvoiceService invoiceService,
          IAppointmentCommandService appointmentCommandService,
         IShiftService shiftService,
-        ILogger<WorkOrderManagementService> logger)
+        ILogger<WorkOrderManagementService> logger,
+        IConfiguration configuration)
     {
         _context = context;
         _queryRepo = queryRepo;
@@ -53,6 +56,7 @@ public class WorkOrderManagementService : IWorkOrderService
         _appointmentCommandService = appointmentCommandService;
         _shiftService = shiftService;
         _logger = logger;
+        _vatRate = configuration.GetValue<decimal>("Tax:VATRate", 0.08m);
     }
 
     #region Create Operations
@@ -544,6 +548,54 @@ public class WorkOrderManagementService : IWorkOrderService
                 $"Technician {technician.FullName} is currently at maximum workload");
         }
 
+        // ✅ ISSUE #3 FIX: Validate technician has shift for WorkOrder date/time
+        if (_shiftService != null)
+        {
+            try
+            {
+                // Check if technician is on-shift at the WorkOrder start time
+                var workOrderStartTime = workOrder.StartDate ?? DateTime.UtcNow;
+
+                bool isOnShift = await _shiftService.IsOnShiftAsync(
+                    technicianId,
+                    workOrderStartTime,
+                    cancellationToken);
+
+                if (!isOnShift)
+                {
+                    var workOrderDate = workOrderStartTime.ToString("dd/MM/yyyy HH:mm");
+
+                    throw new InvalidOperationException(
+                        $"Kỹ thuật viên {technician.FullName} không có ca làm việc vào thời điểm WorkOrder này " +
+                        $"({workOrderDate}). Vui lòng chọn kỹ thuật viên khác hoặc đảm bảo kỹ thuật viên đã check-in ca làm việc.");
+                }
+
+                _logger.LogInformation(
+                    "✅ Technician {TechnicianName} (ID: {TechnicianId}) has valid shift for WorkOrder {WorkOrderCode} at {StartTime}",
+                    technician.FullName, technicianId, workOrder.WorkOrderCode, workOrderStartTime);
+            }
+            catch (InvalidOperationException)
+            {
+                // Re-throw business validation errors
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Log but don't block assignment if shift validation fails unexpectedly
+                _logger.LogWarning(ex,
+                    "Failed to validate shift for technician {TechnicianId} for WorkOrder {WorkOrderCode}. " +
+                    "Proceeding with assignment but manual verification recommended.",
+                    technicianId, workOrder.WorkOrderCode);
+            }
+        }
+        else
+        {
+            _logger.LogWarning(
+                "ShiftService not available. Cannot validate technician shift for WorkOrder {WorkOrderCode}. " +
+                "Assignment proceeding without shift validation.",
+                workOrder.WorkOrderCode);
+        }
+
         var previousStatusId = workOrder.StatusId;
         var previousStatusName = GetWorkOrderStatusName(previousStatusId);
 
@@ -745,7 +797,7 @@ public class WorkOrderManagementService : IWorkOrderService
                 var servicesTotal = workOrder.WorkOrderServices?.Sum(s => s.TotalPrice ?? 0) ?? 0;
                 var partsTotal = workOrder.WorkOrderParts?.Sum(p => p.TotalPrice ?? 0) ?? 0;
                 var subTotal = servicesTotal + partsTotal;
-                var taxRate = 0.08m;
+                var taxRate = _vatRate;
                 var taxAmount = subTotal * taxRate;
                 var grandTotal = subTotal + taxAmount;
 
@@ -874,46 +926,26 @@ public class WorkOrderManagementService : IWorkOrderService
                                     .SetProperty(a => a.CompletedBy, completedBy),
                                     cancellationToken);
 
-                            // Create payment intent for outstanding amount to allow frontend/staff to collect payment
-                            try
-                            {
-                                var outstanding = invoice.OutstandingAmount ?? Math.Max(invoice.GrandTotal ?? 0m - (invoice.PaidAmount ?? 0m), 0m);
+                            // ✅ ISSUE #1 FIX: Add timeline event for payment tracking (DO NOT auto-create PaymentIntent)
+                            // ⚠️ PaymentIntent will be created ON-DEMAND by staff when ready to collect payment
+                            var outstanding = invoice.OutstandingAmount ?? Math.Max(invoice.GrandTotal ?? 0m - (invoice.PaidAmount ?? 0m), 0m);
 
-                                var createIntent = new EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Request.CreatePaymentIntentRequestDto
+                            await _timelineService.AddTimelineEventAsync(
+                                workOrderId,
+                                new AddWorkOrderTimelineRequestDto
                                 {
-                                    AppointmentId = appointmentId,
-                                    Amount = outstanding,
-                                    Currency = "VND",
-                                    ExpiresInHours = 24,
-                                    PaymentMethod = null,
-                                    Notes = $"Payment for invoice {invoice.InvoiceCode} (WorkOrder {workOrder.WorkOrderCode})",
-                                    IdempotencyKey = $"wo:{workOrderId}:inv:{invoice.InvoiceId}"
-                                };
+                                    EventType = "AwaitingPayment",
+                                    EventDescription = $"Work order completed. Invoice {invoice.InvoiceCode} unpaid. Outstanding: {outstanding:N0}đ. " +
+                                        $"Payment required before vehicle delivery. Staff can create PaymentIntent via API when ready to collect payment.",
+                                    IsVisible = true
+                                },
+                                completedBy,
+                                cancellationToken);
 
-                                var intentResponse = await _appointmentCommandService.CreatePaymentIntentAsync(
-                                    createIntent,
-                                    completedBy,
-                                    cancellationToken);
-
-                                await _timelineService.AddTimelineEventAsync(
-                                    workOrderId,
-                                    new AddWorkOrderTimelineRequestDto
-                                    {
-                                        EventType = "PendingPayment",
-                                        EventDescription = $"Work order completed but invoice {invoice.InvoiceCode} unpaid. PaymentIntent {intentResponse.IntentCode} created for {outstanding:C}.",
-                                        IsVisible = true
-                                    },
-                                    completedBy,
-                                    cancellationToken);
-
-                                _logger.LogInformation(
-                                    "Created payment intent {IntentCode} for Appointment {AppointmentId} (Outstanding: {Outstanding})",
-                                    intentResponse.IntentCode, appointmentId, outstanding);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Failed to create payment intent for Appointment {AppointmentId}", appointmentId);
-                            }
+                            _logger.LogWarning(
+                                "⚠️ WorkOrder {WorkOrderCode} completed but Invoice {InvoiceCode} unpaid. Outstanding: {Outstanding}đ. " +
+                                "Appointment marked as CompletedWithUnpaidBalance. PaymentIntent will be created on-demand by staff.",
+                                workOrder.WorkOrderCode, invoice.InvoiceCode, outstanding);
 
                             // Do not call CompleteAppointmentAsync here â€” appointment stays in CompletedWithUnpaidBalance until payment is received
                         }
@@ -1202,13 +1234,13 @@ public class WorkOrderManagementService : IWorkOrderService
 
             // Services
             ServiceSubTotal = servicesTotal,
-            ServiceTax = servicesTotal * 0.08m,
-            ServiceTotal = servicesTotal * 1.08m,
+            ServiceTax = servicesTotal * _vatRate,
+            ServiceTotal = servicesTotal * (1 + _vatRate),
 
             // Parts
             PartsSubTotal = partsTotal,
-            PartsTax = partsTotal * 0.08m,
-            PartsTotal = partsTotal * 1.08m,
+            PartsTax = partsTotal * _vatRate,
+            PartsTotal = partsTotal * (1 + _vatRate),
 
             // Tá»•ng cá»™ng
             SubTotal = subTotal,
