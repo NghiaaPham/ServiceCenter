@@ -1,4 +1,4 @@
-using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
+﻿using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using EVServiceCenter.Core.Domains.Invoices.DTOs.Requests;
 using EVServiceCenter.Core.Domains.Invoices.Interfaces;
 using EVServiceCenter.Core.Domains.Shared.Models;
@@ -11,6 +11,7 @@ using EVServiceCenter.Infrastructure.Domains.WorkOrders.Repositories;
 using EVServiceCenter.Core.Domains.TechnicianManagement.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using EVServiceCenter.Core.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +85,7 @@ public class WorkOrderManagementService : IWorkOrderService
                 AdvisorId = request.AdvisorId,
                 StatusId = initialStatusId,
                 Priority = request.Priority ?? "Normal",
-                SourceType = request.AppointmentId.HasValue ? "Scheduled" : "WalkIn", // ✅ NEW: Auto-detect source
+                SourceType = request.AppointmentId.HasValue ? "Scheduled" : "WalkIn", // âœ… NEW: Auto-detect source
                 EstimatedCompletionDate = request.EstimatedCompletionDate,
                 CustomerNotes = request.CustomerNotes,
                 InternalNotes = request.InternalNotes,
@@ -129,7 +130,7 @@ public class WorkOrderManagementService : IWorkOrderService
     }
 
     /// <summary>
-    /// ❌ OBSOLETE: Create work order from appointment
+    /// âŒ OBSOLETE: Create work order from appointment
     ///
     /// This method is marked as obsolete and should NOT be used.
     ///
@@ -265,7 +266,7 @@ public class WorkOrderManagementService : IWorkOrderService
         if (newStatus == null)
             throw new InvalidOperationException($"Status {request.StatusId} not found");
 
-        // 🔧 FIX GAP #5: Validate status transition
+        // ðŸ”§ FIX GAP #5: Validate status transition
         if (!IsValidStatusTransition(oldStatusId, request.StatusId))
         {
             var allowedTransitions = GetAllowedTransitionsForStatus(oldStatusId);
@@ -282,7 +283,7 @@ public class WorkOrderManagementService : IWorkOrderService
         }
 
         _logger.LogInformation(
-            "Valid status transition: {OldStatus} ({OldId}) → {NewStatus} ({NewId})",
+            "Valid status transition: {OldStatus} ({OldId}) â†’ {NewStatus} ({NewId})",
             oldStatusName, oldStatusId, newStatus.StatusName, request.StatusId);
 
         // Update status
@@ -295,7 +296,7 @@ public class WorkOrderManagementService : IWorkOrderService
         {
             workOrder.CompletedDate = DateTime.UtcNow;
 
-            // ✅ GAP 1 FIX: Auto-generate invoice when WorkOrder is completed
+            // âœ… GAP 1 FIX: Auto-generate invoice when WorkOrder is completed
             try
             {
                 // Check if invoice already exists for this work order
@@ -377,7 +378,7 @@ public class WorkOrderManagementService : IWorkOrderService
 
             if (service != null)
             {
-                // ✅ FIX: Use TotalCost (BasePrice + LaborCost) instead of BasePrice
+                // âœ… FIX: Use TotalCost (BasePrice + LaborCost) instead of BasePrice
                 var unitPrice = service.BasePrice + (service.LaborCost ?? 0m);
                 
                 var workOrderService = new Core.Entities.WorkOrderService
@@ -401,32 +402,32 @@ public class WorkOrderManagementService : IWorkOrderService
     }
 
     /// <summary>
-    /// 🔧 FIX GAP #5: Valid WorkOrder status transition matrix
+    /// ðŸ”§ FIX GAP #5: Valid WorkOrder status transition matrix
     /// WorkOrderStatusEnum:
     /// 1 = Created, 2 = Assigned, 3 = InProgress, 4 = AwaitingParts,
     /// 5 = QualityCheck, 6 = Completed, 7 = Cancelled
     /// </summary>
     private static readonly Dictionary<int, List<int>> ValidStatusTransitions = new()
     {
-        // Created (1) → Can assign to technician, start work, or cancel
+        // Created (1) â†’ Can assign to technician, start work, or cancel
         { 1, new List<int> { 2, 3, 7 } },
 
-        // Assigned (2) → Can start work or cancel
+        // Assigned (2) â†’ Can start work or cancel
         { 2, new List<int> { 3, 7 } },
 
-        // InProgress (3) → Can wait for parts, go to quality check, complete, or cancel
+        // InProgress (3) â†’ Can wait for parts, go to quality check, complete, or cancel
         { 3, new List<int> { 4, 5, 6, 7 } },
 
-        // AwaitingParts (4) → Can resume work or cancel
+        // AwaitingParts (4) â†’ Can resume work or cancel
         { 4, new List<int> { 3, 7 } },
 
-        // QualityCheck (5) → Can return to work (if issues found) or complete
+        // QualityCheck (5) â†’ Can return to work (if issues found) or complete
         { 5, new List<int> { 3, 6 } },
 
-        // Completed (6) → Terminal state, no transitions allowed
+        // Completed (6) â†’ Terminal state, no transitions allowed
         { 6, new List<int>() },
 
-        // Cancelled (7) → Terminal state, no transitions allowed
+        // Cancelled (7) â†’ Terminal state, no transitions allowed
         { 7, new List<int>() }
     };
 
@@ -580,6 +581,7 @@ public class WorkOrderManagementService : IWorkOrderService
     public async Task<WorkOrderResponseDto> StartWorkAsync(
         int workOrderId,
         int startedBy,
+        bool skipShiftValidation = false,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting work on WorkOrder {WorkOrderId}", workOrderId);
@@ -601,26 +603,35 @@ public class WorkOrderManagementService : IWorkOrderService
         if (!workOrder.TechnicianId.HasValue)
             throw new InvalidOperationException("Cannot start work without an assigned technician");
 
-        // ✅ SPRINT 1 DAY 3: On-Shift Validation
-        var isOnShift = await _shiftService.IsOnShiftAsync(
-            workOrder.TechnicianId.Value,
-            DateTime.UtcNow,
-            cancellationToken);
+        if (!skipShiftValidation)
+        {
+            // SPRINT 1 DAY 3: On-Shift Validation
+            var isOnShift = await _shiftService.IsOnShiftAsync(
+                workOrder.TechnicianId.Value,
+                DateTime.UtcNow,
+                cancellationToken);
 
-        if (!isOnShift)
+            if (!isOnShift)
+            {
+                _logger.LogWarning(
+                    "Technician {TechnicianId} attempted to start WorkOrder {WorkOrderId} without being on-shift",
+                    workOrder.TechnicianId.Value, workOrderId);
+
+                throw new InvalidOperationException(
+                    "Technician must check-in for shift before starting work. " +
+                    "Please use POST /api/technicians/attendance/check-in to check-in first.");
+            }
+
+            _logger.LogInformation(
+                "Technician {TechnicianId} on-shift validation passed for WorkOrder {WorkOrderId}",
+                workOrder.TechnicianId.Value, workOrderId);
+        }
+        else
         {
             _logger.LogWarning(
-                "Technician {TechnicianId} attempted to start WorkOrder {WorkOrderId} without being on-shift",
-                workOrder.TechnicianId.Value, workOrderId);
-
-            throw new InvalidOperationException(
-                "Technician must check-in for shift before starting work. " +
-                "Please use POST /api/technicians/attendance/check-in to check-in first.");
+                "Skipping on-shift validation for WorkOrder {WorkOrderId} per request (startedBy={StartedBy})",
+                workOrderId, startedBy);
         }
-
-        _logger.LogInformation(
-            "Technician {TechnicianId} on-shift validation passed for WorkOrder {WorkOrderId}",
-            workOrder.TechnicianId.Value, workOrderId);
 
         var targetStatus = (int)WorkOrderStatusEnum.InProgress;
         if (!IsValidStatusTransition(workOrder.StatusId, targetStatus))
@@ -661,12 +672,12 @@ public class WorkOrderManagementService : IWorkOrderService
 
     /// <summary>
     /// Complete work order with checklist validation and auto invoice generation
-    /// ✅ IMPLEMENTED: Complete flow including invoice creation
+    /// âœ… OPTION B: Enforce payment gate here - block if appointment has outstanding
     /// </summary>
     public async Task<WorkOrderResponseDto> CompleteWorkOrderAsync(
-    int workOrderId,
-    int completedBy,
-    CancellationToken cancellationToken = default)
+        int workOrderId,
+        int completedBy,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Completing WorkOrder {WorkOrderId} by user {UserId}",
@@ -682,6 +693,7 @@ public class WorkOrderManagementService : IWorkOrderService
                 .Include(wo => wo.Customer)
                 .Include(wo => wo.Vehicle)
                     .ThenInclude(v => v.Model)
+                .Include(wo => wo.Appointment) // âœ… NEW: Include Appointment for payment check
                 .FirstOrDefaultAsync(wo => wo.WorkOrderId == workOrderId, cancellationToken);
 
             if (workOrder == null)
@@ -693,7 +705,7 @@ public class WorkOrderManagementService : IWorkOrderService
                 throw new InvalidOperationException($"Work order {workOrder.WorkOrderCode} is already completed");
             }
 
-            // ✅ Lưu lại AppointmentId để dùng sau khi commit transaction
+            // âœ… LÆ°u láº¡i AppointmentId Ä‘á»ƒ dÃ¹ng sau khi commit transaction
             int? linkedAppointmentId = workOrder.AppointmentId;
 
             // 1) Validate checklist
@@ -729,7 +741,7 @@ public class WorkOrderManagementService : IWorkOrderService
 
             try
             {
-                // 2) Tính tiền
+                // 2) TÃ­nh tiá»n
                 var servicesTotal = workOrder.WorkOrderServices?.Sum(s => s.TotalPrice ?? 0) ?? 0;
                 var partsTotal = workOrder.WorkOrderParts?.Sum(p => p.TotalPrice ?? 0) ?? 0;
                 var subTotal = servicesTotal + partsTotal;
@@ -741,7 +753,7 @@ public class WorkOrderManagementService : IWorkOrderService
                     "Calculated totals: Services={Services}, Parts={Parts}, SubTotal={SubTotal}, Tax={Tax}, GrandTotal={GrandTotal}",
                     servicesTotal, partsTotal, subTotal, taxAmount, grandTotal);
 
-                // ✅ FIX: Update WorkOrderServices status to "Completed"
+                // âœ… FIX: Update WorkOrderServices status to "Completed"
                 if (workOrder.WorkOrderServices != null && workOrder.WorkOrderServices.Any())
                 {
                     foreach (var service in workOrder.WorkOrderServices)
@@ -754,7 +766,7 @@ public class WorkOrderManagementService : IWorkOrderService
                         workOrder.WorkOrderServices.Count);
                 }
 
-                // ✅ FIX: Update WorkOrderParts status to "Installed" (if any)
+                // âœ… FIX: Update WorkOrderParts status to "Installed" (if any)
                 if (workOrder.WorkOrderParts != null && workOrder.WorkOrderParts.Any())
                 {
                     foreach (var part in workOrder.WorkOrderParts)
@@ -772,7 +784,7 @@ public class WorkOrderManagementService : IWorkOrderService
                         workOrder.WorkOrderParts.Count);
                 }
 
-                // 3) Cập nhật WorkOrder
+                // 3) Cáº­p nháº­t WorkOrder
                 workOrder.StatusId = (int)WorkOrderStatusEnum.Completed;
                 workOrder.CompletedDate = DateTime.UtcNow;
                 workOrder.TotalAmount = subTotal;
@@ -786,7 +798,7 @@ public class WorkOrderManagementService : IWorkOrderService
                     workOrder.ChecklistTotal = checklistItems.Count;
                 }
 
-                // 4) Đảm bảo Invoice
+                // 4) Äáº£m báº£o Invoice
                 var invoice = await EnsureInvoiceAsync(
                     workOrder,
                     servicesTotal,
@@ -797,7 +809,7 @@ public class WorkOrderManagementService : IWorkOrderService
                     completedBy,
                     cancellationToken);
 
-                // 5) Đảm bảo MaintenanceHistory
+                // 5) Äáº£m báº£o MaintenanceHistory
                 var serviceDate = DateOnly.FromDateTime(workOrder.CompletedDate ?? DateTime.UtcNow);
 
                 var invoiceServiceTotal = invoice.ServiceTotal ?? invoice.ServiceSubTotal ?? servicesTotal;
@@ -813,7 +825,7 @@ public class WorkOrderManagementService : IWorkOrderService
                     completedBy,
                     cancellationToken);
 
-                // ⚠️ KHÔNG tự update Appointment ở đây nữa – để CompleteAppointmentAsync xử lý
+                // âš ï¸ KHÃ”NG tá»± update Appointment á»Ÿ Ä‘Ã¢y ná»¯a â€“ Ä‘á»ƒ CompleteAppointmentAsync xá»­ lÃ½
 
                 // 6) Timeline event
                 await _timelineService.AddTimelineEventAsync(
@@ -834,40 +846,104 @@ public class WorkOrderManagementService : IWorkOrderService
                     "Successfully completed WorkOrder {WorkOrderCode}: Invoice={InvoiceId}, Amount={Amount}",
                     workOrder.WorkOrderCode, invoice.InvoiceId, grandTotal);
 
-                // 7) Sau khi WorkOrder hoàn tất & commit => gọi CompleteAppointmentAsync
+                // 7) Sau khi WorkOrder hoÃ n táº¥t & commit => xá»­ lÃ½ Appointment liÃªn quan
                 if (linkedAppointmentId.HasValue)
                 {
                     var appointmentId = linkedAppointmentId.Value;
 
                     try
                     {
-                        _logger.LogInformation(
-                            "Triggering CompleteAppointmentAsync from CompleteWorkOrderAsync. " +
-                            "WorkOrderId={WorkOrderId}, AppointmentId={AppointmentId}",
-                            workOrderId, appointmentId);
+                        // If invoice has positive grand total and is not Paid, mark appointment as CompletedWithUnpaidBalance
+                        var invoiceGrand = invoice.GrandTotal ?? 0m;
+                        var invoiceStatus = invoice.Status ?? string.Empty;
 
-                        var completed = await _appointmentCommandService.CompleteAppointmentAsync(
-                            appointmentId,
-                            completedBy,
-                            cancellationToken);
+                        if (invoiceGrand > 0m && !string.Equals(invoiceStatus, "Paid", StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.LogWarning(
+                                "WorkOrder {WorkOrderId} produced unpaid Invoice {InvoiceId}. Marking Appointment {AppointmentId} as CompletedWithUnpaidBalance and creating payment intent.",
+                                workOrderId, invoice.InvoiceId, appointmentId);
 
-                        _logger.LogInformation(
-                            "CompleteAppointmentAsync finished (Result={Result}) for Appointment {AppointmentId} " +
-                            "triggered by WorkOrder {WorkOrderId}",
-                            completed, appointmentId, workOrderId);
+                            // Update appointment status to CompletedWithUnpaidBalance
+                            await _context.Appointments
+                                .Where(a => a.AppointmentId == appointmentId)
+                                .ExecuteUpdateAsync(setters => setters
+                                    .SetProperty(a => a.StatusId, (int)AppointmentStatusEnum.CompletedWithUnpaidBalance)
+                                    .SetProperty(a => a.UpdatedBy, completedBy)
+                                    .SetProperty(a => a.UpdatedDate, DateTime.UtcNow)
+                                    .SetProperty(a => a.CompletedDate, DateTime.UtcNow)
+                                    .SetProperty(a => a.CompletedBy, completedBy),
+                                    cancellationToken);
+
+                            // Create payment intent for outstanding amount to allow frontend/staff to collect payment
+                            try
+                            {
+                                var outstanding = invoice.OutstandingAmount ?? Math.Max(invoice.GrandTotal ?? 0m - (invoice.PaidAmount ?? 0m), 0m);
+
+                                var createIntent = new EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Request.CreatePaymentIntentRequestDto
+                                {
+                                    AppointmentId = appointmentId,
+                                    Amount = outstanding,
+                                    Currency = "VND",
+                                    ExpiresInHours = 24,
+                                    PaymentMethod = null,
+                                    Notes = $"Payment for invoice {invoice.InvoiceCode} (WorkOrder {workOrder.WorkOrderCode})",
+                                    IdempotencyKey = $"wo:{workOrderId}:inv:{invoice.InvoiceId}"
+                                };
+
+                                var intentResponse = await _appointmentCommandService.CreatePaymentIntentAsync(
+                                    createIntent,
+                                    completedBy,
+                                    cancellationToken);
+
+                                await _timelineService.AddTimelineEventAsync(
+                                    workOrderId,
+                                    new AddWorkOrderTimelineRequestDto
+                                    {
+                                        EventType = "PendingPayment",
+                                        EventDescription = $"Work order completed but invoice {invoice.InvoiceCode} unpaid. PaymentIntent {intentResponse.IntentCode} created for {outstanding:C}.",
+                                        IsVisible = true
+                                    },
+                                    completedBy,
+                                    cancellationToken);
+
+                                _logger.LogInformation(
+                                    "Created payment intent {IntentCode} for Appointment {AppointmentId} (Outstanding: {Outstanding})",
+                                    intentResponse.IntentCode, appointmentId, outstanding);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to create payment intent for Appointment {AppointmentId}", appointmentId);
+                            }
+
+                            // Do not call CompleteAppointmentAsync here â€” appointment stays in CompletedWithUnpaidBalance until payment is received
+                        }
+                        else
+                        {
+                            // Invoice paid or zero amount â€” safe to complete appointment
+                            _logger.LogInformation(
+                                "Invoice {InvoiceId} is paid or zero. Proceeding to complete Appointment {AppointmentId} (triggered by WorkOrder {WorkOrderId})",
+                                invoice.InvoiceId, appointmentId, workOrderId);
+
+                            var completed = await _appointmentCommandService.CompleteAppointmentAsync(
+                                appointmentId,
+                                completedBy,
+                                cancellationToken);
+
+                            _logger.LogInformation(
+                                "CompleteAppointmentAsync finished (Result={Result}) for Appointment {AppointmentId} triggered by WorkOrder {WorkOrderId}",
+                                completed, appointmentId, workOrderId);
+                        }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex,
-                            "Error while completing Appointment {AppointmentId} from WorkOrder {WorkOrderId}",
+                            "Error while handling Appointment {AppointmentId} from WorkOrder {WorkOrderId}",
                             appointmentId, workOrderId);
-                        // tuỳ business: nếu muốn WO complete phải chắc chắn deduct usage thì throw; 
-                        // nếu chấp nhận xử lý tay thì có thể chỉ log warning.
                         throw;
                     }
                 }
 
-                // 8) Trả về WorkOrder đã cập nhật đầy đủ
+                // 8) Tráº£ vá» WorkOrder Ä‘Ã£ cáº­p nháº­t Ä‘áº§y Ä‘á»§
                 return await GetWorkOrderAsync(workOrderId, cancellationToken);
             }
             catch (Exception ex)
@@ -881,6 +957,68 @@ public class WorkOrderManagementService : IWorkOrderService
         });
     }
 
+    public async Task HandleAppointmentPaymentCompletedAsync(int appointmentId, int processedBy, CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Handling payment completed event for Appointment {AppointmentId}", appointmentId);
+
+        // Load appointment with workorders and invoices
+        var appointment = await _context.Appointments
+            .Include(a => a.WorkOrders)
+                .ThenInclude(wo => wo.Invoices)
+            .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId, cancellationToken);
+
+        if (appointment == null)
+        {
+            _logger.LogWarning("Appointment {AppointmentId} not found when handling payment completed", appointmentId);
+            return;
+        }
+
+        // If appointment already Completed, nothing to do
+        if (appointment.StatusId == (int)AppointmentStatusEnum.Completed)
+        {
+            _logger.LogInformation("Appointment {AppointmentId} already Completed, skipping auto-complete", appointmentId);
+            return;
+        }
+
+        // Find related workorder in Completed state but waiting for payment (we used Completed status but appointment marked CompletedWithUnpaidBalance)
+        var candidate = appointment.WorkOrders
+            .OrderByDescending(wo => wo.WorkOrderId)
+            .FirstOrDefault(wo => wo.StatusId == (int)WorkOrderStatusEnum.Completed);
+
+        if (candidate == null)
+        {
+            _logger.LogInformation("No related Completed WorkOrder found for Appointment {AppointmentId}, skipping auto-complete", appointmentId);
+            return;
+        }
+
+        // Verify invoice fully paid
+        var invoice = candidate.Invoices?.OrderByDescending(i => i.InvoiceId).FirstOrDefault();
+        if (invoice == null)
+        {
+            _logger.LogWarning("WorkOrder {WorkOrderId} has no invoice while payment completed for Appointment {AppointmentId}", candidate.WorkOrderId, appointmentId);
+            return;
+        }
+
+        if (invoice.OutstandingAmount > 0)
+        {
+            _logger.LogWarning("Invoice {InvoiceId} still has outstanding {Outstanding} while payment completed callback for Appointment {AppointmentId}", invoice.InvoiceId, invoice.OutstandingAmount, appointmentId);
+            return;
+        }
+
+        // Attempt to complete appointment (idempotent)
+        try
+        {
+            _logger.LogInformation("Auto-completing Appointment {AppointmentId} after payment. Invoking CompleteAppointmentAsync", appointmentId);
+            await _appointmentCommandService.CompleteAppointmentAsync(appointmentId, processedBy, cancellationToken);
+
+            _logger.LogInformation("Auto-complete succeeded for Appointment {AppointmentId}", appointmentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to auto-complete Appointment {AppointmentId} after payment", appointmentId);
+            throw;
+        }
+    }
 
     private async Task<MaintenanceHistory> EnsureMaintenanceHistoryAsync(
         WorkOrder workOrder,
@@ -924,7 +1062,7 @@ public class WorkOrderManagementService : IWorkOrderService
 
         var servicesPerformed = serviceNames.Count > 0
             ? string.Join(", ", serviceNames)
-            : "Bảo dưỡng tổng hợp";
+            : "Báº£o dÆ°á»¡ng tá»•ng há»£p";
 
         var partsReplaced = partsNames.Count > 0
             ? string.Join(", ", partsNames)
@@ -998,7 +1136,7 @@ public class WorkOrderManagementService : IWorkOrderService
      int completedBy,
      CancellationToken cancellationToken)
     {
-        // Nếu đã có invoice cho work order này thì trả về luôn
+        // Náº¿u Ä‘Ã£ cÃ³ invoice cho work order nÃ y thÃ¬ tráº£ vá» luÃ´n
         var existingInvoice = await _context.Invoices
             .FirstOrDefaultAsync(i => i.WorkOrderId == workOrder.WorkOrderId, cancellationToken);
 
@@ -1015,7 +1153,7 @@ public class WorkOrderManagementService : IWorkOrderService
         decimal paidAmount = 0m;
         string invoiceStatus;
 
-        // ✅ Case 1: WorkOrder miễn phí (mọi thứ được cover từ gói → grandTotal = 0)
+        // âœ… Case 1: WorkOrder miá»…n phÃ­ (má»i thá»© Ä‘Æ°á»£c cover tá»« gÃ³i â†’ grandTotal = 0)
         if (grandTotal == 0m)
         {
             invoiceStatus = "Paid";
@@ -1027,7 +1165,7 @@ public class WorkOrderManagementService : IWorkOrderService
         }
         else
         {
-            // ✅ Case 2: Có phát sinh tiền → xem Appointment đã pre-pay chưa
+            // âœ… Case 2: CÃ³ phÃ¡t sinh tiá»n â†’ xem Appointment Ä‘Ã£ pre-pay chÆ°a
             invoiceStatus = "Pending";
 
             if (workOrder.AppointmentId.HasValue)
@@ -1037,9 +1175,7 @@ public class WorkOrderManagementService : IWorkOrderService
                     .FirstOrDefaultAsync(a => a.AppointmentId == workOrder.AppointmentId.Value, cancellationToken);
 
                 if (appointment != null &&
-                    string.Equals(appointment.PaymentStatus,
-                        PaymentStatusEnum.Completed.ToString(),
-                        StringComparison.OrdinalIgnoreCase))
+                    string.Equals(appointment.PaymentStatus, PaymentStatusEnum.Completed.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
                     paidAmount = appointment.PaidAmount ?? 0m;
 
@@ -1074,7 +1210,7 @@ public class WorkOrderManagementService : IWorkOrderService
             PartsTax = partsTotal * 0.08m,
             PartsTotal = partsTotal * 1.08m,
 
-            // Tổng cộng
+            // Tá»•ng cá»™ng
             SubTotal = subTotal,
             TotalTax = taxAmount,
             GrandTotal = grandTotal,
@@ -1262,16 +1398,15 @@ public class WorkOrderManagementService : IWorkOrderService
         if (service.IsActive.HasValue && service.IsActive.Value == false)
             throw new InvalidOperationException("Service is not active");
 
-        // ✅ FIX: Wrap transaction with ExecutionStrategy
+        // âœ… FIX: Wrap transaction with ExecutionStrategy
         var executionStrategy = _context.Database.CreateExecutionStrategy();
-
         return await executionStrategy.ExecuteAsync(async () =>
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 var quantity = 1;
-                // ✅ FIX: Use TotalCost (BasePrice + LaborCost) instead of BasePrice
+                // âœ… FIX: Use TotalCost (BasePrice + LaborCost) instead of BasePrice
                 var unitPrice = service.BasePrice + (service.LaborCost ?? 0m);
                 var totalPrice = unitPrice * quantity;
 
@@ -1324,7 +1459,7 @@ public class WorkOrderManagementService : IWorkOrderService
 
     /// <summary>
     /// Add part to work order with inventory update
-    /// ✅ IMPLEMENTED: Parts tracking + inventory management
+    /// âœ… IMPLEMENTED: Parts tracking + inventory management
     /// </summary>
     public async Task<WorkOrderResponseDto> AddPartAsync(
         int workOrderId,
@@ -1419,6 +1554,9 @@ public class WorkOrderManagementService : IWorkOrderService
                     .SumAsync(p => p.TotalPrice ?? 0, cancellationToken);
 
                 workOrder.EstimatedAmount = (workOrder.EstimatedAmount ?? 0) + (quantity * (part.SellingPrice ?? 0));
+                workOrder.TotalAmount = (workOrder.TotalAmount ?? 0) + (quantity * (part.SellingPrice ?? 0));
+                workOrder.UpdatedBy = addedBy;
+                workOrder.UpdatedDate = DateTime.UtcNow;
 
                 _logger.LogInformation(
                     "Updated WorkOrder {WorkOrderId} estimated amount to {Amount}",
@@ -1440,7 +1578,7 @@ public class WorkOrderManagementService : IWorkOrderService
                 await transaction.CommitAsync(cancellationToken);
 
                 _logger.LogInformation(
-                    "✅ Successfully added part {PartId} to WorkOrder {WorkOrderId}",
+                    "âœ… Successfully added part {PartId} to WorkOrder {WorkOrderId}",
                     partId, workOrderId);
 
                 // 8. Return updated work order
@@ -1577,6 +1715,52 @@ public class WorkOrderManagementService : IWorkOrderService
             TotalRevenue = decimal.Round(totalRevenue, 2),
             AverageCompletionTimeHours = averageCompletionHours
         };
-    }
-}
+     }
+
+        public async Task<int> BackfillWorkOrdersFromAppointmentsAsync(CancellationToken cancellationToken = default)
+        {
+            var workOrders = await _context.WorkOrders
+                .Where(wo => wo.AppointmentId.HasValue)
+                .Include(wo => wo.Appointment)
+                .ToListAsync(cancellationToken);
+
+            int updated = 0;
+            foreach (var wo in workOrders)
+            {
+                var appt = wo.Appointment;
+                if (appt == null) continue;
+
+                bool changed = false;
+                if (wo.AppointmentCode != appt.AppointmentCode)
+                {
+                    wo.AppointmentCode = appt.AppointmentCode;
+                    changed = true;
+                }
+
+                if (wo.EstimatedAmount == null && appt.EstimatedCost.HasValue)
+                {
+                    wo.EstimatedAmount = appt.EstimatedCost;
+                    changed = true;
+                }
+
+                if (wo.FinalAmount == null && appt.FinalCost.HasValue)
+                {
+                    wo.FinalAmount = appt.FinalCost;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    wo.UpdatedDate = DateTime.UtcNow;
+                    updated++;
+                }
+            }
+
+            if (updated > 0)
+                await _context.SaveChangesAsync(cancellationToken);
+
+            return updated;
+        }
+ }
+
 

@@ -43,6 +43,12 @@ public interface IWorkOrderService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Admin helper: Backfill WorkOrder financial and appointment linkage fields from linked Appointment records.
+    /// Returns number of updated WorkOrders.
+    /// </summary>
+    Task<int> BackfillWorkOrdersFromAppointmentsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get filtered and paginated work orders
     /// </summary>
     Task<PagedResult<WorkOrderSummaryDto>> GetWorkOrdersAsync(
@@ -80,11 +86,13 @@ public interface IWorkOrderService
 
     /// <summary>
     /// Start work on work order
-    /// Changes status to InProgress
+    /// Changes status to InProgress.
+    /// Optionally allows bypassing the on-shift validation for testing/troubleshooting flows.
     /// </summary>
     Task<WorkOrderResponseDto> StartWorkAsync(
         int workOrderId,
         int startedBy,
+        bool skipShiftValidation = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -95,6 +103,12 @@ public interface IWorkOrderService
         int workOrderId,
         int completedBy,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Handle post-payment actions when an appointment's payment becomes Completed.
+    /// This will attempt to finalize related WorkOrder/Appointment flow (idempotent).
+    /// </summary>
+    Task HandleAppointmentPaymentCompletedAsync(int appointmentId, int processedBy, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Request approval for work order

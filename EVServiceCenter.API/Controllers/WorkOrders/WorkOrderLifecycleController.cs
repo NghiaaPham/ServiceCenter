@@ -27,6 +27,27 @@ public class WorkOrderLifecycleController : BaseController
         _logger = logger;
     }
 
+    /// <summary>
+    /// Admin-only endpoint to backfill existing WorkOrders with Appointment linkage and financials.
+    /// Useful after schema changes to populate newly added fields from existing appointments.
+    /// </summary>
+    [HttpPost("admin/backfill-from-appointments")]
+    [Authorize(Policy = "AdminOnly")]
+    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> BackfillFromAppointments(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var updated = await _workOrderService.BackfillWorkOrdersFromAppointmentsAsync(cancellationToken);
+            return Success(updated, $"Backfill complete. Updated {updated} work orders.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during backfill from appointments");
+            return ValidationError(ex.Message);
+        }
+    }
+
     #region Status Management
 
     /// <summary>
@@ -110,12 +131,15 @@ public class WorkOrderLifecycleController : BaseController
     [Authorize(Policy = "TechnicianOnly")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> StartWork(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> StartWork(
+        int id,
+        [FromQuery] bool skipShiftValidation = false,
+        CancellationToken cancellationToken = default)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _workOrderService.StartWorkAsync(id, userId, cancellationToken);
+            var result = await _workOrderService.StartWorkAsync(id, userId, skipShiftValidation, cancellationToken);
             return Success(result, "Work started successfully");
         }
         catch (InvalidOperationException ex)
@@ -154,6 +178,34 @@ public class WorkOrderLifecycleController : BaseController
             var userId = GetCurrentUserId();
             var result = await _workOrderService.CompleteWorkOrderAsync(id, userId, cancellationToken);
             return Success(result, "Work order completed successfully");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Validation error completing {WorkOrderId} by user {UserId}", id, GetCurrentUserId());
+            return ValidationError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error completing work order {WorkOrderId}", id);
+            return ServerError("An error occurred while completing work order");
+        }
+    }
+
+    /// <summary>
+    /// Admin/Staff helper: Force complete a work order for testing (bypass technician-only constraint).
+    /// Use only for testing; will perform normal completion flow (invoice/payment intent generation).
+    /// </summary>
+    [HttpPost("{id:int}/force-complete")]
+    [Authorize(Policy = "AdminOrStaff")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForceCompleteWorkOrder(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _workOrderService.CompleteWorkOrderAsync(id, userId, cancellationToken);
+            return Success(result, "Work order force-completed successfully");
         }
         catch (InvalidOperationException ex)
         {
