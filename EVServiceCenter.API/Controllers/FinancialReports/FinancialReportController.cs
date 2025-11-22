@@ -2,6 +2,7 @@ using EVServiceCenter.Core.Domains.FinancialReports.DTOs.Requests;
 using EVServiceCenter.Core.Domains.FinancialReports.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace EVServiceCenter.API.Controllers.FinancialReports;
 
@@ -18,6 +19,7 @@ public class FinancialReportController : ControllerBase
 {
     private readonly IFinancialReportService _financialReportService;
     private readonly ILogger<FinancialReportController> _logger;
+    private static readonly string[] AllowedGroupBy = new[] { "Daily", "Weekly", "Monthly" };
 
     public FinancialReportController(
         IFinancialReportService financialReportService,
@@ -55,15 +57,20 @@ public class FinancialReportController : ControllerBase
     [HttpGet("revenue")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetRevenueReport(
-        [FromQuery] RevenueReportQueryDto query,
-        CancellationToken cancellationToken)
-    {
-        try
+        public async Task<IActionResult> GetRevenueReport(
+            [FromQuery] RevenueReportQueryDto query,
+            CancellationToken cancellationToken)
         {
-            _logger.LogInformation(
-                "Revenue report requested: {StartDate} to {EndDate}, GroupBy: {GroupBy}",
-                query.StartDate, query.EndDate, query.GroupBy);
+            try
+            {
+                if (!IsValidDateRange(query.StartDate, query.EndDate, out var dateError))
+                    return BadRequest(new { success = false, message = dateError });
+                if (!IsValidGroupBy(query.GroupBy))
+                    return BadRequest(new { success = false, message = "groupBy must be one of: Daily, Weekly, Monthly" });
+
+                _logger.LogInformation(
+                    "Revenue report requested: {StartDate} to {EndDate}, GroupBy: {GroupBy}",
+                    query.StartDate, query.EndDate, query.GroupBy);
 
             var report = await _financialReportService.GenerateRevenueReportAsync(query, cancellationToken);
 
@@ -209,6 +216,13 @@ public class FinancialReportController : ControllerBase
     {
         try
         {
+            if (!IsValidDateRange(period1Start, period1End, out var err1))
+                return BadRequest(new { success = false, message = err1 });
+            if (!IsValidDateRange(period2Start, period2End, out var err2))
+                return BadRequest(new { success = false, message = err2 });
+            if (!IsValidGroupBy(groupBy))
+                return BadRequest(new { success = false, message = "groupBy must be one of: Daily, Weekly, Monthly" });
+
             // Validate periods have same length
             var period1Length = (period1End - period1Start).TotalDays;
             var period2Length = (period2End - period2Start).TotalDays;
@@ -327,6 +341,9 @@ public class FinancialReportController : ControllerBase
     {
         try
         {
+            if (!IsValidDateRange(query.StartDate, query.EndDate, out var dateError))
+                return BadRequest(new { success = false, message = dateError });
+
             _logger.LogInformation(
                 "Payment report requested: {StartDate} to {EndDate}",
                 query.StartDate, query.EndDate);
@@ -369,6 +386,9 @@ public class FinancialReportController : ControllerBase
     {
         try
         {
+            if (!IsValidDateRange(startDate, endDate, out var dateError))
+                return BadRequest(new { success = false, message = dateError });
+
             var query = new PaymentReportQueryDto
             {
                 StartDate = startDate,
@@ -491,6 +511,9 @@ public class FinancialReportController : ControllerBase
     {
         try
         {
+            if (!IsValidDateRange(query.StartDate, query.EndDate, out var dateError))
+                return BadRequest(new { success = false, message = dateError });
+
             _logger.LogInformation(
                 "Invoice report requested: {StartDate} to {EndDate}",
                 query.StartDate, query.EndDate);
@@ -641,6 +664,9 @@ public class FinancialReportController : ControllerBase
     {
         try
         {
+            if (!IsValidDateRange(startDate, endDate, out var dateError))
+                return BadRequest(new { success = false, message = dateError });
+
             var query = new InvoiceReportQueryDto
             {
                 StartDate = startDate,
@@ -677,6 +703,33 @@ public class FinancialReportController : ControllerBase
         }
     }
 
+    #region ValidationHelpers
+
+    private static bool IsValidDateRange(DateTime start, DateTime end, out string error)
+    {
+        if (start == default || end == default)
+        {
+            error = "startDate and endDate are required (ISO format)";
+            return false;
+        }
+
+        if (end < start)
+        {
+            error = "endDate must be greater than or equal to startDate";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool IsValidGroupBy(string groupBy)
+    {
+        return !string.IsNullOrWhiteSpace(groupBy) &&
+               AllowedGroupBy.Any(g => g.Equals(groupBy, StringComparison.OrdinalIgnoreCase));
+    }
+
+    #endregion
+
     #endregion
 }
-

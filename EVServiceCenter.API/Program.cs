@@ -8,6 +8,7 @@ using EVServiceCenter.Core.Domains.CustomerTypes.Validators; // Added for Fluent
 using EVServiceCenter.Core.Entities;
 using EVServiceCenter.Core.Enums;
 using EVServiceCenter.Core.Interfaces.Services;
+using EVServiceCenter.Infrastructure.BackgroundServices;
 using EVServiceCenter.Infrastructure.JsonConverters;
 using EVServiceCenter.Infrastructure.Options;
 using EVServiceCenter.Infrastructure.Persistence.Seeders; // Added for Seeders
@@ -15,9 +16,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore; // Added for Database.Migrate()
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Linq;
 using System.Text;
 
-// ✅ CRITICAL FIX: Set Console encoding to UTF-8 to prevent encoding issues in logs
 Console.OutputEncoding = Encoding.UTF8;
 Console.InputEncoding = Encoding.UTF8;
 
@@ -297,7 +298,21 @@ builder.Services.AddScoped<IServiceSourceAuditService>(sp =>
     return new EVServiceCenter.API.Services.StubServiceSourceAuditService(dbContext, logger);
 });
 
+// Payment completion queue and worker
+builder.Services.AddSingleton<EVServiceCenter.Core.Domains.Payments.Interfaces.IPaymentCompletionQueue, EVServiceCenter.Infrastructure.BackgroundServices.InMemoryPaymentCompletionQueue>();
+builder.Services.AddHostedService<PaymentCompletionWorker>();
+
 var app = builder.Build();
+
+var httpsPortConfig = builder.Configuration.GetValue<int?>("HttpsRedirection:HttpsPort");
+var httpsPortEnv = Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT");
+var urlsConfig = builder.Configuration["ASPNETCORE_URLS"] ?? builder.Configuration["urls"];
+var httpsUrlConfigured = !string.IsNullOrWhiteSpace(urlsConfig)
+    && urlsConfig.Split(';', StringSplitOptions.RemoveEmptyEntries)
+        .Any(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+var httpsRedirectionEnabled = httpsPortConfig.HasValue
+    || !string.IsNullOrEmpty(httpsPortEnv)
+    || httpsUrlConfigured;
 
 // Seed data only in Development environment
 if (app.Environment.IsDevelopment())
@@ -329,7 +344,7 @@ if (app.Environment.IsDevelopment())
             CarBrandSeeder.SeedCarBrands(context);
             CarModelSeeder.SeedCarModels(context);
 
-            // ⏭️ SKIP: CustomerType already seeded in database
+
             // var customerTypeLogger = loggerFactory.CreateLogger("CustomerTypeSeeder");
             // CustomerTypeSeeder.SeedAsync(context, customerTypeLogger).Wait();
 
@@ -342,14 +357,12 @@ if (app.Environment.IsDevelopment())
             WorkOrderStatusSeeder.SeedWorkOrderStatuses(context);
             TimeSlotSeeder.SeedTimeSlots(context);
 
-            // ✅ SEED CHECKLIST TEMPLATES (sau khi seed ServiceCategories và MaintenanceServices)
             ChecklistTemplateSeeder.SeedChecklistTemplates(context);
 
             TechnicianSeeder.SeedTechnicians(context);
             EmployeeSkillSeeder.SeedEmployeeSkills(context);
             TechnicianScheduleSeeder.SeedTechnicianSchedules(context);
 
-            // ✅ SEED TEST TECHNICIANS - 10 kỹ thuật viên với data đa dạng cho test auto-assign
             await TechnicianTestDataSeeder.SeedAsync(context);
 
             var packageLogger = loggerFactory.CreateLogger<MaintenancePackageSeeder>();
@@ -397,7 +410,14 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<GlobalExceptionHandler>();
 
 // Middleware pipeline
-app.UseHttpsRedirection();
+if (httpsRedirectionEnabled)
+{
+    app.UseHttpsRedirection();
+}
+else
+{
+    app.Logger.LogInformation("Skipping HTTPS redirection because no HTTPS endpoint is configured.");
+}
 app.UseResponseCaching();
 
 // ✅ FIX: CORS MUST BE CALLED BEFORE Authentication/Authorization
@@ -446,12 +466,12 @@ app.UseMiddleware<EVServiceCenter.API.Middlewares.TokenBlacklistMiddleware>(); /
 app.UseMiddleware<PasswordResetRateLimitMiddleware>();
 app.UseAuthorization();
 
-// Map SignalR Hub
+
 app.MapHub<EVServiceCenter.API.Hubs.ChatHub>("/hubs/chat");
 
 app.MapControllers();
 
-// ⚙️ Start background services
+
 var reconciliationService = app.Services.GetRequiredService<EVServiceCenter.Infrastructure.BackgroundServices.AppointmentReconciliationService>();
 reconciliationService.Start();
 app.Run();

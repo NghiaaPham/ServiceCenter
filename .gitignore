@@ -48,12 +48,12 @@ Migrations/
 *.txt
 
 # 4. NGOẠI TRỪ: Giữ lại các file appsettings.json và appsettings.Development.json
-!**/appsettings.json
-!**/appsettings.Development.json
+#!**/appsettings.json
+#!**/appsettings.Development.json
 
 # 5. NGOẠI TRỪ: Giữ lại các file project và solution để duy trì cấu trúc dự án
 !*.sln
-!*.csproj
+#!*.csproj
 
 # 6. NGOẠI TRỪ: Luôn giữ lại chính file .gitignore
 !.gitignore
@@ -62,3 +62,5 @@ Migrations/
 [Bb]in/
 [Oo]bj/
 logs/
+
+*.md
