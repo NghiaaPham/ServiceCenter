@@ -332,9 +332,14 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
         {
             try
             {
-                // Verify token with Facebook
                 var appId = _configuration["Authentication:Facebook:AppId"];
                 var appSecret = _configuration["Authentication:Facebook:AppSecret"];
+
+                if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(appSecret))
+                {
+                    _logger.LogError("Facebook AppId or AppSecret is not configured.");
+                    throw new InvalidOperationException("Facebook login is not configured correctly.");
+                }
 
                 // Debug token
                 var debugTokenUrl = $"https://graph.facebook.com/debug_token?input_token={accessToken}&access_token={appId}|{appSecret}";
@@ -342,63 +347,74 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
 
                 if (!debugResponse.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Facebook token validation failed");
+                    var errorContent = await debugResponse.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Facebook token validation failed with status {StatusCode}. Response: {Response}", debugResponse.StatusCode, errorContent);
                     return null;
                 }
 
                 var debugContent = await debugResponse.Content.ReadAsStringAsync();
-                var debugData = JsonConvert.DeserializeObject<dynamic>(debugContent);
+                var debugData = JsonConvert.DeserializeObject<FacebookDebugToken>(debugContent);
 
-                if (debugData?.data?.is_valid != true)
+                if (debugData?.Data?.IsValid != true)
                 {
-                    _logger.LogWarning("Facebook token is not valid");
+                    _logger.LogWarning("Facebook token is not valid. Response: {Response}", debugContent);
                     return null;
                 }
 
-                // ✅ IMPROVED: Get user info with additional fields (birthday, gender, location)
+                // Get user info
                 var userInfoUrl = $"https://graph.facebook.com/me?fields=id,name,email,picture,birthday,gender,location&access_token={accessToken}";
                 var userResponse = await _httpClient.GetAsync(userInfoUrl);
 
                 if (!userResponse.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Failed to get Facebook user info");
+                    var errorContent = await userResponse.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Failed to get Facebook user info with status {StatusCode}. Response: {Response}", userResponse.StatusCode, errorContent);
                     return null;
                 }
 
                 var userContent = await userResponse.Content.ReadAsStringAsync();
-                var userData = JsonConvert.DeserializeObject<dynamic>(userContent);
+                var userData = JsonConvert.DeserializeObject<FacebookUserData>(userContent);
+
+                if (userData == null || string.IsNullOrEmpty(userData.Id))
+                {
+                    _logger.LogWarning("Failed to deserialize Facebook user data or user ID is missing.");
+                    return null;
+                }
 
                 // Parse birthday from Facebook format (MM/DD/YYYY)
                 DateOnly? birthday = null;
-                if (userData.birthday != null)
+                if (!string.IsNullOrEmpty(userData.Birthday))
                 {
                     try
                     {
-                        var birthdayStr = (string)userData.birthday;
-                        var parts = birthdayStr.Split('/');
-                        if (parts.Length == 3)
+                        var parts = userData.Birthday.Split('/');
+                        if (parts.Length == 3 && int.TryParse(parts[2], out var year) && int.TryParse(parts[0], out var month) && int.TryParse(parts[1], out var day))
                         {
-                            birthday = new DateOnly(int.Parse(parts[2]), int.Parse(parts[0]), int.Parse(parts[1]));
+                            birthday = new DateOnly(year, month, day);
                         }
                     }
                     catch (Exception ex)
                     {
-                        string birthdayStr = userData.birthday?.ToString() ?? "null";
-                        _logger.LogWarning(ex, "Failed to parse Facebook birthday: {Birthday}", birthdayStr);
+                        _logger.LogWarning(ex, "Failed to parse Facebook birthday: {Birthday}", userData.Birthday);
                     }
                 }
 
                 return new ExternalUserInfoDto
                 {
-                    Id = userData.id,
-                    Email = userData.email ?? $"{userData.id}@facebook.local",
-                    Name = userData.name,
-                    Picture = userData.picture?.data?.url,
+                    Id = userData.Id,
+                    Email = userData.Email ?? $"{userData.Id}@facebook.local",
+                    Name = userData.Name,
+                    Picture = userData.Picture?.Data?.Url,
                     Provider = "Facebook",
                     Birthday = birthday,
-                    Gender = userData.gender,
-                    Location = userData.location?.name
+                    Gender = userData.Gender,
+                    Location = userData.Location?.Name
                 };
+            }
+            catch (JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Error deserializing Facebook API response.");
+                return null;
             }
             catch (Exception ex)
             {
@@ -695,5 +711,61 @@ namespace EVServiceCenter.Infrastructure.Domains.Identity.Services
                 _ => null
             };
         }
+        
+        #region Facebook DTOs
+        private class FacebookPictureData
+        {
+            [JsonProperty("url")]
+            public string? Url { get; set; }
+        }
+
+        private class FacebookPicture
+        {
+            [JsonProperty("data")]
+            public FacebookPictureData? Data { get; set; }
+        }
+
+        private class FacebookLocation
+        {
+            [JsonProperty("name")]
+            public string? Name { get; set; }
+        }
+
+        private class FacebookUserData
+        {
+            [JsonProperty("id")]
+            public string Id { get; set; } = null!;
+
+            [JsonProperty("name")]
+            public string? Name { get; set; }
+
+            [JsonProperty("email")]
+            public string? Email { get; set; }
+
+            [JsonProperty("picture")]
+            public FacebookPicture? Picture { get; set; }
+
+            [JsonProperty("birthday")]
+            public string? Birthday { get; set; }
+
+            [JsonProperty("gender")]
+            public string? Gender { get; set; }
+
+            [JsonProperty("location")]
+            public FacebookLocation? Location { get; set; }
+        }
+        
+        private class FacebookDebugData
+        {
+            [JsonProperty("is_valid")]
+            public bool IsValid { get; set; }
+        }
+
+        private class FacebookDebugToken
+        {
+            [JsonProperty("data")]
+            public FacebookDebugData? Data { get; set; }
+        }
+        #endregion
     }
 }

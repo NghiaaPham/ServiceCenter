@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using EVServiceCenter.Core.Domains.Invoices.Interfaces;
 using EVServiceCenter.Core.Domains.Payments.Constants;
 using EVServiceCenter.Core.Domains.Payments.DTOs.Requests;
@@ -897,11 +898,39 @@ public class PaymentService : IPaymentService
                     .ThenInclude(w => w!.Appointment)
                 .FirstOrDefaultAsync(i => i.InvoiceId == payment.InvoiceId, cancellationToken);
 
-            if (invoice?.WorkOrder?.Appointment != null)
+            // Chuẩn hóa sai lệch làm tròn: nếu còn < 1đ xem như đã thanh toán đủ
+            if (invoice?.OutstandingAmount is > 0m and < 1m)
             {
-                var appointment = invoice.WorkOrder.Appointment;
-                var paidAmount = invoice.PaidAmount ?? 0m;
-                var outstanding = invoice.OutstandingAmount ?? 0m;
+                invoice.OutstandingAmount = 0;
+                invoice.PaidAmount = invoice.GrandTotal ?? invoice.PaidAmount;
+                invoice.Status = "Paid";
+                _logger.LogInformation(
+                    "Normalized tiny outstanding for Invoice {InvoiceCode}: set Outstanding=0 to mark Paid",
+                    invoice.InvoiceCode);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            var appointment = invoice?.WorkOrder?.Appointment;
+
+            if (appointment == null && invoice != null &&
+                TryExtractAppointmentIdFromInvoiceNotes(invoice.Notes, out var fallbackAppointmentId))
+            {
+                appointment = await _context.Appointments
+                    .FirstOrDefaultAsync(a => a.AppointmentId == fallbackAppointmentId, cancellationToken);
+
+                if (appointment != null)
+                {
+                    _logger.LogInformation(
+                        "Linked Invoice {InvoiceCode} to Appointment {AppointmentId} via invoice note fallback",
+                        invoice.InvoiceCode,
+                        appointment.AppointmentId);
+                }
+            }
+
+            if (appointment != null)
+            {
+                var paidAmount = invoice?.PaidAmount ?? 0m;
+                var outstanding = invoice?.OutstandingAmount ?? 0m;
 
                 var targetStatus = outstanding <= 0
                     ? PaymentStatusEnum.Completed.ToString()
@@ -920,7 +949,7 @@ public class PaymentService : IPaymentService
                     _logger.LogInformation(
                         "Synchronized payment status for Appointment {AppointmentId} from Invoice {InvoiceCode}. {PreviousStatus} -> {NewStatus} (Paid={PaidAmount:N0}, Outstanding={Outstanding:N0})",
                         appointment.AppointmentId,
-                        invoice.InvoiceCode,
+                        invoice?.InvoiceCode,
                         previousStatus,
                         targetStatus,
                         paidAmount,
@@ -1009,9 +1038,50 @@ public class PaymentService : IPaymentService
         string? gatewayTransactionId,
         CancellationToken cancellationToken)
     {
+        // Try to find PaymentIntent by ProviderIntentId first
         var paymentIntent = await _context.PaymentIntents
             .Include(pi => pi.Appointment)
             .FirstOrDefaultAsync(pi => pi.ProviderIntentId == payment.PaymentCode, cancellationToken);
+
+        Invoice? invoice = null;
+
+        // If not found by ProviderIntentId, try to find by Invoice -> Appointment
+        if (paymentIntent == null)
+        {
+            invoice = await _context.Set<Invoice>()
+                .Include(i => i.WorkOrder)
+                    .ThenInclude(w => w!.Appointment)
+                        .ThenInclude(a => a.PaymentIntents)
+                .FirstOrDefaultAsync(i => i.InvoiceId == payment.InvoiceId, cancellationToken);
+
+            if (invoice?.WorkOrder?.Appointment != null)
+            {
+                // Find the most recent pending PaymentIntent for this appointment
+                paymentIntent = invoice.WorkOrder.Appointment.PaymentIntents
+                    .Where(pi => pi.Status == PaymentIntentStatusEnum.Pending.ToString())
+                    .OrderByDescending(pi => pi.CreatedDate)
+                    .FirstOrDefault();
+            }
+        }
+
+        if (paymentIntent == null && invoice != null &&
+            TryExtractAppointmentIdFromInvoiceNotes(invoice.Notes, out var fallbackAppointmentId))
+        {
+            paymentIntent = await _context.PaymentIntents
+                .Include(pi => pi.Appointment)
+                .Where(pi => pi.AppointmentId == fallbackAppointmentId &&
+                             pi.Status == PaymentIntentStatusEnum.Pending.ToString())
+                .OrderByDescending(pi => pi.CreatedDate)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (paymentIntent != null)
+            {
+                _logger.LogInformation(
+                    "Linked payment intent {IntentCode} for Appointment {AppointmentId} via invoice note fallback",
+                    paymentIntent.IntentCode,
+                    paymentIntent.AppointmentId);
+            }
+        }
 
         if (paymentIntent == null)
         {
@@ -1057,6 +1127,18 @@ public class PaymentService : IPaymentService
         }
     }
 
+    private static bool TryExtractAppointmentIdFromInvoiceNotes(string? notes, out int appointmentId)
+    {
+        appointmentId = default;
+        if (string.IsNullOrWhiteSpace(notes))
+        {
+            return false;
+        }
+
+        var match = Regex.Match(notes, @"Appointment[^()]*\(ID:\s*(\d+)\)", RegexOptions.IgnoreCase);
+        return match.Success && int.TryParse(match.Groups[1].Value, out appointmentId);
+    }
+
     #region Private Helper Methods - Mapping
 
     /// <summary>
@@ -1073,6 +1155,8 @@ public class PaymentService : IPaymentService
             PaymentCode = payment.PaymentCode,
             InvoiceId = payment.InvoiceId,
             InvoiceCode = payment.Invoice!.InvoiceCode,
+            InvoicePaidAmount = payment.Invoice?.PaidAmount,
+            InvoiceOutstandingAmount = payment.Invoice?.OutstandingAmount,
             PaymentMethodId = payment.MethodId,
             PaymentMethodName = payment.Method?.MethodName ?? "Unknown",
             Amount = payment.Amount,

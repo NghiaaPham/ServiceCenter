@@ -1227,94 +1227,90 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             int currentUserId,
             CancellationToken cancellationToken = default)
         {
-            var appointment = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
+            var strategy = _context.Database.CreateExecutionStrategy();
 
-            if (appointment == null)
-                throw new InvalidOperationException("Appointment không tồn tại");
-
-            // Validate status
-            if (appointment.StatusId != (int)AppointmentStatusEnum.Confirmed)
-                throw new InvalidOperationException(
-                    $"Chỉ có thể check-in appointment đã Confirmed. Trạng thái hiện tại: {appointment.StatusId}");
-
-            // Validate payment status (nếu cần thanh toán trước)
-            if (appointment.EstimatedCost > 0 &&
-                appointment.PaymentStatus != PaymentStatusEnum.Completed.ToString())
+            return await strategy.ExecuteAsync(async () =>
             {
-                throw new InvalidOperationException(
-                    "Khách hàng chưa thanh toán. Vui lòng thanh toán trước khi check-in.");
-            }
+                var appointment = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
 
-            // ✅ NEW: Check existing WorkOrder (prevent duplicate)
-            var existingWorkOrder = await _context.WorkOrders
-                .FirstOrDefaultAsync(wo => wo.AppointmentId == appointmentId, cancellationToken);
+                if (appointment == null)
+                    throw new InvalidOperationException("Appointment không tồn tại");
 
-            if (existingWorkOrder != null)
-            {
-                _logger.LogWarning(
-                    "Appointment {AppointmentId} already has WorkOrder {WorkOrderCode}",
-                    appointmentId, existingWorkOrder.WorkOrderCode);
-                throw new InvalidOperationException(
-                    $"Appointment đã được check-in với WorkOrder {existingWorkOrder.WorkOrderCode}");
-            }
+                if (appointment.StatusId != (int)AppointmentStatusEnum.Confirmed)
+                    throw new InvalidOperationException(
+                        $"Chỉ có thể check-in appointment đã Confirmed. Trạng thái hiện tại: {appointment.StatusId}");
 
-            _logger.LogInformation(
-                "🚀 Check-in appointment {AppointmentId} by user {UserId}",
-                appointmentId, currentUserId);
-
-            // ✅ NEW: Transaction safety
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
-            {
-                // ✅ FIX: Update appointment status directly in database to avoid tracking conflicts
-                // Since appointment was loaded with AsNoTracking(), we use ExecuteUpdateAsync
-                await _context.Appointments
-                    .Where(a => a.AppointmentId == appointmentId)
-                    .ExecuteUpdateAsync(setters => setters
-                        .SetProperty(a => a.StatusId, (int)AppointmentStatusEnum.InProgress)
-                        .SetProperty(a => a.PaymentStatus, PaymentStatusEnum.Completed.ToString())
-                        .SetProperty(a => a.UpdatedBy, currentUserId)
-                        .SetProperty(a => a.UpdatedDate, DateTime.UtcNow),
-                        cancellationToken);
-
-                // Tạo WorkOrder để tracking công việc
-                var workOrder = new WorkOrder
+                if (appointment.EstimatedCost > 0 &&
+                    appointment.PaymentStatus != PaymentStatusEnum.Completed.ToString())
                 {
-                    AppointmentId = appointmentId,
-                    WorkOrderCode = await GenerateWorkOrderCodeAsync(cancellationToken),
-                    CustomerId = appointment.CustomerId,
-                    VehicleId = appointment.VehicleId,
-                    ServiceCenterId = appointment.ServiceCenterId,
-                    TechnicianId = appointment.PreferredTechnicianId,
-                    StatusId = 1, // WorkOrderStatus: Started/InProgress
-                    StartDate = DateTime.UtcNow,
-                    EstimatedCompletionDate = DateTime.UtcNow.AddMinutes(appointment.EstimatedDuration ?? 60),
-                    InternalNotes = "Auto-created from check-in",
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedBy = currentUserId
-                };
+                    throw new InvalidOperationException(
+                        "Khách hàng chưa thanh toán. Vui lòng thanh toán trước khi check-in.");
+                }
 
-                await _context.WorkOrders.AddAsync(workOrder, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
+                var existingWorkOrder = await _context.WorkOrders
+                    .FirstOrDefaultAsync(wo => wo.AppointmentId == appointmentId, cancellationToken);
+
+                if (existingWorkOrder != null)
+                {
+                    _logger.LogWarning(
+                        "Appointment {AppointmentId} already has WorkOrder {WorkOrderCode}",
+                        appointmentId, existingWorkOrder.WorkOrderCode);
+                    throw new InvalidOperationException(
+                        $"Appointment đã được check-in với WorkOrder {existingWorkOrder.WorkOrderCode}");
+                }
 
                 _logger.LogInformation(
-                    "✅ Check-in successful: Appointment {AppointmentId} → InProgress, " +
-                    "WorkOrder {WorkOrderCode} created",
-                    appointmentId, workOrder.WorkOrderCode);
+                    "🚀 Check-in appointment {AppointmentId} by user {UserId}",
+                    appointmentId, currentUserId);
 
-                // ✅ FIX: RELOAD appointment with full details (include Status navigation)
-                // PHẢI reload sau khi commit transaction để EF Core load lại Status entity
-                var result = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
-                return AppointmentMapper.ToResponseDto(result!);
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex,
-                    "❌ Failed to check-in appointment {AppointmentId}", appointmentId);
-                throw;
-            }
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
+                {
+                    await _context.Appointments
+                        .Where(a => a.AppointmentId == appointmentId)
+                        .ExecuteUpdateAsync(setters => setters
+                            .SetProperty(a => a.StatusId, (int)AppointmentStatusEnum.InProgress)
+                            .SetProperty(a => a.PaymentStatus, PaymentStatusEnum.Completed.ToString())
+                            .SetProperty(a => a.UpdatedBy, currentUserId)
+                            .SetProperty(a => a.UpdatedDate, DateTime.UtcNow),
+                            cancellationToken);
+
+                    var workOrder = new WorkOrder
+                    {
+                        AppointmentId = appointmentId,
+                        WorkOrderCode = await GenerateWorkOrderCodeAsync(cancellationToken),
+                        CustomerId = appointment.CustomerId,
+                        VehicleId = appointment.VehicleId,
+                        ServiceCenterId = appointment.ServiceCenterId,
+                        TechnicianId = appointment.PreferredTechnicianId,
+                        StatusId = 1, // WorkOrderStatus: Started/InProgress
+                        StartDate = DateTime.UtcNow,
+                        EstimatedCompletionDate = DateTime.UtcNow.AddMinutes(appointment.EstimatedDuration ?? 60),
+                        InternalNotes = "Auto-created from check-in",
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedBy = currentUserId
+                    };
+
+                    await _context.WorkOrders.AddAsync(workOrder, cancellationToken);
+                    await _context.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "✅ Check-in successful: Appointment {AppointmentId} → InProgress, " +
+                        "WorkOrder {WorkOrderCode} created",
+                        appointmentId, workOrder.WorkOrderCode);
+
+                    var result = await _repository.GetByIdWithDetailsAsync(appointmentId, cancellationToken);
+                    return AppointmentMapper.ToResponseDto(result!);
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    _logger.LogError(ex,
+                        "❌ Failed to check-in appointment {AppointmentId}", appointmentId);
+                    throw;
+                }
+            });
         }
 
         /// <summary>

@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using System.Globalization;
 
 namespace EVServiceCenter.API.Controllers.Payments;
 
@@ -124,9 +125,13 @@ public class PaymentController : ControllerBase
         var result = await _paymentService.ProcessVNPayCallbackAsync(callback, cancellationToken);
 
         var success = result.Status == PaymentCallbackStatus.Success || result.Status == PaymentCallbackStatus.AlreadyProcessed;
-        
-      
-        var redirectUrl = BuildFrontendRedirectUrl(callback.vnp_TxnRef, success, redirect);
+
+        var paymentInfo = await ResolveFrontendPaymentInfoAsync(callback.vnp_TxnRef, cancellationToken);
+        var redirectUrl = BuildFrontendRedirectUrl(
+            paymentInfo.PaymentCode,
+            success,
+            redirect,
+            BuildPaymentResultQuery(paymentInfo));
 
         if (Uri.IsWellFormedUriString(redirectUrl, UriKind.Absolute))
         {
@@ -138,7 +143,7 @@ public class PaymentController : ControllerBase
         return Ok(new
         {
             success,
-            transaction = callback.vnp_TxnRef,
+            transaction = paymentInfo.PaymentCode,
             message = result.Message ?? (success ? "Payment completed successfully." : "Payment failed or cancelled.")
         });
     }
@@ -324,22 +329,31 @@ public class PaymentController : ControllerBase
     /// </summary>
     [HttpPost("momo/return")]
     [AllowAnonymous]
-    public async Task<IActionResult> MoMoReturn([FromBody] MoMoCallbackDto callback)
+    public async Task<IActionResult> MoMoReturn([FromBody] MoMoCallbackDto callback, CancellationToken cancellationToken)
     {
         try
         {
             _logger.LogInformation("Received MoMo Return for {OrderId}", callback.orderId);
 
-            var success = await _paymentService.ProcessMoMoCallbackAsync(callback);
+            var success = await _paymentService.ProcessMoMoCallbackAsync(callback, cancellationToken);
 
-            // Redirect to frontend with payment result
-            var redirectUrl = BuildFrontendRedirectUrl(callback.orderId, success);
+            var paymentInfo = await ResolveFrontendPaymentInfoAsync(callback.orderId, cancellationToken);
+            var redirectUrl = BuildFrontendRedirectUrl(
+                paymentInfo.PaymentCode,
+                success,
+                null,
+                BuildPaymentResultQuery(paymentInfo));
             return Redirect(redirectUrl);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing MoMo Return");
-            var redirectUrl = BuildFrontendRedirectUrl(callback.orderId, false);
+            var paymentInfo = await ResolveFrontendPaymentInfoAsync(callback.orderId, cancellationToken);
+            var redirectUrl = BuildFrontendRedirectUrl(
+                paymentInfo.PaymentCode,
+                false,
+                null,
+                BuildPaymentResultQuery(paymentInfo));
             return Redirect(redirectUrl);
         }
     }
@@ -517,7 +531,11 @@ public class PaymentController : ControllerBase
         return Content(payload, "application/json");
     }
 
-    private string BuildFrontendRedirectUrl(string paymentCode, bool success, string? requestedRedirect = null)
+    private string BuildFrontendRedirectUrl(
+        string paymentCode,
+        bool success,
+        string? requestedRedirect = null,
+        IDictionary<string, string?>? extraQueryParameters = null)
     {
         // Use provided redirect URL or fallback to query parameter or config
         var baseUrl = ResolveFrontendRedirectUrl(requestedRedirect);
@@ -533,8 +551,62 @@ public class PaymentController : ControllerBase
             ["status"] = success ? "success" : "failed"
         };
 
+        if (extraQueryParameters != null)
+        {
+            foreach (var kv in extraQueryParameters)
+            {
+                if (!string.IsNullOrWhiteSpace(kv.Key))
+                {
+                    queryParams[kv.Key] = kv.Value;
+                }
+            }
+        }
+
         return BuildUrlWithQuery(baseUrl, queryParams);
     }
+
+    private static IDictionary<string, string?> BuildPaymentResultQuery(PaymentRedirectInfo info)
+    {
+        var extras = new Dictionary<string, string?>();
+
+        if (info.PaidAmount.HasValue)
+        {
+            extras["paidAmount"] = info.PaidAmount.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (info.OutstandingAmount.HasValue)
+        {
+            extras["outstandingAmount"] = info.OutstandingAmount.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return extras;
+    }
+
+    private async Task<PaymentRedirectInfo> ResolveFrontendPaymentInfoAsync(
+        string? reference,
+        CancellationToken cancellationToken)
+    {
+        var fallback = reference ?? string.Empty;
+        PaymentResponseDto? payment = null;
+
+        if (!string.IsNullOrWhiteSpace(reference))
+        {
+            if (int.TryParse(reference, NumberStyles.Integer, CultureInfo.InvariantCulture, out var paymentId))
+            {
+                payment = await _paymentService.GetPaymentByIdAsync(paymentId, cancellationToken);
+            }
+
+            if (payment == null)
+            {
+                payment = await _paymentService.GetPaymentByCodeAsync(reference, cancellationToken);
+            }
+        }
+
+        var code = string.IsNullOrWhiteSpace(payment?.PaymentCode) ? fallback : payment!.PaymentCode;
+        return new PaymentRedirectInfo(code, payment?.InvoiceOutstandingAmount, payment?.InvoicePaidAmount);
+    }
+
+    private sealed record PaymentRedirectInfo(string PaymentCode, decimal? OutstandingAmount, decimal? PaidAmount);
 
     private string? ResolveFrontendRedirectUrl(string? requestedUrl)
     {

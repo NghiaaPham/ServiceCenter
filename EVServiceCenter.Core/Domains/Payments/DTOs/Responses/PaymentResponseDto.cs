@@ -9,6 +9,8 @@ public class PaymentResponseDto
     public string PaymentCode { get; set; } = null!;
     public int InvoiceId { get; set; }
     public string InvoiceCode { get; set; } = null!;
+    public decimal? InvoicePaidAmount { get; set; }
+    public decimal? InvoiceOutstandingAmount { get; set; }
     public int? PaymentMethodId { get; set; }
     public string PaymentMethodName { get; set; } = null!;
     public decimal Amount { get; set; }
