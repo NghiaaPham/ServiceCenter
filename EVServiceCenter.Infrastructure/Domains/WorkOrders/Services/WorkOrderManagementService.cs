@@ -760,6 +760,34 @@ public class WorkOrderManagementService : IWorkOrderService
             // âœ… LÆ°u láº¡i AppointmentId Ä‘á»ƒ dÃ¹ng sau khi commit transaction
             int? linkedAppointmentId = workOrder.AppointmentId;
 
+            // 0) PAYMENT GATE: Validate payment status for post-payment customers
+            if (workOrder.Appointment != null)
+            {
+                var paymentStatus = workOrder.Appointment.PaymentStatus;
+                var estimatedCost = workOrder.Appointment.EstimatedCost ?? 0m;
+
+                if (estimatedCost > 0 &&
+                    paymentStatus != PaymentStatusEnum.Completed.ToString())
+                {
+                    _logger.LogWarning(
+                        "Cannot complete WorkOrder {WorkOrderCode} - Payment not completed. " +
+                        "PaymentStatus = {PaymentStatus}, EstimatedCost = {EstimatedCost}đ",
+                        workOrder.WorkOrderCode, paymentStatus, estimatedCost);
+
+                    throw new InvalidOperationException(
+                        $"Không thể hoàn tất work order. " +
+                        $"Khách hàng chưa thanh toán ({estimatedCost:N0}đ). " +
+                        $"Vui lòng yêu cầu thanh toán trước khi hoàn tất.");
+                }
+
+                if (paymentStatus == PaymentStatusEnum.Completed.ToString())
+                {
+                    _logger.LogInformation(
+                        "Payment validated: WorkOrder {WorkOrderCode} - Customer already paid ({EstimatedCost}đ)",
+                        workOrder.WorkOrderCode, estimatedCost);
+                }
+            }
+
             // 1) Validate checklist
             var checklistItems = await _context.Set<ChecklistItem>()
                 .Where(ci => ci.WorkOrderId == workOrderId)

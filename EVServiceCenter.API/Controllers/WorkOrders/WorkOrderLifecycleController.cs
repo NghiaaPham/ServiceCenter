@@ -121,19 +121,19 @@ public class WorkOrderLifecycleController : BaseController
     }
 
     /// <summary>
-    /// [Technician] Start work on work order
-    /// 
+    /// [Technician/Staff/Admin] Start work on work order
+    ///
     /// **Business Rules:**
-    /// - Must be assigned to this work order
-    /// - Must be on-shift (checked in)
+    /// - Must be assigned to this work order (or Admin/Staff can start on behalf)
+    /// - Must be on-shift (checked in) or have valid schedule
     /// - Work order must be in Assigned or Created status
-    /// 
+    ///
     /// **On-Shift Validation:**
-    /// System checks if technician has checked in for shift today.
-    /// If not checked in, returns error with instruction to check-in first.
+    /// System checks if technician has checked in for shift today or has valid schedule.
+    /// Can be skipped with skipShiftValidation=true for Admin/Staff.
     /// </summary>
     [HttpPost("{id:int}/start")]
-    [Authorize(Policy = "TechnicianOnly")]
+    [Authorize(Policy = "AllInternal")]  // Allow Admin, Staff, Technician
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> StartWork(
@@ -160,20 +160,20 @@ public class WorkOrderLifecycleController : BaseController
     }
 
     /// <summary>
-    /// [Technician] Complete work order
-    /// 
+    /// [Technician/Staff/Admin] Complete work order
+    ///
     /// **Business Rules:**
-    /// - Must be assigned to this work order
+    /// - Must be assigned to this work order (or Admin/Staff can complete on behalf)
     /// - Work order must be InProgress
     /// - All required checklist items must be completed
-    /// 
+    ///
     /// **Post-Completion:**
     /// - Auto-generates invoice
     /// - Creates maintenance history
     /// - Updates appointment status
     /// </summary>
     [HttpPost("{id:int}/complete")]
-    [Authorize(Policy = "TechnicianOnly")]
+    [Authorize(Policy = "AllInternal")]  // Allow Admin, Staff, Technician
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CompleteWorkOrder(int id, CancellationToken cancellationToken)

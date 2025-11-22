@@ -50,7 +50,7 @@ namespace EVServiceCenter.Infrastructure.Persistence.Seeders
                             SlotDate = currentDate,
                             StartTime = currentTime,
                             EndTime = slotEnd,
-                            MaxBookings = center.Capacity > 10 ? 2 : 1,
+                            MaxBookings = 5, // 5 vehicles per slot
                             SlotType = "Regular",
                             IsBlocked = false,
                             CreatedDate = DateTime.UtcNow

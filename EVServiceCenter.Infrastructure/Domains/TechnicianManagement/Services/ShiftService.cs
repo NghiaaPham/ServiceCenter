@@ -243,33 +243,43 @@ public class ShiftService : IShiftService
         var currentUtc = dateTime ?? DateTime.UtcNow;
         var currentVn = TimeZoneInfo.ConvertTimeFromUtc(currentUtc, VietnamTimeZone);
         var today = DateOnly.FromDateTime(currentVn);
+        var currentTime = TimeOnly.FromDateTime(currentVn);
 
+        // First try to find actual shift (check-in record)
         var shift = await _shiftRepository
             .GetByTechnicianAndDateAsync(technicianId, today, cancellationToken);
 
-        if (shift == null)
+        // If shift exists and checked in, validate it
+        if (shift != null && shift.CheckInTime.HasValue && !shift.CheckOutTime.HasValue)
         {
-            _logger.LogDebug("No shift found for Technician {TechnicianId} on {Date}", technicianId, today);
-            return false;
+            _logger.LogDebug(
+                "Technician {TechnicianId} is on-shift (checked in). ShiftId={ShiftId}, CheckInTimeUtc={CheckInTime}",
+                technicianId, shift.ShiftId, shift.CheckInTime);
+            return true;
         }
 
-        if (!shift.CheckInTime.HasValue)
-        {
-            _logger.LogDebug("Technician {TechnicianId} has not checked in for shift {ShiftId}", technicianId, shift.ShiftId);
-            return false;
-        }
+        // FALLBACK: If no check-in, check TechnicianSchedule (planned schedule)
+        var schedule = await _context.TechnicianSchedules
+            .FirstOrDefaultAsync(s =>
+                s.TechnicianId == technicianId &&
+                s.WorkDate == today &&
+                s.IsAvailable == true &&
+                currentTime >= s.StartTime &&
+                currentTime <= s.EndTime,
+                cancellationToken);
 
-        if (shift.CheckOutTime.HasValue)
+        if (schedule != null)
         {
-            _logger.LogDebug("Technician {TechnicianId} has already checked out from shift {ShiftId}", technicianId, shift.ShiftId);
-            return false;
+            _logger.LogDebug(
+                "Technician {TechnicianId} has valid schedule for {Date} {Time} (not checked in yet)",
+                technicianId, today, currentTime);
+            return true;
         }
 
         _logger.LogDebug(
-            "Technician {TechnicianId} is on-shift. ShiftId={ShiftId}, CheckInTimeUtc={CheckInTime}",
-            technicianId, shift.ShiftId, shift.CheckInTime);
-
-        return true;
+            "Technician {TechnicianId} not available: No shift or schedule found for {Date} {Time}",
+            technicianId, today, currentTime);
+        return false;
     }
 
     public async Task<ShiftResponseDto?> GetTodayShiftAsync(

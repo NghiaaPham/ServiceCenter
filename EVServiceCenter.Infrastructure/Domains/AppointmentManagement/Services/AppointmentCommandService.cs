@@ -1240,11 +1240,14 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                     throw new InvalidOperationException(
                         $"Chỉ có thể check-in appointment đã Confirmed. Trạng thái hiện tại: {appointment.StatusId}");
 
+                // ✅ OPTION B: Cho phép check-in dù chưa thanh toán, chỉ ghi log cảnh báo
                 if (appointment.EstimatedCost > 0 &&
                     appointment.PaymentStatus != PaymentStatusEnum.Completed.ToString())
                 {
-                    throw new InvalidOperationException(
-                        "Khách hàng chưa thanh toán. Vui lòng thanh toán trước khi check-in.");
+                    _logger.LogWarning(
+                        "⚠️ Check-in appointment {AppointmentId} với PaymentStatus = {PaymentStatus}. " +
+                        "Estimated cost: {EstimatedCost}đ. Khách hàng cần thanh toán trước khi hoàn tất.",
+                        appointmentId, appointment.PaymentStatus, appointment.EstimatedCost);
                 }
 
                 var existingWorkOrder = await _context.WorkOrders
@@ -1266,11 +1269,12 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
+                    // ✅ OPTION B: Giữ nguyên PaymentStatus hiện tại (không force Completed)
+                    // PaymentStatus sẽ được cập nhật khi customer thực sự thanh toán
                     await _context.Appointments
                         .Where(a => a.AppointmentId == appointmentId)
                         .ExecuteUpdateAsync(setters => setters
                             .SetProperty(a => a.StatusId, (int)AppointmentStatusEnum.InProgress)
-                            .SetProperty(a => a.PaymentStatus, PaymentStatusEnum.Completed.ToString())
                             .SetProperty(a => a.UpdatedBy, currentUserId)
                             .SetProperty(a => a.UpdatedDate, DateTime.UtcNow),
                             cancellationToken);
