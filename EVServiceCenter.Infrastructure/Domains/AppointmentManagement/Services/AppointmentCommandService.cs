@@ -1519,9 +1519,10 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             if (appointment == null)
                 throw new InvalidOperationException("Appointment không tồn tại");
 
-            if (appointment.StatusId != (int)AppointmentStatusEnum.Pending)
+            if (appointment.StatusId != (int)AppointmentStatusEnum.Pending &&
+                appointment.StatusId != (int)AppointmentStatusEnum.Cancelled)
                 throw new InvalidOperationException(
-                    "Chỉ có thể xóa appointment ở trạng thái Pending");
+                    "Chi co the xoa appointment o trang thai Pending hoac Cancelled");
 
             return await _commandRepository.DeleteIfPossibleAsync(appointmentId, cancellationToken);
         }

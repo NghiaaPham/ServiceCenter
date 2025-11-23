@@ -244,11 +244,13 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Repositor
             CancellationToken cancellationToken = default)
         {
             var pendingStatusId = (int)AppointmentStatusEnum.Pending;
+            var cancelledStatusId = (int)AppointmentStatusEnum.Cancelled;
 
             var appointment = await _context.Appointments
                 .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId, cancellationToken);
 
-            if (appointment == null || appointment.StatusId != pendingStatusId)
+            if (appointment == null ||
+                (appointment.StatusId != pendingStatusId && appointment.StatusId != cancelledStatusId))
                 return false;
 
             _context.Appointments.Remove(appointment);
