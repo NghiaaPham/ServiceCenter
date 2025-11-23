@@ -1115,88 +1115,91 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
             if (AppointmentStatusHelper.IsFinalStatus(appointment.StatusId))
                 throw new InvalidOperationException("Không thể hủy appointment đã kết thúc");
 
-            // ✅ NEW: Transaction safety
-            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                // Xử lý refund nếu đã thanh toán
-                if (appointment.PaidAmount > 0)
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+                try
                 {
-                    // ✅ NEW: Null check for LatestPaymentIntentId
-                    if (!appointment.LatestPaymentIntentId.HasValue)
+                    // Xử lý refund nếu đã thanh toán
+                    if (appointment.PaidAmount > 0)
                     {
-                        _logger.LogError(
-                            "Appointment {AppointmentId} has PaidAmount={PaidAmount} but no LatestPaymentIntentId",
-                            appointment.AppointmentId, appointment.PaidAmount);
-                        throw new InvalidOperationException(
-                            "Dữ liệu không hợp lệ: Appointment đã thanh toán nhưng không có PaymentIntent");
-                    }
-
-                    // ✅ NEW: Check duplicate refund
-                    var existingRefund = await _context.Refunds
-                        .FirstOrDefaultAsync(r => r.AppointmentId == appointment.AppointmentId,
-                                           cancellationToken);
-
-                    if (existingRefund != null)
-                    {
-                        _logger.LogWarning(
-                            "Appointment {AppointmentId} already has refund {RefundId} (Status: {Status})",
-                            appointment.AppointmentId, existingRefund.RefundId, existingRefund.Status);
-                        // Skip refund creation - already exists
-                    }
-                    else
-                    {
-                        var refundAmount = CalculateRefundAmount(appointment, DateTime.UtcNow);
-
-                        if (refundAmount > 0)
+                        // ✅ NEW: Null check for LatestPaymentIntentId
+                        if (!appointment.LatestPaymentIntentId.HasValue)
                         {
-                            _logger.LogInformation(
-                                "💰 Creating refund for appointment {AppointmentId}: {RefundAmount}đ / {PaidAmount}đ",
-                                appointment.AppointmentId, refundAmount, appointment.PaidAmount);
+                            _logger.LogError(
+                                "Appointment {AppointmentId} has PaidAmount={PaidAmount} but no LatestPaymentIntentId",
+                                appointment.AppointmentId, appointment.PaidAmount);
+                            throw new InvalidOperationException(
+                                "Dữ liệu không hợp lệ: Appointment đã thanh toán nhưng không có PaymentIntent");
+                        }
 
-                            var refund = new Refund
-                            {
-                                PaymentIntentId = appointment.LatestPaymentIntentId.Value,
-                                AppointmentId = appointment.AppointmentId,
-                                CustomerId = appointment.CustomerId,
-                                RefundAmount = refundAmount,
-                                RefundReason = $"Cancelled by customer: {request.CancellationReason}",
-                                RefundMethod = RefundConstants.Method.Original,
-                                Status = RefundConstants.Status.Pending,
-                                CreatedDate = DateTime.UtcNow,
-                                CreatedBy = currentUserId,
-                                Notes = $"Auto-calculated refund ({(refundAmount / appointment.PaidAmount.Value * 100):F0}%)"
-                            };
+                        // ✅ NEW: Check duplicate refund
+                        var existingRefund = await _context.Refunds
+                            .FirstOrDefaultAsync(r => r.AppointmentId == appointment.AppointmentId,
+                                               cancellationToken);
 
-                            await _context.Refunds.AddAsync(refund, cancellationToken);
-
-                            _logger.LogInformation(
-                                "✅ Refund created: RefundId={RefundId}, Amount={Amount}đ",
-                                refund.RefundId, refund.RefundAmount);
+                        if (existingRefund != null)
+                        {
+                            _logger.LogWarning(
+                                "Appointment {AppointmentId} already has refund {RefundId} (Status: {Status})",
+                                appointment.AppointmentId, existingRefund.RefundId, existingRefund.Status);
+                            // Skip refund creation - already exists
                         }
                         else
                         {
-                            _logger.LogWarning(
-                                "⚠️ No refund for appointment {AppointmentId} (cancelled too late: {HoursBefore}h before)",
-                                appointment.AppointmentId,
-                                (appointment.AppointmentDate - DateTime.UtcNow).TotalHours);
+                            var refundAmount = CalculateRefundAmount(appointment, DateTime.UtcNow);
+
+                            if (refundAmount > 0)
+                            {
+                                _logger.LogInformation(
+                                    "💰 Creating refund for appointment {AppointmentId}: {RefundAmount}đ / {PaidAmount}đ",
+                                    appointment.AppointmentId, refundAmount, appointment.PaidAmount);
+
+                                var refund = new Refund
+                                {
+                                    PaymentIntentId = appointment.LatestPaymentIntentId.Value,
+                                    AppointmentId = appointment.AppointmentId,
+                                    CustomerId = appointment.CustomerId,
+                                    RefundAmount = refundAmount,
+                                    RefundReason = $"Cancelled by customer: {request.CancellationReason}",
+                                    RefundMethod = RefundConstants.Method.Original,
+                                    Status = RefundConstants.Status.Pending,
+                                    CreatedDate = DateTime.UtcNow,
+                                    CreatedBy = currentUserId,
+                                    Notes = $"Auto-calculated refund ({(refundAmount / appointment.PaidAmount.Value * 100):F0}%)"
+                                };
+
+                                await _context.Refunds.AddAsync(refund, cancellationToken);
+
+                                _logger.LogInformation(
+                                    "✅ Refund created: RefundId={RefundId}, Amount={Amount}đ",
+                                    refund.RefundId, refund.RefundAmount);
+                            }
+                            else
+                            {
+                                _logger.LogWarning(
+                                    "⚠️ No refund for appointment {AppointmentId} (cancelled too late: {HoursBefore}h before)",
+                                    appointment.AppointmentId,
+                                    (appointment.AppointmentDate - DateTime.UtcNow).TotalHours);
+                            }
                         }
                     }
+
+                    bool result = await _commandRepository.CancelAsync(
+                        request.AppointmentId, request.CancellationReason, cancellationToken);
+
+                    await transaction.CommitAsync(cancellationToken);
+                    return result;
                 }
-
-                bool result = await _commandRepository.CancelAsync(
-                    request.AppointmentId, request.CancellationReason, cancellationToken);
-
-                await transaction.CommitAsync(cancellationToken);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync(cancellationToken);
-                _logger.LogError(ex,
-                    "❌ Failed to cancel appointment {AppointmentId}", request.AppointmentId);
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    _logger.LogError(ex,
+                        "❌ Failed to cancel appointment {AppointmentId}", request.AppointmentId);
+                    throw;
+                }
+            });
         }
 
         public async Task<bool> ConfirmAsync(
