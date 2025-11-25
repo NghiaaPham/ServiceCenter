@@ -69,7 +69,10 @@ namespace EVServiceCenter.Infrastructure.Domains.CustomerVehicles.Services
             CancellationToken cancellationToken = default)
         {
             var vehicles = await _repository.GetVehiclesByCustomerAsync(customerId, cancellationToken);
-            return vehicles.Select(MapToDto);
+            var vehicleList = vehicles.ToList();
+
+            // Luôn trả về cờ HasMaintenanceHistory cho FE bằng cách batch load thống kê
+            return await MapToDtosAsync(vehicleList, includeStats: true, cancellationToken);
         }
 
         public async Task<IEnumerable<CustomerVehicleResponseDto>> GetVehiclesByModelAsync(
@@ -123,6 +126,9 @@ namespace EVServiceCenter.Infrastructure.Domains.CustomerVehicles.Services
                         dto.TotalWorkOrders = vehicleStats.TotalWorkOrders;
                         dto.TotalMaintenanceRecords = vehicleStats.TotalMaintenanceRecords;
                         dto.TotalSpentOnVehicle = vehicleStats.TotalSpentOnVehicle;
+                        // Preserve any positive signal from domain fields; only elevate, never downgrade
+                        dto.HasMaintenanceHistory = dto.HasMaintenanceHistory ||
+                            vehicleStats.TotalMaintenanceRecords > 0;
                     }
                 }
             }
@@ -176,7 +182,9 @@ namespace EVServiceCenter.Infrastructure.Domains.CustomerVehicles.Services
                 DaysUntilNextMaintenance = vehicle.NextMaintenanceDate.HasValue
                     ? vehicle.NextMaintenanceDate.Value.DayNumber - today.DayNumber
                     : null,
-                MaintenanceStatus = GetMaintenanceStatus(vehicle, today)
+                MaintenanceStatus = GetMaintenanceStatus(vehicle, today),
+                HasMaintenanceHistory = vehicle.LastMaintenanceDate.HasValue ||
+                    (vehicle.LastMaintenanceMileage.HasValue && vehicle.LastMaintenanceMileage.Value > 0)
             };
         }
 

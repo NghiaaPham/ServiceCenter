@@ -1,4 +1,5 @@
 using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Request;
+using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Query;
 using EVServiceCenter.Core.Domains.AppointmentManagement.DTOs.Response;
 using EVServiceCenter.Core.Domains.AppointmentManagement.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -163,14 +164,22 @@ namespace EVServiceCenter.API.Controllers.Appointments
         /// </remarks>
         /// <returns>Danh sách lịch hẹn</returns>
         [HttpGet("my-appointments")]
-        public async Task<IActionResult> GetMyAppointments()
+        public async Task<IActionResult> GetMyAppointments([FromQuery] AppointmentQueryDto query)
         {
             try
             {
                 var customerId = GetCurrentCustomerId();
-                var result = await _queryService.GetByCustomerIdAsync(customerId);
 
-                return Success(result, $"Tìm thấy {result.Count()} lịch hẹn");
+                // Force customer scope and sane defaults
+                query ??= new AppointmentQueryDto();
+                query.CustomerId = customerId;
+                if (query.Page <= 0) query.Page = 1;
+                if (query.PageSize <= 0) query.PageSize = 10;
+                if (query.PageSize > 100) query.PageSize = 100; // Prevent fetching too much
+
+                var result = await _queryService.GetPagedAsync(query);
+
+                return Success(result, $"Tìm thấy {result.TotalCount} lịch hẹn");
             }
             catch (Exception ex)
             {

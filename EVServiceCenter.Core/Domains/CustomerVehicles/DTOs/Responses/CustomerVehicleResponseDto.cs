@@ -43,6 +43,7 @@
         public int? DaysSinceLastMaintenance { get; set; }
         public int? DaysUntilNextMaintenance { get; set; }
         public string MaintenanceStatus { get; set; } = string.Empty;
+        public bool HasMaintenanceHistory { get; set; }
 
         public int? TotalWorkOrders { get; set; }
         public int? TotalMaintenanceRecords { get; set; }

@@ -140,6 +140,14 @@ public class VehicleMaintenanceController : BaseController
                 }
             });
         }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new

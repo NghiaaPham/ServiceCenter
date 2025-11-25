@@ -270,7 +270,9 @@ namespace EVServiceCenter.Infrastructure.Domains.CustomerVehicles.Services
                 DaysUntilNextMaintenance = vehicle.NextMaintenanceDate.HasValue
                     ? vehicle.NextMaintenanceDate.Value.DayNumber - today.DayNumber
                     : null,
-                MaintenanceStatus = GetMaintenanceStatus(vehicle, today)
+                MaintenanceStatus = GetMaintenanceStatus(vehicle, today),
+                HasMaintenanceHistory = vehicle.LastMaintenanceDate.HasValue ||
+                    (vehicle.LastMaintenanceMileage.HasValue && vehicle.LastMaintenanceMileage.Value > 0)
             };
         }
 
