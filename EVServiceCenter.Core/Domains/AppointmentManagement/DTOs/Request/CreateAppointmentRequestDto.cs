@@ -32,5 +32,10 @@
         public int? PreferredTechnicianId { get; set; }
         public string Priority { get; set; } = "Normal"; // Normal, High, Urgent
         public string Source { get; set; } = "Online"; // Online, Walk-in, Phone
+
+        /// <summary>
+        /// Km khách khai báo khi đặt lịch (tùy chọn)
+        /// </summary>
+        public int? CustomerReportedMileage { get; set; }
     }
 }

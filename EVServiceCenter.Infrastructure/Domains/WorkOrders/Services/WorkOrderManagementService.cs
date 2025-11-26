@@ -89,7 +89,8 @@ public class WorkOrderManagementService : IWorkOrderService
                 AdvisorId = request.AdvisorId,
                 StatusId = initialStatusId,
                 Priority = request.Priority ?? "Normal",
-                SourceType = request.AppointmentId.HasValue ? "Scheduled" : "WalkIn", // âœ… NEW: Auto-detect source
+                SourceType = request.AppointmentId.HasValue ? "Scheduled" : "WalkIn", // Auto-detect source
+                ActualMileage = request.ActualMileage, // âœ… NEW: Auto-detect source
                 EstimatedCompletionDate = request.EstimatedCompletionDate,
                 CustomerNotes = request.CustomerNotes,
                 InternalNotes = request.InternalNotes,
@@ -896,6 +897,9 @@ public class WorkOrderManagementService : IWorkOrderService
                 var invoicePartsTotal = invoice.PartsTotal ?? invoice.PartsSubTotal ?? partsTotal;
                 var invoiceGrandTotal = invoice.GrandTotal ?? grandTotal;
 
+                // Prefer actual mileage captured on work order; fallback vehicle/last maintenance
+                var actualMileage = workOrder.ActualMileage ?? workOrder.Vehicle?.Mileage ?? workOrder.Vehicle?.LastMaintenanceMileage;
+
                 _ = await EnsureMaintenanceHistoryAsync(
                     workOrder,
                     serviceDate,
@@ -903,7 +907,8 @@ public class WorkOrderManagementService : IWorkOrderService
                     invoicePartsTotal,
                     invoiceGrandTotal,
                     completedBy,
-                    cancellationToken);
+                    cancellationToken,
+                    actualMileage);
 
                 // âš ï¸ KHÃ”NG tá»± update Appointment á»Ÿ Ä‘Ã¢y ná»¯a â€“ Ä‘á»ƒ CompleteAppointmentAsync xá»­ lÃ½
 
@@ -1087,7 +1092,8 @@ public class WorkOrderManagementService : IWorkOrderService
         decimal partsTotal,
         decimal grandTotal,
         int completedBy,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int? actualMileageOverride = null)
     {
         var history = await _context.MaintenanceHistories
             .FirstOrDefaultAsync(h => h.WorkOrderId == workOrder.WorkOrderId, cancellationToken);
@@ -1097,7 +1103,7 @@ public class WorkOrderManagementService : IWorkOrderService
             .FirstOrDefaultAsync(v => v.VehicleId == workOrder.VehicleId, cancellationToken)
             ?? throw new InvalidOperationException($"Vehicle {workOrder.VehicleId} not found for work order {workOrder.WorkOrderCode}");
 
-        var vehicleMileage = vehicle.Mileage ?? vehicle.LastMaintenanceMileage;
+        var vehicleMileage = actualMileageOverride ?? vehicle.Mileage ?? vehicle.LastMaintenanceMileage;
 
         var serviceNames = workOrder.WorkOrderServices?
             .Where(s => s.Service != null)
@@ -1176,6 +1182,7 @@ public class WorkOrderManagementService : IWorkOrderService
             history.NextServiceDue = serviceDate.AddMonths(serviceIntervalMonths.Value);
         }
 
+        vehicle.Mileage = vehicleMileage.HasValue ? (int?)vehicleMileage.Value : vehicle.Mileage;
         vehicle.LastMaintenanceDate = serviceDate;
         vehicle.LastMaintenanceMileage = history.Mileage;
         vehicle.NextMaintenanceMileage = history.NextServiceMileage;
@@ -1822,5 +1829,6 @@ public class WorkOrderManagementService : IWorkOrderService
             return updated;
         }
  }
+
 
 

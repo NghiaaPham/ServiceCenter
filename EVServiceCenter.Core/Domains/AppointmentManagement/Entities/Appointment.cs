@@ -85,11 +85,16 @@ namespace EVServiceCenter.Core.Domains.AppointmentManagement.Entities
         [StringLength(1000)]
         public string? CustomerNotes { get; set; }
 
-        [Column("PreferredTechnicianID")]
-        public int? PreferredTechnicianId { get; set; }
+    [Column("PreferredTechnicianID")]
+    public int? PreferredTechnicianId { get; set; }
 
-        [Column("StatusID")]
-        public int StatusId { get; set; }
+    [Column("StatusID")]
+    public int StatusId { get; set; }
+
+    /// <summary>
+    /// Km khach khai bao khi dat lich (tuy chon)
+    /// </summary>
+    public int? CustomerReportedMileage { get; set; }
 
         /// <summary>
         /// Trạng thái thanh toán hiện tại của appointment

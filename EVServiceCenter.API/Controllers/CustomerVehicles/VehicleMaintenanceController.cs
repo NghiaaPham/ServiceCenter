@@ -103,6 +103,25 @@ public class VehicleMaintenanceController : BaseController
     }
 
     /// <summary>
+    /// [Admin/Staff] Xem lịch sử bảo dưỡng của xe (dành cho nội bộ)
+    /// </summary>
+    [HttpGet("admin/{vehicleId}/history")]
+    [Authorize(Policy = "AdminOrStaff")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetVehicleMaintenanceHistoryInternal(int vehicleId)
+    {
+        var history = await _maintenanceService.GetVehicleMaintenanceHistoryAsync(vehicleId);
+
+        return Ok(new
+        {
+            success = true,
+            message = $"Lấy lịch sử bảo dưỡng thành công ({history.Count} lần)",
+            data = history
+        });
+    }
+
+    /// <summary>
     /// Cập nhật km hiện tại của xe (thủ công)
     /// </summary>
     /// <param name="vehicleId">ID của xe</param>

@@ -19,6 +19,7 @@ public class WorkOrderResponseDto
     public int VehicleId { get; set; }
     public string VehiclePlate { get; set; } = null!;
     public string VehicleModel { get; set; } = null!;
+    public int? ActualMileage { get; set; }
 
     public int ServiceCenterId { get; set; }
     public string ServiceCenterName { get; set; } = null!;

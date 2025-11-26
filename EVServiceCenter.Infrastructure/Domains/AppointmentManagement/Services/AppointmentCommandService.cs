@@ -329,6 +329,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                 PreferredTechnicianId = request.PreferredTechnicianId,
                 Priority = request.Priority,
                 Source = request.Source,
+                CustomerReportedMileage = request.CustomerReportedMileage,
                 PaymentStatus = requiresPayment
                     ? PaymentStatusEnum.Pending.ToString()
                     : PaymentStatusEnum.Completed.ToString(),
@@ -1290,6 +1291,7 @@ namespace EVServiceCenter.Infrastructure.Domains.AppointmentManagement.Services
                         VehicleId = appointment.VehicleId,
                         ServiceCenterId = appointment.ServiceCenterId,
                         TechnicianId = appointment.PreferredTechnicianId,
+                        ActualMileage = appointment.CustomerReportedMileage,
                         StatusId = 1, // WorkOrderStatus: Started/InProgress
                         StartDate = DateTime.UtcNow,
                         EstimatedCompletionDate = DateTime.UtcNow.AddMinutes(appointment.EstimatedDuration ?? 60),

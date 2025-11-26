@@ -1,5 +1,6 @@
 using EVServiceCenter.Core.Domains.CustomerVehicles.DTOs.Response;
 using EVServiceCenter.Core.Domains.CustomerVehicles.Interfaces.Services;
+using EVServiceCenter.Core.Domains.CustomerVehicles.Entities;
 using EVServiceCenter.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,7 +9,7 @@ namespace EVServiceCenter.Infrastructure.Domains.CustomerVehicles.Services;
 
 /// <summary>
 /// Service implementation cho Smart Maintenance Reminder.
-/// Tính toán ước tính km dựa trên lịch sử bảo dưỡng.
+/// Kết hợp cả km và thời gian để nhắc bảo dưỡng.
 /// </summary>
 public class VehicleMaintenanceService : IVehicleMaintenanceService
 {
@@ -17,6 +18,8 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
 
     // Khoảng cách km giữa các lần bảo dưỡng định kỳ (có thể cấu hình)
     private const decimal DEFAULT_MAINTENANCE_INTERVAL_KM = 10000;
+    // Khoảng cách ngày giữa các lần bảo dưỡng định kỳ (fallback theo thời gian)
+    private const int DEFAULT_MAINTENANCE_INTERVAL_DAYS = 180;
 
     public VehicleMaintenanceService(
         EVDbContext context,
@@ -30,7 +33,6 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
         int vehicleId,
         CancellationToken cancellationToken = default)
     {
-        // Lấy thông tin xe
         var vehicle = await _context.CustomerVehicles
             .Include(v => v.Model)
             .ThenInclude(m => m.Brand)
@@ -41,7 +43,6 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
             throw new KeyNotFoundException($"Không tìm thấy xe với ID {vehicleId}");
         }
 
-        // Lấy lịch sử bảo dưỡng (2 lần gần nhất để tính km trung bình)
         var maintenanceHistory = await _context.MaintenanceHistories
             .Where(h => h.VehicleId == vehicleId)
             .OrderByDescending(h => h.ServiceDate)
@@ -66,12 +67,15 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
             result.NextMaintenanceKm = DEFAULT_MAINTENANCE_INTERVAL_KM;
             result.AverageKmPerDay = 0;
             var rawRemainingKm = result.NextMaintenanceKm - result.EstimatedCurrentKm;
+            var rawDaysRemaining = CalculateDaysRemaining(vehicle);
             result.RemainingKm = Math.Max(0, rawRemainingKm);
             result.ProgressPercent = (result.EstimatedCurrentKm / result.NextMaintenanceKm) * 100;
 
-            // Dù chưa có lịch sử, vẫn cảnh báo nếu đã vượt ngưỡng
-            result.Status = DetermineStatus(result.ProgressPercent);
-            result.Message = GenerateMessage(result.Status, rawRemainingKm, 0);
+            var effectiveProgressNoHistory = Math.Max((double)result.ProgressPercent, CalculateDaysProgress(vehicle));
+            result.Status = DetermineStatus((decimal)effectiveProgressNoHistory);
+            result.EstimatedDaysUntilMaintenance = rawDaysRemaining.HasValue ? (int)Math.Round(rawDaysRemaining.Value) : 0;
+            result.EstimatedNextMaintenanceDate = ComputeNextMaintenanceDate(vehicle)?.ToDateTime(TimeOnly.MinValue);
+            result.Message = GenerateMessage(result.Status, rawRemainingKm, result.EstimatedDaysUntilMaintenance);
 
             return result;
         }
@@ -87,10 +91,15 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
             result.EstimatedCurrentKm = vehicle.Mileage ?? result.LastMaintenanceKm;
             result.AverageKmPerDay = 0;
             var rawRemainingKm = result.NextMaintenanceKm - result.EstimatedCurrentKm;
+            var rawDaysRemaining = CalculateDaysRemaining(vehicle);
             result.RemainingKm = Math.Max(0, rawRemainingKm);
             result.ProgressPercent = ((result.EstimatedCurrentKm - result.LastMaintenanceKm) / DEFAULT_MAINTENANCE_INTERVAL_KM) * 100;
-            result.Status = DetermineStatus(result.ProgressPercent);
-            result.Message = GenerateMessage(result.Status, rawRemainingKm, 0);
+
+            var effectiveProgressSingle = Math.Max((double)result.ProgressPercent, CalculateDaysProgress(vehicle));
+            result.Status = DetermineStatus((decimal)effectiveProgressSingle);
+            result.EstimatedDaysUntilMaintenance = rawDaysRemaining.HasValue ? (int)Math.Round(rawDaysRemaining.Value) : 0;
+            result.EstimatedNextMaintenanceDate = ComputeNextMaintenanceDate(vehicle)?.ToDateTime(TimeOnly.MinValue);
+            result.Message = GenerateMessage(result.Status, rawRemainingKm, result.EstimatedDaysUntilMaintenance);
 
             return result;
         }
@@ -122,10 +131,18 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
             estimatedDaysUntilMaintenance = (int)(remainingKm / avgKmPerDay);
             estimatedNextMaintenanceDate = DateTime.Now.AddDays(estimatedDaysUntilMaintenance);
         }
+        else
+        {
+            var rawDaysRemaining = CalculateDaysRemaining(vehicle);
+            estimatedDaysUntilMaintenance = rawDaysRemaining.HasValue ? (int)Math.Round(rawDaysRemaining.Value) : 0;
+            estimatedNextMaintenanceDate = ComputeNextMaintenanceDate(vehicle)?.ToDateTime(TimeOnly.MinValue);
+        }
 
         var progressPercent = ((estimatedCurrentKm - (latestMaintenance.Mileage ?? 0)) / DEFAULT_MAINTENANCE_INTERVAL_KM) * 100;
+        var daysProgress = CalculateDaysProgress(vehicle);
+        var effectiveProgressFull = Math.Max((double)progressPercent, daysProgress);
 
-        var status = DetermineStatus(progressPercent);
+        var status = DetermineStatus((decimal)effectiveProgressFull);
         var message = GenerateMessage(status, remainingKm, estimatedDaysUntilMaintenance);
 
         result.EstimatedCurrentKm = Math.Round(estimatedCurrentKm, 0);
@@ -135,8 +152,8 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
         result.AverageKmPerDay = Math.Round(avgKmPerDay, 2);
         result.RemainingKm = Math.Max(0, Math.Round(remainingKm, 0));
         result.EstimatedDaysUntilMaintenance = estimatedDaysUntilMaintenance;
-        result.EstimatedNextMaintenanceDate = estimatedNextMaintenanceDate;
-        result.ProgressPercent = Math.Round(progressPercent, 2);
+        result.EstimatedNextMaintenanceDate = estimatedNextMaintenanceDate ?? ComputeNextMaintenanceDate(vehicle)?.ToDateTime(TimeOnly.MinValue);
+        result.ProgressPercent = Math.Round((decimal)effectiveProgressFull, 2);
         result.Status = status;
         result.Message = message;
 
@@ -226,9 +243,6 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
             vehicleId, mileage, notes);
     }
 
-    /// <summary>
-    /// Xác định trạng thái dựa trên phần trăm tiến độ
-    /// </summary>
     private string DetermineStatus(decimal progressPercent)
     {
         if (progressPercent >= 90)
@@ -245,9 +259,6 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
         }
     }
 
-    /// <summary>
-    /// Tạo message phù hợp với trạng thái
-    /// </summary>
     private string GenerateMessage(string status, decimal remainingKm, int daysUntilMaintenance)
     {
         if (remainingKm < 0)
@@ -258,6 +269,17 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
                 "Urgent" => $"Xe cua ban da qua han bao duong khoang {overdueKm:N0} km. Vui long dat lich ngay.",
                 "NeedAttention" => $"Xe da qua han khoang {overdueKm:N0} km. Nen dat lich bao duong som.",
                 _ => $"Xe da vuot moc bao duong khoang {overdueKm:N0} km. Vui long dat lich."
+            };
+        }
+
+        if (daysUntilMaintenance < 0)
+        {
+            var overdueDays = Math.Abs(daysUntilMaintenance);
+            return status switch
+            {
+                "Urgent" => $"Xe cua ban da qua han bao duong khoang {overdueDays:N0} ngay. Vui long dat lich ngay.",
+                "NeedAttention" => $"Xe da qua han khoang {overdueDays:N0} ngay. Nen dat lich bao duong som.",
+                _ => $"Xe da qua han bao duong khoang {overdueDays:N0} ngay. Vui long dat lich."
             };
         }
 
@@ -277,5 +299,41 @@ public class VehicleMaintenanceService : IVehicleMaintenanceService
             "NeedAttention" => $"Xe cua ban se can bao duong sau khoang {remainingKm:N0} km hoac {daysUntilMaintenance} ngay. Hay chuan bi dat lich som.",
             _ => $"Xe cua ban van trong tinh trang tot. Can {remainingKm:N0} km hoac khoang {daysUntilMaintenance} ngay den lan bao duong tiep theo."
         };
+    }
+
+    private double CalculateDaysProgress(CustomerVehicle vehicle)
+    {
+        if (!vehicle.LastMaintenanceDate.HasValue)
+        {
+            return 0;
+        }
+
+        var lastDate = vehicle.LastMaintenanceDate.Value.ToDateTime(TimeOnly.MinValue);
+        var daysElapsed = (DateTime.Now.Date - lastDate.Date).TotalDays;
+        if (daysElapsed < 0) return 0;
+
+        return (daysElapsed / DEFAULT_MAINTENANCE_INTERVAL_DAYS) * 100;
+    }
+
+    private double? CalculateDaysRemaining(CustomerVehicle vehicle)
+    {
+        var next = ComputeNextMaintenanceDate(vehicle);
+        if (!next.HasValue) return null;
+        return (next.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Now.Date).TotalDays;
+    }
+
+    private DateOnly? ComputeNextMaintenanceDate(CustomerVehicle vehicle)
+    {
+        if (vehicle.NextMaintenanceDate.HasValue)
+        {
+            return vehicle.NextMaintenanceDate.Value;
+        }
+
+        if (vehicle.LastMaintenanceDate.HasValue)
+        {
+            return vehicle.LastMaintenanceDate.Value.AddDays(DEFAULT_MAINTENANCE_INTERVAL_DAYS);
+        }
+
+        return null;
     }
 }

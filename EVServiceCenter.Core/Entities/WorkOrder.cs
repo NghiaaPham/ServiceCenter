@@ -100,6 +100,11 @@ public partial class WorkOrder
 
     public DateTime? QualityCheckDate { get; set; }
 
+    /// <summary>
+    /// Km thực tế của xe khi tiếp nhận/khách khai báo
+    /// </summary>
+    public int? ActualMileage { get; set; }
+
     public int? QualityRating { get; set; }
 
     [StringLength(1000)]

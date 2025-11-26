@@ -47,6 +47,11 @@ public class CreateWorkOrderRequestDto
     public string Priority { get; set; } = "Normal";
 
     /// <summary>
+    /// Km thực tế khách khai báo khi tạo work order/check-in (tùy chọn)
+    /// </summary>
+    public int? ActualMileage { get; set; }
+
+    /// <summary>
     /// Estimated completion date
     /// </summary>
     public DateTime? EstimatedCompletionDate { get; set; }

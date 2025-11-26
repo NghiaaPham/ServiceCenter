@@ -213,31 +213,26 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin", policy =>
-    {
-        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
-            ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5000" };
+    var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+        ?? new[] { "http://localhost:3000", "http://localhost:4200", "http://localhost:5000" };
 
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
-
-    options.AddPolicy("AllowNgrok", policy =>
-    {
+    options.AddPolicy("DefaultCors", policy =>
         policy.SetIsOriginAllowed(origin =>
         {
             var uri = new Uri(origin);
-            return uri.Host == "localhost" ||
-                   uri.Host.EndsWith("ngrok.app") ||
-                   uri.Host.EndsWith("ngrok-free.app") ||
-                   uri.Host.EndsWith("ngrok.io");
+            var host = uri.Host;
+            var normalizedOrigin = origin.TrimEnd('/');
+            return allowedOrigins.Any(allowed => string.Equals(allowed.TrimEnd('/'), normalizedOrigin, StringComparison.OrdinalIgnoreCase))
+                   || host == "localhost"
+                   || host.EndsWith("ngrok.app", StringComparison.OrdinalIgnoreCase)
+                   || host.EndsWith("ngrok-free.app", StringComparison.OrdinalIgnoreCase)
+                   || host.EndsWith("ngrok-free.dev", StringComparison.OrdinalIgnoreCase)
+                   || host.EndsWith("ngrok.io", StringComparison.OrdinalIgnoreCase);
         })
         .AllowAnyMethod()
         .AllowAnyHeader()
-        .AllowCredentials();
-    });
+        .AllowCredentials()
+        .SetPreflightMaxAge(TimeSpan.FromMinutes(30)));
 });
 
 // 🔥 ĐĂNG KÝ INFRASTRUCTURE (DbContext, Repositories, Services)
@@ -420,29 +415,9 @@ else
 }
 app.UseResponseCaching();
 
-// ✅ FIX: CORS MUST BE CALLED BEFORE Authentication/Authorization
-// Apply CORS policy for ALL environments
-app.UseCors(app.Environment.IsDevelopment() ? "AllowNgrok" : "AllowSpecificOrigin");
-
-// ✅ FIX: Handle OPTIONS (preflight) requests BEFORE Authentication
-// Prevents 401 errors on CORS preflight checks
-app.Use(async (context, next) =>
-{
-    if (context.Request.Method == "OPTIONS")
-    {
-        var origin = context.Request.Headers["Origin"].ToString();
-        if (!string.IsNullOrEmpty(origin))
-        {
-            context.Response.Headers["Access-Control-Allow-Origin"] = origin;
-            context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
-            context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With";
-            context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
-        }
-        context.Response.StatusCode = 200;
-        return;
-    }
-    await next();
-});
+// ✅ CORS MUST BE CALLED BEFORE Authentication/Authorization
+// Apply single policy for all environments (allows localhost + ngrok)
+app.UseCors("DefaultCors");
 
 if (app.Environment.IsDevelopment())
 {
